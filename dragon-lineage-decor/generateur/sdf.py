@@ -87,7 +87,7 @@ class Grid:
         self.shape = tuple(n)
 
 
-def to_mesh(grid, d, target_tris=None, smooth_iter=8):
+def to_mesh(grid, d, target_tris=None, smooth_iter=8, strict=True):
     """Champ de distance -> trimesh lissé et décimé, normales vers l'extérieur."""
     import trimesh
     from skimage.measure import marching_cubes
@@ -110,9 +110,9 @@ def to_mesh(grid, d, target_tris=None, smooth_iter=8):
             v2, f2 = fast_simplification.simplify(full.vertices, full.faces, 1 - min(1.0, tgt / len(full.faces)))
             m = trimesh.Trimesh(v2, f2, process=True)
             # triangles isolés qui « volent » : on les retire
-            m = trimesh.util.concatenate([c for c in m.split(only_watertight=False) if len(c.faces) >= 12])
+            m = trimesh.util.concatenate([c for c in m.split(only_watertight=False) if len(c.faces) >= (12 if strict else 4)])
             e = m.edges_unique_length
-            if e.max() < 6 * np.median(e) + 0.15:
+            if not strict or e.max() < 6 * np.median(e) + 0.15:
                 break
         if m.volume < 0:
             m.invert()

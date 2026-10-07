@@ -1,0 +1,594 @@
+{
+  "name": "Dragon_LowPoly",
+  "tris": 7562,
+  "size_studs": [
+    25.3,
+    11.9,
+    21.4
+  ],
+  "forward": "-Z",
+  "segments": [
+    {
+      "name": "Torso",
+      "neon": false,
+      "parent": null,
+      "pivot": [
+        0.0,
+        5.3,
+        0.0
+      ],
+      "center": [
+        -0.002,
+        6.034,
+        -0.509
+      ],
+      "size": [
+        5.013,
+        5.176,
+        9.252
+      ],
+      "tris": 898
+    },
+    {
+      "name": "ChestGem",
+      "neon": true,
+      "parent": "Torso",
+      "pivot": [
+        0.0,
+        5.75,
+        -4.5
+      ],
+      "center": [
+        0.006,
+        5.748,
+        -4.644
+      ],
+      "size": [
+        0.942,
+        1.4,
+        0.654
+      ],
+      "tris": 22
+    },
+    {
+      "name": "Neck1",
+      "neon": false,
+      "parent": "Torso",
+      "pivot": [
+        0.0,
+        6.9,
+        -4.0
+      ],
+      "center": [
+        -0.002,
+        7.571,
+        -4.404
+      ],
+      "size": [
+        2.329,
+        3.628,
+        3.14
+      ],
+      "tris": 298
+    },
+    {
+      "name": "Neck2",
+      "neon": false,
+      "parent": "Neck1",
+      "pivot": [
+        0.0,
+        8.3,
+        -5.0
+      ],
+      "center": [
+        0.002,
+        8.9,
+        -5.275
+      ],
+      "size": [
+        1.979,
+        3.183,
+        2.488
+      ],
+      "tris": 288
+    },
+    {
+      "name": "Head",
+      "neon": false,
+      "parent": "Neck2",
+      "pivot": [
+        0.0,
+        9.55,
+        -5.6
+      ],
+      "center": [
+        0.009,
+        10.22,
+        -6.096
+      ],
+      "size": [
+        3.248,
+        3.159,
+        6.729
+      ],
+      "tris": 1046
+    },
+    {
+      "name": "Jaw",
+      "neon": false,
+      "parent": "Head",
+      "pivot": [
+        0.0,
+        9.485,
+        -6.12
+      ],
+      "center": [
+        0.008,
+        9.168,
+        -7.317
+      ],
+      "size": [
+        1.272,
+        0.793,
+        3.524
+      ],
+      "tris": 270
+    },
+    {
+      "name": "Eyes",
+      "neon": true,
+      "parent": "Head",
+      "pivot": [
+        0.0,
+        9.55,
+        -5.6
+      ],
+      "center": [
+        -0.011,
+        10.291,
+        -7.037
+      ],
+      "size": [
+        1.895,
+        0.383,
+        0.681
+      ],
+      "tris": 58
+    },
+    {
+      "name": "Tail1",
+      "neon": false,
+      "parent": "Torso",
+      "pivot": [
+        0.0,
+        5.35,
+        3.1
+      ],
+      "center": [
+        0.004,
+        5.138,
+        4.039
+      ],
+      "size": [
+        2.068,
+        2.8,
+        3.887
+      ],
+      "tris": 268
+    },
+    {
+      "name": "Tail2",
+      "neon": false,
+      "parent": "Tail1",
+      "pivot": [
+        0.0,
+        4.55,
+        5.2
+      ],
+      "center": [
+        -0.0,
+        4.284,
+        6.091
+      ],
+      "size": [
+        1.615,
+        2.26,
+        3.394
+      ],
+      "tris": 240
+    },
+    {
+      "name": "Tail3",
+      "neon": false,
+      "parent": "Tail2",
+      "pivot": [
+        0.0,
+        3.75,
+        7.2
+      ],
+      "center": [
+        -0.0,
+        3.575,
+        8.047
+      ],
+      "size": [
+        1.165,
+        1.628,
+        2.878
+      ],
+      "tris": 218
+    },
+    {
+      "name": "Tail4",
+      "neon": false,
+      "parent": "Tail3",
+      "pivot": [
+        0.0,
+        3.15,
+        9.1
+      ],
+      "center": [
+        0.007,
+        3.132,
+        10.345
+      ],
+      "size": [
+        1.163,
+        0.838,
+        3.238
+      ],
+      "tris": 280
+    },
+    {
+      "name": "FrontUpperLegR",
+      "neon": false,
+      "parent": "Torso",
+      "pivot": [
+        1.62,
+        4.5,
+        -2.4
+      ],
+      "center": [
+        1.661,
+        3.736,
+        -2.24
+      ],
+      "size": [
+        1.923,
+        3.334,
+        2.115
+      ],
+      "tris": 130
+    },
+    {
+      "name": "FrontLowerLegR",
+      "neon": false,
+      "parent": "FrontUpperLegR",
+      "pivot": [
+        1.78,
+        2.75,
+        -1.85
+      ],
+      "center": [
+        1.748,
+        1.646,
+        -2.643
+      ],
+      "size": [
+        1.51,
+        3.545,
+        2.972
+      ],
+      "tris": 298
+    },
+    {
+      "name": "BackUpperLegR",
+      "neon": false,
+      "parent": "Torso",
+      "pivot": [
+        1.42,
+        4.6,
+        1.5
+      ],
+      "center": [
+        1.525,
+        3.826,
+        1.36
+      ],
+      "size": [
+        2.002,
+        3.492,
+        2.619
+      ],
+      "tris": 160
+    },
+    {
+      "name": "BackLowerLegR",
+      "neon": false,
+      "parent": "BackUpperLegR",
+      "pivot": [
+        1.62,
+        2.75,
+        0.75
+      ],
+      "center": [
+        1.622,
+        1.66,
+        1.199
+      ],
+      "size": [
+        1.439,
+        3.593,
+        2.697
+      ],
+      "tris": 308
+    },
+    {
+      "name": "WingUpperR",
+      "neon": false,
+      "parent": "Torso",
+      "pivot": [
+        1.15,
+        6.85,
+        -1.85
+      ],
+      "center": [
+        3.716,
+        6.438,
+        0.783
+      ],
+      "size": [
+        6.189,
+        4.163,
+        6.28
+      ],
+      "tris": 308
+    },
+    {
+      "name": "WingLowerR",
+      "neon": false,
+      "parent": "WingUpperR",
+      "pivot": [
+        4.0,
+        8.15,
+        -0.95
+      ],
+      "center": [
+        8.144,
+        7.01,
+        0.968
+      ],
+      "size": [
+        8.965,
+        5.308,
+        5.912
+      ],
+      "tris": 514
+    },
+    {
+      "name": "WingGlowR",
+      "neon": true,
+      "parent": "WingLowerR",
+      "pivot": [
+        6.8,
+        8.95,
+        -1.55
+      ],
+      "center": [
+        9.465,
+        6.765,
+        1.602
+      ],
+      "size": [
+        5.649,
+        4.762,
+        4.669
+      ],
+      "tris": 120
+    },
+    {
+      "name": "FrontUpperLegL",
+      "neon": false,
+      "parent": "Torso",
+      "pivot": [
+        -1.62,
+        4.5,
+        -2.4
+      ],
+      "center": [
+        -1.675,
+        3.723,
+        -2.251
+      ],
+      "size": [
+        1.9,
+        3.361,
+        2.179
+      ],
+      "tris": 130
+    },
+    {
+      "name": "FrontLowerLegL",
+      "neon": false,
+      "parent": "FrontUpperLegL",
+      "pivot": [
+        -1.78,
+        2.75,
+        -1.85
+      ],
+      "center": [
+        -1.752,
+        1.651,
+        -2.653
+      ],
+      "size": [
+        1.511,
+        3.537,
+        2.952
+      ],
+      "tris": 298
+    },
+    {
+      "name": "BackUpperLegL",
+      "neon": false,
+      "parent": "Torso",
+      "pivot": [
+        -1.42,
+        4.6,
+        1.5
+      ],
+      "center": [
+        -1.515,
+        3.81,
+        1.371
+      ],
+      "size": [
+        2.043,
+        3.471,
+        2.616
+      ],
+      "tris": 160
+    },
+    {
+      "name": "BackLowerLegL",
+      "neon": false,
+      "parent": "BackUpperLegL",
+      "pivot": [
+        -1.62,
+        2.75,
+        0.75
+      ],
+      "center": [
+        -1.618,
+        1.66,
+        1.219
+      ],
+      "size": [
+        1.395,
+        3.609,
+        2.719
+      ],
+      "tris": 308
+    },
+    {
+      "name": "WingUpperL",
+      "neon": false,
+      "parent": "Torso",
+      "pivot": [
+        -1.15,
+        6.85,
+        -1.85
+      ],
+      "center": [
+        -3.715,
+        6.431,
+        0.796
+      ],
+      "size": [
+        6.191,
+        4.149,
+        6.254
+      ],
+      "tris": 310
+    },
+    {
+      "name": "WingLowerL",
+      "neon": false,
+      "parent": "WingUpperL",
+      "pivot": [
+        -4.0,
+        8.15,
+        -0.95
+      ],
+      "center": [
+        -8.127,
+        7.011,
+        0.973
+      ],
+      "size": [
+        8.999,
+        5.309,
+        5.902
+      ],
+      "tris": 512
+    },
+    {
+      "name": "WingGlowL",
+      "neon": true,
+      "parent": "WingLowerL",
+      "pivot": [
+        -6.8,
+        8.95,
+        -1.55
+      ],
+      "center": [
+        -9.465,
+        6.769,
+        1.633
+      ],
+      "size": [
+        5.626,
+        4.761,
+        4.67
+      ],
+      "tris": 120
+    }
+  ],
+  "variants": {
+    "Feu": {
+      "skin": "#B8281F",
+      "back": "#7E1612",
+      "belly": "#FFB43C",
+      "horn": "#4A332C",
+      "membrane": "#E8642C",
+      "teeth": "#F4EAD2",
+      "pupil": "#120806",
+      "eye": "#FF7A1A",
+      "glow": "#FF7A1A"
+    },
+    "Glace": {
+      "skin": "#3C78C0",
+      "back": "#244E8C",
+      "belly": "#D4F1FF",
+      "horn": "#EEF8FF",
+      "membrane": "#86CCF2",
+      "teeth": "#FFFFFF",
+      "pupil": "#0B1A33",
+      "eye": "#8CF4FF",
+      "glow": "#8CF4FF"
+    },
+    "Foret": {
+      "skin": "#3F7B3A",
+      "back": "#284F26",
+      "belly": "#DCCB6E",
+      "horn": "#5B4229",
+      "membrane": "#86B44D",
+      "teeth": "#F1E8C8",
+      "pupil": "#0E1408",
+      "eye": "#E2FF57",
+      "glow": "#E2FF57"
+    },
+    "Ombre": {
+      "skin": "#2C2440",
+      "back": "#17121F",
+      "belly": "#5E4590",
+      "horn": "#CFC6DE",
+      "membrane": "#56347C",
+      "teeth": "#E6E0F0",
+      "pupil": "#07050B",
+      "eye": "#C34BFF",
+      "glow": "#C34BFF"
+    }
+  },
+  "palette_slots": [
+    "skin",
+    "back",
+    "belly",
+    "horn",
+    "membrane",
+    "teeth",
+    "pupil",
+    "eye",
+    "glow"
+  ]
+}

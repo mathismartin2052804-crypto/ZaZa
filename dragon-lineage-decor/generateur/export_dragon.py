@@ -1,5 +1,7 @@
 # Exporte le dragon sauvage : GLB découpé + palettes de lignées + manifeste + scripts Roblox + aperçus.
-# Usage : python3 generateur/export_dragon.py   (depuis dragon-lineage-decor/)
+# Usage (depuis dragon-lineage-decor/) :
+#   python3 generateur/export_dragon.py            -> version lisse  (dragon-sauvage/)
+#   python3 generateur/export_dragon.py lowpoly    -> version low-poly sculptée (dragon-lowpoly/)
 import json
 import os
 import sys
@@ -12,21 +14,29 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dragon_sauvage as D
 import rendu
 
+LOWPOLY = len(sys.argv) > 1 and sys.argv[1] == "lowpoly"
+if LOWPOLY:
+    import dragon_lowpoly as MODEL
+    NAME, FOLDER, VARIANTS, SLOTS = "Dragon_LowPoly", "dragon-lowpoly", MODEL.VARIANTS, MODEL.SLOTS
+else:
+    MODEL = D
+    NAME, FOLDER, VARIANTS, SLOTS = "Dragon_Sauvage", "dragon-sauvage", D.VARIANTS, D.SLOTS
+NEON_LAYERS = ("eye", "glow")
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "dragon-sauvage")
+OUT = os.path.join(ROOT, FOLDER)
 CELL, GRID = 16, 4  # palette 64x64 : 4x4 cases de 16 px
 
 
 def palette_image(colors):
     img = np.zeros((CELL * GRID, CELL * GRID, 3), np.uint8)
-    for i, slot in enumerate(D.SLOTS):
+    for i, slot in enumerate(SLOTS):
         r, c = divmod(i, GRID)
         img[r * CELL:(r + 1) * CELL, c * CELL:(c + 1) * CELL] = (rendu.hex_rgb(colors[slot]) * 255).round()
     return Image.fromarray(img)
 
 
 def slot_uv(slot):
-    r, c = divmod(D.SLOTS.index(slot), GRID)
+    r, c = divmod(SLOTS.index(slot), GRID)
     return (c + 0.5) / GRID, 1 - (r + 0.5) / GRID  # origine en bas à gauche (trimesh retourne pour le glTF)
 
 
@@ -38,7 +48,13 @@ def segment_mesh(seg):
     meshes = []
     for layer, m in seg["layers"].items():
         m = m.copy()
-        uv = np.tile(slot_uv(layer_slot(layer)), (len(m.vertices), 1))
+        slots = seg.get("slots", {}).get(layer)
+        if slots is not None:  # low-poly : une couleur par face (sommets non partagés)
+            uv = np.zeros((len(m.vertices), 2))
+            for fi, f in enumerate(m.faces):
+                uv[f] = slot_uv(slots[fi])
+        else:
+            uv = np.tile(slot_uv(layer_slot(layer)), (len(m.vertices), 1))
         m.visual = trimesh.visual.TextureVisuals(uv=uv)
         meshes.append(m)
     return trimesh.util.concatenate(meshes)
@@ -46,38 +62,39 @@ def segment_mesh(seg):
 
 def main():
     os.makedirs(os.path.join(OUT, "palettes"), exist_ok=True)
-    model = D.build()
-    feu = D.VARIANTS["Feu"]
+    model = MODEL.build()
+    feu = VARIANTS["Feu"]
     pal = palette_image(feu)
-    for name, colors in D.VARIANTS.items():
+    for name, colors in VARIANTS.items():
         palette_image(colors).save(os.path.join(OUT, "palettes", f"Palette_{name}.png"))
 
     scene = trimesh.Scene()
     tex_mat = PBRMaterial(name="DragonPalette", baseColorTexture=pal, metallicFactor=0.0, roughnessFactor=0.75)
     report = []
     for name, seg in model.items():
-        if name == "Eyes":
-            m = seg["layers"]["eye"].copy()
+        if set(seg["layers"]) <= set(NEON_LAYERS):  # morceau lumineux (Neon dans Studio)
+            m = trimesh.util.concatenate(list(seg["layers"].values()))
             rgb = list(rendu.hex_rgb(feu["eye"]))
             m.visual = trimesh.visual.TextureVisuals(material=PBRMaterial(
-                name="DragonEyes", baseColorFactor=rgb + [1.0], emissiveFactor=rgb, metallicFactor=0.0))
+                name="DragonNeon", baseColorFactor=rgb + [1.0], emissiveFactor=rgb, metallicFactor=0.0))
         else:
             m = segment_mesh(seg)
             m.visual.material = tex_mat
         scene.add_geometry(m, node_name=name, geom_name=name)
         lo, hi = m.bounds
-        report.append({"name": name, "parent": seg["parent"], "pivot": [round(x, 3) for x in seg["pivot"]],
+        neon = set(seg["layers"]) <= set(NEON_LAYERS)
+        report.append({"name": name, "neon": neon, "parent": seg["parent"], "pivot": [round(x, 3) for x in seg["pivot"]],
                        "center": [round(float(x), 3) for x in (lo + hi) / 2],
                        "size": [round(float(x), 3) for x in hi - lo], "tris": int(len(m.faces))})
         print(f"{name:16s} {len(m.faces):5d} tris")
-    with open(os.path.join(OUT, "Dragon_Sauvage.glb"), "wb") as fh:
+    with open(os.path.join(OUT, NAME + ".glb"), "wb") as fh:
         fh.write(scene.export(file_type="glb", include_normals=True))
     allv = np.concatenate([s.vertices for s in scene.geometry.values()])
     total = sum(r["tris"] for r in report)
-    manifest = {"name": "Dragon_Sauvage", "tris": total,
+    manifest = {"name": NAME, "tris": total,
                 "size_studs": [round(float(x), 1) for x in allv.max(0) - allv.min(0)],
-                "forward": "-Z", "segments": report, "variants": D.VARIANTS,
-                "palette_slots": D.SLOTS}
+                "forward": "-Z", "segments": report, "variants": VARIANTS,
+                "palette_slots": SLOTS}
     with open(os.path.join(OUT, "manifest.json"), "w") as fh:
         json.dump(manifest, fh, indent=2, ensure_ascii=False)
     write_luau(report)
@@ -94,15 +111,16 @@ def write_luau(report):
                      f'{lua_vec(r["pivot"])}, {lua_vec(r["center"])}}},' for r in report)
     torso = next(r for r in report if r["name"] == "Torso")
     colors = "\n".join(f'\t{n} = {{ eye = Color3.fromHex("{c["eye"]}"), texture = "" }}, -- rbxassetid de Palette_{n}.png'
-                       for n, c in D.VARIANTS.items())
-    src = TEMPLATE.replace("{{ROWS}}", rows).replace("{{TORSO_X}}", f'{torso["size"][0]:.3f}').replace("{{VARIANTS}}", colors)
+                       for n, c in VARIANTS.items())
+    neon = ", ".join(f'"{r["name"]}"' for r in report if r["neon"])
+    src = TEMPLATE.replace("{{NEON}}", neon).replace("{{NAME}}", NAME).replace("{{ROWS}}", rows).replace("{{TORSO_X}}", f'{torso["size"][0]:.3f}').replace("{{VARIANTS}}", colors)
     with open(os.path.join(OUT, "RigDragon.lua"), "w") as fh:
         fh.write(src)
 
 
-TEMPLATE = '''-- RigDragon : transforme le dragon importé (Dragon_Sauvage.glb) en modèle animable.
+TEMPLATE = '''-- RigDragon : transforme le dragon importé ({{NAME}}.glb) en modèle animable.
 -- À mettre dans un Script (ServerScriptService) ou à lancer une fois dans la barre de commande.
--- Il relie les 21 morceaux par des Motor6D placés aux articulations, puis crée un AnimationController.
+-- Il relie tous les morceaux par des Motor6D placés aux articulations, puis crée un AnimationController.
 -- Le modèle peut avoir été agrandi ou réduit : l'échelle est retrouvée à partir de la largeur du Torso.
 
 local Rig = {}
@@ -112,6 +130,8 @@ local SEGMENTS = {
 {{ROWS}}
 }
 local TORSO_WIDTH = {{TORSO_X}}
+-- Morceaux lumineux (yeux, gemme, bout des ailes) : Neon, couleur de la lignée.
+local NEON = { {{NEON}} }
 
 -- Couleur des yeux par lignée ; mets dans texture l'ID de la palette importée (ex. "rbxassetid://123").
 Rig.VARIANTS = {
@@ -145,8 +165,10 @@ function Rig.build(model: Model)
 			m.Parent = parent
 		end
 	end
-	parts.Eyes.Material = Enum.Material.Neon
-	parts.Eyes.CastShadow = false
+	for _, n in NEON do
+		parts[n].Material = Enum.Material.Neon
+		parts[n].CastShadow = false
+	end
 	model.PrimaryPart = parts.Torso
 	if not model:FindFirstChildOfClass("AnimationController") then
 		local ac = Instance.new("AnimationController")
@@ -162,7 +184,7 @@ function Rig.setVariant(model: Model, variant: string)
 	assert(v, "Lignée inconnue : " .. tostring(variant))
 	for _, p in model:GetDescendants() do
 		if p:IsA("MeshPart") then
-			if p.Name == "Eyes" then
+			if table.find(NEON, p.Name) then
 				p.Color = v.eye
 			elseif v.texture ~= "" then
 				p.TextureID = v.texture
@@ -185,10 +207,10 @@ def previews(model):
     cells = [("Feu", None, (-22, 12, -22)), ("Feu", pose, (-23, 13, -22)), ("Feu", None, (-32, 8, 1)),
              ("Glace", None, (-22, 12, -22)), ("Foret", pose, (-23, 13, -22)), ("Ombre", None, (0, 10, -32))]
     for k, (var, p, eye) in enumerate(cells):
-        img = rendu.render(rendu.gather(model, D.VARIANTS[var], p), eye, (1.5, 5.8, 1), size=(W, H), ss=2)
+        img = rendu.render(rendu.gather(model, VARIANTS[var], p), eye, (1.5, 5.8, 1), size=(W, H), ss=2)
         sheet.paste(img, ((k % 3) * W, (k // 3) * H))
         print("aperçu", k + 1, "/", len(cells), flush=True)
-    sheet.save(os.path.join(OUT, "apercu-dragon-sauvage.png"))
+    sheet.save(os.path.join(OUT, f"apercu-{FOLDER}.png"))
 
 
 if __name__ == "__main__":

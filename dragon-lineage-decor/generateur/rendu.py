@@ -50,8 +50,12 @@ def gather(model, palette, pose=None):
         for layer, m in seg["layers"].items():
             v = m.vertices @ R.T + t
             n = m.vertex_normals @ R.T
-            out.append((v, n, np.asarray(m.faces), hex_rgb(palette[layer if layer != "skin" else "skin"]),
-                        layer == "eye"))
+            slots = seg.get("slots", {}).get(layer)
+            if slots is not None:  # une couleur par face (low-poly)
+                col = np.array([hex_rgb(palette[s]) for s in slots])
+            else:
+                col = hex_rgb(palette["eye" if layer == "glow" else layer])
+            out.append((v, n, np.asarray(m.faces), col, layer in ("eye", "glow")))
     return out
 
 
@@ -72,7 +76,8 @@ def render(items, eye, target, size=(900, 640), fov=32, ss=2, bg=("#1d2230", "#0
         cx, cy, cz = rel @ r, rel @ u, rel @ f
         sx = W / 2 + foc * cx / cz
         sy = H / 2 - foc * cy / cz
-        for a, b, c in faces:
+        per_face = np.ndim(col) == 2
+        for fi, (a, b, c) in enumerate(faces):
             xs, ys = sx[[a, b, c]], sy[[a, b, c]]
             x0, x1 = int(max(xs.min(), 0)), int(min(np.ceil(xs.max()), W - 1))
             y0, y1 = int(max(ys.min(), 0)), int(min(np.ceil(ys.max()), H - 1))
@@ -99,7 +104,7 @@ def render(items, eye, target, size=(900, 640), fov=32, ss=2, bg=("#1d2230", "#0
             pp = (w0[..., None] * v[a] / cz[a] + w1[..., None] * v[b] / cz[b] + w2[..., None] * v[c] / cz[c]) * z[..., None]
             nbuf[y0:y1 + 1, x0:x1 + 1][m] = nn[m]
             pbuf[y0:y1 + 1, x0:x1 + 1][m] = pp[m]
-            cbuf[y0:y1 + 1, x0:x1 + 1][m] = col
+            cbuf[y0:y1 + 1, x0:x1 + 1][m] = col[fi] if per_face else col
             ebuf[y0:y1 + 1, x0:x1 + 1][m] = emissive
     hit = np.isfinite(zbuf)
     N = nbuf / np.maximum(np.linalg.norm(nbuf, axis=-1, keepdims=True), 1e-9)
