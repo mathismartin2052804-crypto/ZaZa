@@ -1,20 +1,21 @@
 # Démo d'animations du dragon v6 sur le rig à os (rig_v6.py) : un seul maillage déformé, articulations sans trous.
-#   Course : galop lourd refait (course_v6.py) : pieds posés au sol par IK (à plat pendant l'appui, roulent sur
-#            les griffes au décollage), corps qui ne rebondit plus, tête stabilisée, cou et queue en retard
+#   Course, Marche : allures_v6.py (pieds posés au sol par IK, corps qui s'enfonce aux réceptions, tête stabilisée)
+#   Décollage, Atterrissage, Souffle de feu : sequences_v6.py
 #   Vol    : battements avec le bout d'aile en retard ; pattes avant repliées sous le poitrail, pattes arrière
 #            qui traînent vers l'arrière (moins relevées qu'en v5)
 #   Rugissement : se cabre, ouvre la gueule (commissures étirées, lueur de gorge), plisse les yeux, ailes
 #            déployées d'un seul tenant (la membrane se plie au coude au lieu de se couper)
 #   Repos  : respiration ; les yeux sautent d'un point à l'autre (saccades, aussi en hauteur), la tête suit plus
 #            lentement pendant que l'œil revient au centre ; micro-mouvements, double clignement, paupières lourdes
-# Conventions de rendu.rot : +ex lève l'avant / balance vers l'avant ce qui pend sous l'os ; +ez lève l'aile droite.
+# Conventions de rendu.rot : +ex lève l'avant / balance vers l'avant ce qui pend sous l'os ; +ez lève l'aile droite ;
+# +ey tourne vers la GAUCHE du dragon (regard « + = vers la droite » => lacet négatif).
 # Usage : python3 demo_animations_v6.py  ->  ../demo-animations-v6.gif
 import os
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import rendu
 import rig_v6 as RG
-import course_v6 as CO
+import allures_v6 as AL
 import corps_v4 as V4
 from tete_v5 import FONT_B
 
@@ -52,10 +53,37 @@ def folded(P):
     return P
 
 
-def course(t):
-    P, off = CO.pose(t)
-    P.update(eyes(0.15, 0))
+def allure(A, t):
+    P, off, lid = A.pose(t)
+    P.update(eyes(lid, 0))
     return P, off
+
+
+def course(t):
+    return allure(AL.COURSE, t)
+
+
+def marche(t):
+    return allure(AL.MARCHE, t)
+
+
+def sequence(nom, t):
+    import sequences_v6 as SQ                                 # import tardif : sequences_v6 importe ce module
+    P, off, lid, lueur, feu = SQ.SEQUENCES[nom].pose(t)
+    P.update(eyes(lid, 0))
+    return P, off
+
+
+def decollage(t):
+    return sequence("Decollage", t)
+
+
+def atterrissage(t):
+    return sequence("Atterrissage", t)
+
+
+def souffle_feu(t):
+    return sequence("SouffleFeu", t)
 
 
 def vol(t):
@@ -134,8 +162,8 @@ def repos(t):
     br = np.sin(2 * np.pi * t)                                # une respiration par boucle
     tc, th, cap, haut, lid = regard_repos(t)
     P = folded({"Chest": (1.5 * br, 0, 0), "Spine": (-1 * br, 0, 0),
-                "Neck1": (2 * br, 0.3 * tc, 0), "Neck2": (1 * br, 0.3 * tc, 0), "Neck3": (0.4 * th, 0.2 * tc, 0),
-                "Head": (-2 * br + 0.6 * th, 0.2 * tc, 0), "Jaw": (-3 - 3 * max(0, br), 0, 0)})
+                "Neck1": (2 * br, -0.3 * tc, 0), "Neck2": (1 * br, -0.3 * tc, 0), "Neck3": (0.4 * th, -0.2 * tc, 0),
+                "Head": (-2 * br + 0.6 * th, -0.2 * tc, 0), "Jaw": (-3 - 3 * max(0, br), 0, 0)})
     P.update(sides("WingUpper", (0, -38, -22 + 2 * br)))
     for i in range(6):
         P[f"Tail{i + 1}"] = (1.5 * np.sin(2 * np.pi * t - 0.5 * i), 6 * np.sin(2 * np.pi * t - 0.6 * i), 0)

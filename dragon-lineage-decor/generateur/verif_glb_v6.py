@@ -26,7 +26,8 @@ nodes = g["nodes"]
 parent = {c: i for i, n in enumerate(nodes) for c in n.get("children", [])}
 names = [nodes[j]["name"] for j in joints]
 rig = RG.Rig()
-FN = {"Course": D.course, "Vol": D.vol, "Rugissement": D.rugit, "Repos": D.repos}
+FN = {"Course": D.course, "Marche": D.marche, "Vol": D.vol, "Rugissement": D.rugit, "Repos": D.repos,
+      "Decollage": D.decollage, "Atterrissage": D.atterrissage, "SouffleFeu": D.souffle_feu}
 
 def cf(c):
     M = np.eye(4); M[:3, 3] = c[:3]; M[:3, :3] = np.array(c[3:]).reshape(3, 3); return M

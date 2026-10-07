@@ -24,13 +24,17 @@ for name in string.gmatch(string.match(src, "local BONES = {(.-)}"), '"(%w+)"') 
 	table.insert(list, b); bones[name] = b
 end
 local out = {}
-for _, case in { { "Course", 0.1 }, { "Course", 0.37 }, { "Course", 0.8113 }, { "Vol", 0.125 }, { "Vol", 0.62 },
-	{ "Rugissement", 0.12 }, { "Rugissement", 0.6 }, { "Repos", 0.0625 }, { "Repos", 0.45 }, { "Repos", 0.66 },
-	{ "Repos", 0.887 } } do
+local DUREES = { Course = 2.2, Marche = 1.7, Vol = 2.2, Rugissement = 2.2, Repos = 4.0, Decollage = 2.0,
+	Atterrissage = 1.8, SouffleFeu = 2.8 }
+for _, case in { { "Course", 0.1 }, { "Course", 0.37 }, { "Course", 0.8113 }, { "Marche", 0.21 }, { "Marche", 0.77 },
+	{ "Vol", 0.125 }, { "Vol", 0.62 }, { "Rugissement", 0.12 }, { "Rugissement", 0.6 }, { "Repos", 0.0625 },
+	{ "Repos", 0.45 }, { "Repos", 0.66 }, { "Repos", 0.887 }, { "Decollage", 0.3 }, { "Decollage", 0.55 },
+	{ "Decollage", 0.93 }, { "Atterrissage", 0.2 }, { "Atterrissage", 0.6 }, { "SouffleFeu", 0.25 },
+	{ "SouffleFeu", 0.6 } } do
 	local d = Anim.new(model)
 	d:play(case[1])
 	d.blinkT = 10
-	cb(case[2] * ({ Course = 2.2, Vol = 2.2, Rugissement = 2.2, Repos = 4.0 })[case[1]])
+	cb(case[2] * DUREES[case[1]])
 	local T = {}
 	for n, b in bones do T[n] = { b.Transform:GetComponents() } end
 	table.insert(out, { anim = case[1], t = case[2], T = T })

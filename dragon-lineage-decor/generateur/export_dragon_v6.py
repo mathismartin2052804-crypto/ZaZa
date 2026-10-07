@@ -20,8 +20,9 @@ import rendu
 import rig_v6 as RG
 import corps_v6 as C6
 import tete_v8 as T8
-import course_v6 as CO
+import allures_v6 as AL
 import demo_animations_v6 as D
+import sequences_v6 as SQ
 
 NAME = "Dragon_V6"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -161,313 +162,58 @@ def lua_vec(v):
     return "Vector3.new(%s)" % ", ".join(f"{x:.4f}" for x in v)
 
 
+def lua_table(nom, A, periodique):
+    rows = ",\n".join("\t\t{ " + ", ".join(np.format_float_positional(x, trim="-") for x in r) + " }"
+                      for r in A.table)
+    head = f'\t{nom} = {{ duree = {A.duree}, periodique = {str(periodique).lower()}, '
+    if periodique:
+        head += f"foulees = {A.foulees}, vitesse = {A.vitesse:.3f}, sol = true, "
+    else:
+        head += f'suite = "{A.suite}", sol = {str(A.sol).lower()}, '
+    bones = ", ".join(f'"{b}"' for b in A.bones)
+    return head + f"bones = {{ {bones} }},\n\t\trows = {{\n{rows}\n\t\t}} }},"
+
+
+def lua_pattes(sk):
+    rest = {b[0]: np.asarray(b[2], float) for b in sk.bones}
+    out = []
+    for kind in ("Front", "Back"):
+        for sd in ("R", "L"):
+            up, low, foot = (kind + n + sd for n in ("UpperLeg", "LowerLeg", "Foot"))
+            S, E, W = rest[up], rest[low], rest[foot]
+            a, b = (E - S)[1:], (W - E)[1:]
+            sens = np.sign(a[0] * (W - S)[2] - a[1] * (W - S)[1])
+            griffe = np.array([W[0], AL.SOL, AL.PIVOT_Z[kind]]) - W
+            out.append(f'\t{kind}{sd} = {{ up = "{up}", low = "{low}", foot = "{foot}", l1y = {a[0]:.4f}, l1z = {a[1]:.4f}, '
+                       f"l2y = {b[0]:.4f}, l2z = {b[1]:.4f}, l1 = {np.linalg.norm(a):.4f}, l2 = {np.linalg.norm(b):.4f}, "
+                       f"sens = {int(sens)}, griffe = {lua_vec(griffe)} }},")
+    return "\n".join(out)
+
+
 def write_luau(rig, path):
     _, _, u, _ = T8.eye_frame(RG.A)
     axR = C6.HEAD_R @ u
     axL = C6.HEAD_R @ np.array([-u[0], u[1], u[2]])
-    rows = ",\n".join("\t{ " + ", ".join(f"{x:.4f}" for x in r) + " }" for r in CO.TABLE)
+    sk = AL._Os()
+    root = np.asarray(sk.bones[sk.index["Root"]][2], float)
+    hb = np.asarray(C6.HB, float)
+    bouche = RG.hl((0, -0.15, -2.75)) - hb                          # entre les mâchoires, relatif à l'os Head
+    dirb = RG.hl((0, -0.15, -3.75)) - RG.hl((0, -0.15, -2.75))
+    tables = [lua_table(n, A, True) for n, A in AL.ALLURES.items()]
+    tables += [lua_table(n, S, False) for n, S in SQ.SEQUENCES.items()]
     sac = ", ".join("{ %g, %g, %g }" % s for s in D.SACCADES)
-    src = (LUA.replace("{{AXE_R}}", lua_vec(axR)).replace("{{AXE_L}}", lua_vec(axL))
-           .replace("{{PUP_R}}", lua_vec(RG.pupil_axis("R"))).replace("{{PUP_L}}", lua_vec(RG.pupil_axis("L")))
-           .replace("{{LID}}", f"{T8.LID_CLOSE:.1f}").replace("{{BONES}}", ", ".join(f'"{b[0]}"' for b in rig.bones))
-           .replace("{{COURSE}}", rows).replace("{{SACCADES}}", sac).replace("{{VITESSE}}", f"{CO.VITESSE:.3f}")
-           .replace("{{DUREE}}", f"{CO.DUREE}").replace("{{FOULEES}}", str(CO.FOULEES)))
+    src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "AnimDragon_modele.lua")).read()
+    for k, v in {"AXE_R": lua_vec(axR), "AXE_L": lua_vec(axL),
+                 "PUP_R": lua_vec(RG.pupil_axis("R")), "PUP_L": lua_vec(RG.pupil_axis("L")),
+                 "LID": f"{T8.LID_CLOSE:.1f}", "BONES": ", ".join(f'"{b[0]}"' for b in rig.bones),
+                 "SACCADES": sac, "SOL_ROOT": f"{AL.SOL - root[1]:.4f}",
+                 "BOUCHE": f"CFrame.lookAt({lua_vec(bouche)}, {lua_vec(bouche + dirb / np.linalg.norm(dirb))})",
+                 "PATTES": lua_pattes(sk), "TABLES": "\n".join(tables)}.items():
+        assert "{{" + k + "}}" in src, k
+        src = src.replace("{{" + k + "}}", v)
+    assert "{{" not in src
     with open(path, "w") as fh:
         fh.write(src)
-
-
-LUA = r'''-- AnimDragon : anime le dragon v6 importé (Dragon_V6.glb) en pilotant ses os (Bone.Transform).
--- Placement : ModuleScript dans ReplicatedStorage ; à utiliser depuis un LocalScript (rendu fluide côté client)
--- ou un Script serveur. Les deux MeshParts (Dragon, DragonNeon) doivent être dans le même Model que les os.
---   local Anim = require(ReplicatedStorage.AnimDragon)
---   local d = Anim.new(workspace.Dragon_V6)
---   d:play("Course")            -- "Course", "Vol", "Rugissement", "Repos"
---   d:blink()                   -- clignement
---   d:look(20, 5)               -- regard en degrés (+ = vers la droite du dragon, + = vers le haut)
---   d:squint(0.4)               -- plisser les yeux (0 ouverts, 1 fermés)
---   d:setRate(vitesse / Anim.VITESSE_COURSE)   -- cale la foulée sur la vitesse réelle (pieds qui ne patinent pas)
--- Mêmes formules que generateur/demo_animations_v6.py (angles en degrés, ordre YXZ, autour de la tête de chaque os) ;
--- la course vient de generateur/course_v6.py (angles des pattes calculés par IK, copiés dans la table COURSE).
-local RunService = game:GetService("RunService")
-
-local Anim = {}
-Anim.__index = Anim
-
-local BONES = { {{BONES}} }
-local LID_AXIS = { R = {{AXE_R}}, L = {{AXE_L}} }
-local LID_CLOSE = math.rad({{LID}})
-local PUPIL_AXIS = { R = {{PUP_R}}, L = {{PUP_L}} }
-local rad, sin, cos, max, abs, clamp = math.rad, math.sin, math.cos, math.max, math.abs, math.clamp
-local TAU = 2 * math.pi
-
--- course : vitesse au sol (studs/s) à donner au dragon pour que ses pieds ne patinent pas à la vitesse normale
-Anim.VITESSE_COURSE = {{VITESSE}}
-
--- pattes pendant la course (une ligne par échantillon de foulée) : pour avant R, avant L, arrière R, arrière L :
--- haut et bas de la patte (degrés, autour de X) puis pied (quaternion x, y, z, w)
-local COURSE = {
-{{COURSE}}
-}
-
--- regard au repos : { instant, cap, hauteur }
-local SACCADES = { {{SACCADES}} }
-
-local function ease(a, b, t)
-	local x = clamp((t - a) / (b - a), 0, 1)
-	return x * x * (3 - 2 * x)
-end
-
-local function rot(v)
-	return CFrame.fromEulerAnglesYXZ(rad(v[1]), rad(v[2]), rad(v[3]))
-end
-
-local function blink(t, at, d)
-	return clamp(1 - abs(t - at) / (d or 0.06), 0, 1) ^ 0.7
-end
-
--- interpolation Catmull-Rom périodique (comme course_v6.catmull)
-local function catmull(tab, s)
-	local n = #tab
-	local x = (s % 1) * n
-	local i = math.floor(x)
-	local f = x - i
-	local p0, p1, p2, p3 = tab[(i - 1) % n + 1], tab[i % n + 1], tab[(i + 1) % n + 1], tab[(i + 2) % n + 1]
-	local out = table.create(#p1)
-	for k = 1, #p1 do
-		out[k] = 0.5 * (2 * p1[k] + (p2[k] - p0[k]) * f + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * f * f
-			+ (3 * p1[k] - p0[k] - 3 * p2[k] + p3[k]) * f * f * f)
-	end
-	return out
-end
-
-local function quat(x, y, z, w)
-	local n = math.sqrt(x * x + y * y + z * z + w * w)
-	return CFrame.new(0, 0, 0, x / n, y / n, z / n, w / n)
-end
-
--- valeur k (2 = cap, 3 = hauteur) du regard au repos, transitions de durée dur
-local function cible(t, k, dur, delai)
-	delai = delai or 0
-	local v = SACCADES[#SACCADES][k]
-	for i, s in SACCADES do
-		local prev = SACCADES[i == 1 and #SACCADES or i - 1]
-		v += (s[k] - prev[k]) * ease(s[1] + delai, s[1] + delai + dur, t)
-	end
-	return v
-end
-
-local function sides(P, name, ex, ey, ez)
-	P[name .. "R"] = { ex, ey, ez }
-	P[name .. "L"] = { ex, -ey, -ez }
-end
-
-local function folded(P)
-	sides(P, "WingUpper", 0, -38, -22)
-	sides(P, "WingLower", 0, -68, 0)
-	return P
-end
-
-local ANIMS = {}
-ANIMS.Course = { duree = {{DUREE}}, fn = function(t)
-	local s = (t * {{FOULEES}}) % 1
-	local ph = TAU * s
-	local P = {}
-	P.Root = { 2.0 * sin(ph - 0.4), 2.5 * sin(ph), 1.2 * sin(ph + 0.3) }
-	P.Spine = { -3.0 * sin(ph + 0.3), -2.0 * sin(ph + 0.5), 0 }
-	P.Chest = { 1.8 * sin(ph + 1.0), -1.5 * sin(ph + 0.9), -0.8 * sin(ph + 0.9) }
-	P.Neck1 = { -7 + 2.5 * sin(ph + 1.6), 1.5 * sin(ph + 1.3), 0 }
-	P.Neck2 = { -3 + 1.5 * sin(ph + 2.0), 1.0 * sin(ph + 1.7), 0 }
-	P.Neck3 = { 1.0 * sin(ph + 2.4), 0, 0 }
-	-- tête stabilisée : compense presque tout le tangage et le lacet du tronc et du cou
-	local tang, lac = 0, 0
-	for _, n in { "Root", "Spine", "Chest", "Neck1", "Neck2", "Neck3" } do
-		tang += P[n][1]
-	end
-	for _, n in { "Root", "Spine", "Chest", "Neck1", "Neck2" } do
-		lac += P[n][2]
-	end
-	P.Head = { -0.85 * tang - 8 + 1.0 * sin(ph + 2.8), -0.7 * lac, -0.6 * (P.Root[3] + P.Chest[3]) }
-	P.Jaw = { -6 - 4 * (0.5 + 0.5 * sin(ph + 2.2)), 0, 0 }
-	sides(P, "WingUpper", 0, -38, -22 + 3 * sin(ph - 0.8))
-	sides(P, "WingLower", 0, -68, 2 * sin(ph - 1.4))
-	for i = 0, 5 do
-		P["Tail" .. (i + 1)] = { -1.5 + 2.5 * sin(ph - 0.6 * i - 0.8) + 0.6 * sin(2 * ph - 0.9 * i),
-			(3 + 1.2 * i) * sin(ph - 0.75 * i - 0.5), 0 }
-	end
-	local v = catmull(COURSE, s)
-	local c = 0
-	for _, kind in { "Front", "Back" } do
-		for _, sd in { "R", "L" } do
-			P[kind .. "UpperLeg" .. sd] = { v[c + 1], 0, 0 }
-			P[kind .. "LowerLeg" .. sd] = { v[c + 2], 0, 0 }
-			P[kind .. "Foot" .. sd] = quat(v[c + 3], v[c + 4], v[c + 5], v[c + 6])
-			c += 6
-		end
-	end
-	return P, Vector3.new(0, -0.32 + 0.1 * cos(ph - TAU * 0.78), 0.12 * sin(ph - 1.2)), 0.15
-end }
-
-ANIMS.Vol = { duree = 2.2, fn = function(t)
-	local p = TAU * 2 * t
-	local P = { Root = { -4 + 3 * sin(p + 0.6), 0, 0 }, Spine = { 2 * sin(p + 1.0), 0, 0 }, Chest = { 2 * sin(p + 1.4), 0, 0 },
-		Neck1 = { -8 + 3 * sin(p + 1.4), 0, 0 }, Neck2 = { -4 + 2 * sin(p + 1.8), 0, 0 },
-		Head = { 8 - 3 * sin(p + 2.2), 0, 0 }, Jaw = { -4, 0, 0 } }
-	sides(P, "WingUpper", 0, 4 * cos(p), 38 * sin(p) + 8)
-	sides(P, "WingLower", 0, 6 * cos(p), 30 * sin(p - 0.7) - 4)
-	for j = 0, 3 do
-		sides(P, "WingFinger" .. (j + 1), 0, 3 * j * cos(p - 1.2), 10 * sin(p - 1.3 - 0.2 * j))
-	end
-	sides(P, "FrontUpperLeg", -22, 0, 0)
-	sides(P, "FrontLowerLeg", 48, 0, 0)
-	sides(P, "FrontFoot", -35, 0, 0)
-	sides(P, "BackUpperLeg", -28 + 3 * sin(p), 0, 0)
-	sides(P, "BackLowerLeg", -12, 0, 0)
-	sides(P, "BackFoot", -35, 0, 0)
-	for i = 0, 5 do
-		P["Tail" .. (i + 1)] = { 3 * sin(p - 0.8 * i) + (i == 0 and 3 or 0), 5 * sin(0.5 * p - 0.6 * i), 0 }
-	end
-	return P, Vector3.new(0, 4.5 - 0.7 * sin(p), 0), blink(t, 0.62), 0, 8 * sin(TAU * t)
-end }
-
-ANIMS.Rugissement = { duree = 2.2, boucle = false, fn = function(t)
-	local a = ease(0, 0.22, t) * (1 - ease(0.3, 0.42, t))
-	local r = ease(0.3, 0.42, t) * (1 - ease(0.82, 0.98, t))
-	local sh = r * sin(TAU * t * 14)
-	local P = { Root = { 6 * a - 3 * r, 0, 0 }, Spine = { 3 * a, 0, 0 }, Chest = { 3 * a - 2 * r, 0, 0 } }
-	for i = 1, 3 do
-		P["Neck" .. i] = { 7 * a - 4 * r, 0, 0 }
-	end
-	P.Head = { 12 * a + 8 * r + 2 * sh, 2 * sh, 0 }
-	P.Jaw = { -6 * a - 34 * r, 0, 0 }
-	local f = 1 - a - r
-	sides(P, "WingUpper", 0, -38 * f - 10 * r, -22 * f + 25 * a + 45 * r)
-	sides(P, "WingLower", 0, -68 * f + 8 * r, 10 * a + 25 * r)
-	for j = 0, 3 do
-		sides(P, "WingFinger" .. (j + 1), 0, (j - 1.5) * 6 * r, 4 * r * sin(TAU * t * 7 + j))
-	end
-	sides(P, "FrontUpperLeg", -14 * a + 10 * r, 0, 0)
-	sides(P, "FrontLowerLeg", 10 * a - 8 * r, 0, 0)
-	sides(P, "FrontFoot", 6 * a, 0, 0)
-	sides(P, "BackUpperLeg", -6 * a - 6 * r, 0, 0)
-	sides(P, "BackLowerLeg", 4 * a, 0, 0)
-	sides(P, "BackFoot", 2 * a + 6 * r, 0, 0)
-	for i = 0, 5 do
-		P["Tail" .. (i + 1)] = { 4 * a + 3 * r, 12 * r * sin(TAU * t * 3 - 0.8 * i), 0 }
-	end
-	return P, Vector3.new(0, 0.45 * a - 0.15 * r, 0), 0.4 * r + blink(t, 0.12), r
-end }
-
--- repos : l'œil saute vers un point (~50 ms), la tête suit plus lentement pendant que l'œil revient au centre
-ANIMS.Repos = { duree = 4.0, fn = function(t)
-	local br = sin(TAU * t)
-	local tc, th = 0.65 * cible(t, 2, 0.1, 0.02), 0.5 * cible(t, 3, 0.1, 0.02)
-	local cap = clamp(cible(t, 2, 0.012) - tc, -18, 18) + 0.7 * sin(19 * TAU * t) + 0.4 * sin(31 * TAU * t + 1)
-	local haut = clamp(cible(t, 3, 0.012) - th, -9, 9) + 0.5 * sin(23 * TAU * t + 2)
-	local lourd = 0.35 * ease(0.58, 0.62, t) * (1 - ease(0.70, 0.73, t))
-	local lid = 0.08 + lourd - 0.02 * haut + max(blink(t, 0.45, 0.03), blink(t, 0.83, 0.03), blink(t, 0.89, 0.03))
-	local P = folded({ Chest = { 1.5 * br, 0, 0 }, Spine = { -br, 0, 0 },
-		Neck1 = { 2 * br, 0.3 * tc, 0 }, Neck2 = { br, 0.3 * tc, 0 }, Neck3 = { 0.4 * th, 0.2 * tc, 0 },
-		Head = { -2 * br + 0.6 * th, 0.2 * tc, 0 }, Jaw = { -3 - 3 * max(0, br), 0, 0 } })
-	sides(P, "WingUpper", 0, -38, -22 + 2 * br)
-	for i = 0, 5 do
-		P["Tail" .. (i + 1)] = { 1.5 * sin(TAU * t - 0.5 * i), 6 * sin(TAU * t - 0.6 * i), 0 }
-	end
-	return P, Vector3.new(0, 0.05 * br, 0), lid, 0, cap, haut
-end }
-
-function Anim.new(model: Model)
-	local self = setmetatable({}, Anim)
-	self.model = model
-	self.bones = {}
-	for _, b in model:GetDescendants() do
-		if b:IsA("Bone") then
-			self.bones[b.Name] = b
-		end
-	end
-	for _, n in BONES do
-		assert(self.bones[n], "Os introuvable : " .. n)
-	end
-	self.neon = model:FindFirstChild("DragonNeon", true)
-	if self.neon then
-		self.neon.Material = Enum.Material.Neon
-		self.baseColor = self.neon.Color
-	end
-	self.current, self.t = "Repos", 0
-	self.blinkT, self.squintV, self.lookV, self.lookUpV, self.rate = math.huge, 0, nil, nil, 1
-	self.conn = RunService.Heartbeat:Connect(function(dt)
-		self:step(dt)
-	end)
-	return self
-end
-
-function Anim:play(name: string)
-	assert(ANIMS[name], "Animation inconnue : " .. tostring(name))
-	self.current, self.t = name, 0
-end
-
-function Anim:blink()
-	self.blinkT = 0
-end
-
-function Anim:look(deg: number?, up: number?)
-	self.lookV, self.lookUpV = deg, up -- nil : le regard suit l'animation
-end
-
-function Anim:setRate(r: number)
-	self.rate = max(r, 0) -- vitesse de lecture (1 = normale)
-end
-
-function Anim:squint(v: number)
-	self.squintV = clamp(v, 0, 1)
-end
-
-function Anim:step(dt)
-	local A = ANIMS[self.current]
-	self.t += dt * self.rate / A.duree
-	if self.t >= 1 then
-		if A.boucle == false then
-			self.current, self.t = "Repos", 0
-			A = ANIMS.Repos
-		else
-			self.t %= 1
-		end
-	end
-	local P, off, squint, roar, look, lookUp = A.fn(self.t)
-	-- clignement : à la demande + un au hasard toutes les 3 à 6 s
-	self.blinkT += dt
-	if self.blinkT > 0.25 and math.random() < dt / 4.5 then
-		self.blinkT = 0
-	end
-	local bl = clamp(1 - abs(self.blinkT - 0.08) / 0.08, 0, 1)
-	local lid = clamp(max(bl, squint or 0, self.squintV), 0, 1)
-	look = self.lookV or look or 0
-	lookUp = self.lookUpV or lookUp or 0
-	for _, s in { "R", "L" } do
-		P["Eyelid" .. s] = CFrame.fromAxisAngle(LID_AXIS[s], -LID_CLOSE * lid * (s == "R" and 1 or -1))
-		P["Pupil" .. s] = CFrame.fromEulerAnglesYXZ(0, rad(-look), 0) * CFrame.fromAxisAngle(PUPIL_AXIS[s], rad(lookUp))
-	end
-	for _, n in BONES do
-		local v = P[n]
-		local cf = typeof(v) == "CFrame" and v or (v and rot(v) or CFrame.identity)
-		if n == "Root" then
-			cf = CFrame.new(off) * cf
-		end
-		self.bones[n].Transform = cf
-	end
-	-- lueur des yeux : pulsation lente, plus vive pendant le rugissement
-	if self.neon then
-		local k = 0.85 + 0.15 * sin(os.clock() * 2.5) + 0.3 * (roar or 0)
-		self.neon.Color = Color3.new(math.min(self.baseColor.R * k, 1), math.min(self.baseColor.G * k, 1),
-			math.min(self.baseColor.B * k, 1))
-	end
-end
-
-function Anim:destroy()
-	self.conn:Disconnect()
-end
-
-return Anim
-'''
 
 
 def main():
