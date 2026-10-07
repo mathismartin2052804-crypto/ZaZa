@@ -203,44 +203,78 @@ def head(cv, kind, o, s, pal, shade=1.0, trait=None):
 
 
 # ---------- dragon complet (profil) ----------
-def dragon(cv, o, s, pal, headkind="A", trait=None):
+# Proportions v2b : corps trapu en tonneau, tête ~1/4 de la longueur du corps, cou court et épais,
+# pattes épaisses et courtes, ailes un peu réduites, queue épaisse à la base et relevée.
+def frame(a, b):
+    a, b = np.array(a, float), np.array(b, float)
+    u = (b - a) / np.linalg.norm(b - a)
+    v = np.array([-u[1], u[0]])
+    return lambda pts: [tuple(b + u * x + v * y) for x, y in pts]
+
+
+def tail(cv, T, pal, kind, shade=1.0):
+    c = [(640, 380), (720, 422), (800, 448), (870, 446), (928, 418), (972, 376)]
+    poly, l, r = tube(c, [112, 84, 62, 44, 30, 18])
+    dors = l if np.mean([p[1] for p in l]) < np.mean([p[1] for p in r]) else r
+    cv.facets(T(poly), pal["body"], shade=shade)
+    ventre = r if dors is l else l
+    for i in range(1, 4):   # plaques ventrales
+        a, b = np.array(ventre[i - 1]), np.array(ventre[i])
+        cv.facets(T([tuple(a), tuple(b), tuple(b + (0, -10)), tuple(a + (0, -12))]), pal["belly"], n_in=0, shade=shade)
+    F = frame(c[-2], c[-1])
+    if kind == "nageoire":   # voile membraneuse sur le dernier tiers
+        a, b, cc, d = (np.array(dors[i]) for i in (2, 3, 4, 5))
+        tips = [a + (0, -80), b + (12, -104), cc + (34, -96), d + (60, -50)]
+        memb = [tuple(a)] + sum([[tuple(t), tuple((t + n) / 2 + (6, 12))] for t, n in zip(tips[:-1], tips[1:])], []) \
+            + [tuple(tips[-1]), tuple(d)]
+        cv.facets(T(memb), pal["memb"], shade=shade)
+        for base, t in zip((a, b, cc, d), tips):
+            cv.line(T([tuple(base), tuple(t)]), pal["dark"], 5, shade=shade * 1.3)
+            cv.neon(T([tuple(t + (base - t) * 0.25), tuple(t)]), pal["neon"], width=4)
+        cv.facets(T(F([(-8, 10), (34, 0), (-8, -10)])), pal["horn"], n_in=0, shade=shade)
+        return
+    for i, h in zip(range(1, 5), (34, 28, 22, 16)):   # plaques dorsales
+        p = np.array(dors[i])
+        cv.facets(T([tuple(p + (-14, 6)), tuple(p + (2, -h)), tuple(p + (14, 6))]), pal["spike"], n_in=0, shade=shade)
+    if kind == "lame":       # fer de lance, Neon seulement sur le tranchant
+        blade = F([(-14, 12), (20, 34), (96, 0), (20, -34), (-14, -12), (6, 0)])
+        cv.facets(T(blade), pal["spike"], shade=shade, n_in=2)
+        cv.facets(T(F([(6, 0), (20, 34), (96, 0)])), pal["spike"], shade=shade * 0.72, n_in=0)
+        cv.neon(T(F([(30, 28), (92, 0), (30, -28)])), pal["neon"], width=4)
+    else:                    # massue hérissée
+        ring = [(26 + 34 * np.cos(t), 30 * np.sin(t)) for t in np.linspace(0, 2 * np.pi, 9)[:-1]]
+        for ang in (-80, -40, 0, 40, 80, 125, -125):
+            t = np.radians(ang)
+            cx, cy = 26 + 30 * np.cos(t), 26 * np.sin(t)
+            cv.facets(T(F([(cx - 9 * np.sin(t), cy + 9 * np.cos(t)), (26 + 62 * np.cos(t), 56 * np.sin(t)),
+                           (cx + 9 * np.sin(t), cy - 9 * np.cos(t))])), pal["horn"], n_in=0, shade=shade)
+        cv.facets(T(F(ring)), pal["dark"], shade=shade * 1.4, n_in=3)
+        cv.neon(T(F([(14, 0), (26, -10), (38, 0), (26, 10)])), pal["neon"])
+
+
+def dragon(cv, o, s, pal, headkind="A", trait=None, queue="lame"):
     T = lambda pts: tf(pts, o, s)
     far = 0.62
-
-    # aile éloignée (derrière)
-    wing(cv, T, pal, shade=far, off=(-46, -26), trait=trait)
-    # pattes éloignées
-    leg_front(cv, T, pal, off=(28, -6), shade=far)
-    leg_hind(cv, T, pal, off=(30, -8), shade=far)
-    # queue
-    tail_c = [(670, 350), (750, 378), (830, 410), (900, 455), (970, 480), (1030, 478)]
-    poly, top, _ = tube(tail_c, [78, 58, 40, 26, 14, 6])
-    cv.facets(T(poly), pal["body"])
-    for i in range(1, 5):
-        p = np.array(top[i])
-        cv.facets(T([tuple(p + (-10, 2)), tuple(p + (4, -26 + 3 * i)), tuple(p + (12, 4))]), pal["spike"], n_in=0)
-    cv.neon(T([(1024, 474), (1058, 458), (1074, 478), (1052, 494), (1026, 484)]), pal["neon"])
-    # corps
-    torso = [(395, 330), (392, 395), (430, 440), (520, 452), (610, 430), (684, 392), (700, 330),
-             (650, 288), (560, 276), (470, 284), (420, 300)]
+    wing(cv, T, pal, shade=far, off=(-40, -22), trait=trait)
+    leg_front(cv, T, pal, off=(30, -6), shade=far)
+    leg_hind(cv, T, pal, off=(32, -8), shade=far)
+    tail(cv, T, pal, queue)
+    torso = [(382, 318), (372, 392), (408, 452), (500, 472), (590, 456), (652, 414), (672, 352),
+             (634, 302), (545, 282), (452, 286), (404, 298)]
     cv.facets(T(torso), pal["body"])
-    cv.facets(T([(398, 360), (405, 400), (440, 438), (520, 448), (560, 444), (500, 420), (440, 395)]), pal["belly"])
-    # cou en S
-    neck_c = [(450, 320), (390, 312), (345, 280), (322, 238), (312, 200), (288, 172)]
-    poly, top, bot = tube(neck_c, [96, 84, 70, 62, 56, 54])
-    neck_top = top
+    cv.facets(T([(378, 360), (386, 410), (420, 452), (500, 468), (548, 462), (480, 434), (420, 400)]), pal["belly"])
+    neck_c = [(440, 330), (378, 306), (338, 262), (322, 222)]
+    poly, top, bot = tube(neck_c, [124, 108, 92, 84])
     cv.facets(T(poly), pal["body"])
-    for i in range(1, 6):   # plaques ventrales
+    for i in range(1, 4):
         a, b = np.array(bot[i - 1]), np.array(bot[i])
-        cv.facets(T([tuple(a), tuple(b), tuple(b + (b - a) * 0 + (8, -4)), tuple(a + (10, -6))]), pal["belly"], n_in=0)
-    # pattes proches
+        cv.facets(T([tuple(a), tuple(b), tuple(b + (10, -4)), tuple(a + (12, -6))]), pal["belly"], n_in=0)
     leg_hind(cv, T, pal)
     leg_front(cv, T, pal)
-    # piquants du dos (couleur d'accent)
-    back = [tuple(np.array(top[i]) + (2, 4)) for i in (5, 4, 3, 2)] + [(470, 286), (530, 278), (590, 280), (645, 290)]
+    back = [tuple(np.array(top[i]) + (2, 4)) for i in (3, 2, 1)] + [(470, 288), (530, 282), (590, 288), (636, 304)]
     for i, p in enumerate(back):
         p = np.array(p)
-        h = [18, 22, 26, 30, 34, 30, 26, 22][i]
+        h = [22, 26, 30, 34, 36, 32, 26][i]
         if trait == "cristal":
             cv.facets(T([tuple(p + (-12, 6)), tuple(p + (-4, -h * 1.5)), tuple(p + (4, -h * 1.1)), tuple(p + (12, 6))]),
                       pal["spike"], n_in=0)
@@ -248,23 +282,18 @@ def dragon(cv, o, s, pal, headkind="A", trait=None):
             cv.facets(T([tuple(p + (-6, 4)), tuple(p + (14, -h * 1.2)), tuple(p + (34, -h * 0.5)), tuple(p + (18, 6))]),
                       pal["spike"], n_in=0)
         else:
-            cv.facets(T([tuple(p + (-11, 4)), tuple(p + (6, -h)), tuple(p + (11, 4))]), pal["spike"], n_in=0)
-    # tête
-    head(cv, headkind, T([(300, 168)])[0], s * 0.92, pal, trait="bois" if trait == "feuilles" else None)
-    # aile proche
+            cv.facets(T([tuple(p + (-12, 4)), tuple(p + (6, -h)), tuple(p + (12, 4))]), pal["spike"], n_in=0)
+    head(cv, headkind, T([(334, 206)])[0], s * 1.12, pal, trait="bois" if trait == "feuilles" else None)
     wing(cv, T, pal, trait=trait)
-    # gemme
-    cv.neon(T([(404, 352), (414, 340), (424, 352), (414, 368)]), pal["neon"])
+    cv.neon(T([(384, 356), (396, 340), (408, 356), (396, 374)]), pal["neon"])
 
 
 def wing(cv, T, pal, shade=1.0, off=(0, 0), trait=None):
     ox, oy = off
     S = lambda pts: T([(x + ox, y + oy) for x, y in pts])
-    root, elbow, wrist = (505, 296), (555, 175), (690, 112)
-    tips = [(880, 70), (905, 190), (845, 285), (735, 305)]
-    back = (615, 300)
-    memb = [root, elbow, wrist]
-    chain = [wrist] + tips
+    root, elbow, wrist = (500, 298), (540, 196), (650, 140)
+    tips = [(810, 100), (842, 200), (790, 278), (694, 302)]
+    back = (604, 304)
     w = np.array(wrist, float)
     pts = [tips[0]]
     for a, b in zip(tips[:-1], tips[1:]):
@@ -274,24 +303,21 @@ def wing(cv, T, pal, shade=1.0, off=(0, 0), trait=None):
             pts += [tuple(a + (b - a) * 0.3 + (w - m) * 0.25), tuple(m + (w - m) * 0.08),
                     tuple(a + (b - a) * 0.7 + (w - m) * 0.42)]
         else:
-            pts.append(tuple(m + (w - m) * 0.32))   # feston
+            pts.append(tuple(m + (w - m) * 0.32))
         pts.append(tuple(b))
     last = np.array(tips[-1], float)
-    pts.append(tuple((last + np.array(back)) / 2 + (np.array(wrist) - (last + np.array(back)) / 2) * 0.2))
+    pts.append(tuple((last + np.array(back)) / 2 + (w - (last + np.array(back)) / 2) * 0.2))
     memb = [root, elbow, wrist] + pts + [back]
-    # membrane : éventail de facettes depuis le poignet
     cv.facets(S(memb), pal["memb"], shade=shade)
-    # os
-    cv.line(S([root, elbow, wrist]), pal["dark"], 15, shade=shade * 1.3)
+    cv.line(S([root, elbow, wrist]), pal["dark"], 16, shade=shade * 1.3)
     for t in tips:
         cv.line(S([wrist, t]), pal["dark"], 7, shade=shade * 1.3)
     cv.facets(S([(wrist[0] - 6, wrist[1] + 4), (wrist[0] - 30, wrist[1] - 24), (wrist[0] + 6, wrist[1] - 6)]),
-              pal["horn"], n_in=0, shade=shade)   # griffe du pouce
-    # bouts de doigts Neon (seulement le bout, pas tout le bord)
+              pal["horn"], n_in=0, shade=shade)
     for t in tips[:3]:
         t = np.array(t, float)
         d = (t - w) / np.linalg.norm(t - w)
-        p0 = t - d * 34
+        p0 = t - d * 30
         if shade >= 1:
             cv.neon(S([tuple(p0), tuple(t + d * 6)]), pal["neon"], width=6)
         else:
@@ -300,64 +326,59 @@ def wing(cv, T, pal, shade=1.0, off=(0, 0), trait=None):
 
 def claws(cv, T, pal, pts, shade):
     for x, y in pts:
-        cv.flat(T([(x, y - 6), (x - 16, y + 4), (x, y + 4)]), pal["horn"], shade=shade)
+        cv.flat(T([(x, y - 7), (x - 18, y + 4), (x, y + 4)]), pal["horn"], shade=shade)
 
 
 def leg_front(cv, T, pal, off=(0, 0), shade=1.0):
     ox, oy = off
-    c = [(445 + ox, 355 + oy), (470 + ox, 440 + oy), (440 + ox, 520 + oy), (436 + ox, 562 + oy)]
-    poly, _, _ = tube(c, [64, 44, 30, 28])
+    c = [(440 + ox, 372 + oy), (466 + ox, 448 + oy), (444 + ox, 518 + oy), (440 + ox, 552 + oy)]
+    poly, _, _ = tube(c, [86, 60, 42, 40])
     cv.facets(T(poly), pal["body"], shade=shade * 0.95)
-    cv.facets(T([(400 + ox, 556 + oy), (450 + ox, 552 + oy), (458 + ox, 576 + oy), (396 + ox, 578 + oy)]),
+    cv.facets(T([(398 + ox, 548 + oy), (462 + ox, 544 + oy), (470 + ox, 578 + oy), (392 + ox, 580 + oy)]),
               pal["body"], shade=shade * 0.85, n_in=0)
-    claws(cv, T, pal, [(400 + ox, 574 + oy), (416 + ox, 576 + oy), (432 + ox, 577 + oy)], shade)
+    claws(cv, T, pal, [(396 + ox, 576 + oy), (416 + ox, 578 + oy), (436 + ox, 579 + oy)], shade)
 
 
 def leg_hind(cv, T, pal, off=(0, 0), shade=1.0):
     ox, oy = off
-    # cuisse massive puis patte digitigrade (talon relevé)
-    cv.facets(T([(590 + ox, 330 + oy), (660 + ox, 318 + oy), (708 + ox, 370 + oy), (690 + ox, 440 + oy),
-                 (630 + ox, 470 + oy), (590 + ox, 420 + oy)]), pal["body"], shade=shade * 1.02)
-    c = [(632 + ox, 445 + oy), (612 + ox, 478 + oy), (664 + ox, 520 + oy), (640 + ox, 566 + oy)]
-    poly, _, _ = tube(c, [50, 38, 26, 24])
+    cv.facets(T([(556 + ox, 330 + oy), (646 + ox, 310 + oy), (702 + ox, 366 + oy), (690 + ox, 446 + oy),
+                 (624 + ox, 482 + oy), (566 + ox, 432 + oy)]), pal["body"], shade=shade * 1.02)
+    c = [(626 + ox, 456 + oy), (602 + ox, 490 + oy), (652 + ox, 526 + oy), (636 + ox, 556 + oy)]
+    poly, _, _ = tube(c, [66, 50, 38, 36])
     cv.facets(T(poly), pal["body"], shade=shade * 0.92)
-    cv.facets(T([(600 + ox, 560 + oy), (656 + ox, 556 + oy), (662 + ox, 578 + oy), (594 + ox, 580 + oy)]),
+    cv.facets(T([(592 + ox, 550 + oy), (660 + ox, 546 + oy), (668 + ox, 578 + oy), (586 + ox, 580 + oy)]),
               pal["body"], shade=shade * 0.85, n_in=0)
-    claws(cv, T, pal, [(598 + ox, 576 + oy), (614 + ox, 578 + oy), (630 + ox, 579 + oy)], shade)
+    claws(cv, T, pal, [(590 + ox, 576 + oy), (610 + ox, 578 + oy), (630 + ox, 579 + oy)], shade)
 
 
 # ---------- planche ----------
 def main():
     cv = Canvas()
     F = LIGNEES["Feu"]
-    cv.text((40, 30), "Dragon low-poly — concept v2", 34, bold=True)
-    cv.text((40, 76), "À valider avant de toucher au générateur. Tête : choisir A, B ou C.", 19, "#9aa3b8")
-
-    # corps entier
-    dragon(cv, (-40, 110), 0.98, F, "A")
+    cv.text((40, 30), "Dragon low-poly — concept v2b", 34, bold=True)
+    cv.text((40, 76), "Proportions revues + 3 queues au choix (tête A).", 19, "#9aa3b8")
+    dragon(cv, (-70, 120), 1.0, F, "A", queue="lame")
     notes = [
-        ((60, 790), "1  Tête plus grosse : arcade qui écrase l'œil, crocs qui dépassent, cornes vers l'arrière"),
-        ((60, 818), "2  Cou en S, plaques ventrales"),
-        ((60, 846), "3  Aile à 4 doigts, membrane festonnée, Neon seulement au bout des doigts"),
-        ((60, 874), "4  Pattes arrière digitigrades (talon relevé), cuisses massives, griffes visibles"),
-        ((60, 902), "5  Piquants dans la couleur d'accent, facettes plus grandes (~5 000 triangles)"),
+        "1  Corps en tonneau plus court, poitrail profond",
+        "2  Tête plus grosse (~1/4 du corps), cou court et épais",
+        "3  Pattes plus épaisses et plus courtes, grosses pattes au sol",
+        "4  Ailes réduites d'environ 15 % : le corps reste le centre",
+        "5  Queue épaisse à la base, relevée au bout, plaques dorsales",
     ]
-    for xy, t in notes:
-        cv.text(xy, t, 17, "#c8cede")
+    for i, t in enumerate(notes):
+        cv.text((60, 790 + i * 28), t, 17, "#c8cede")
 
-    # têtes
-    cv.text((1180, 120), "Têtes proposées", 24, bold=True)
+    cv.text((1180, 120), "Queues proposées", 24, bold=True)
     for i, (k, nom, desc) in enumerate([
-        ("A", "A · Brute", "arcade massive, mâchoire carrée, crocs"),
-        ("B", "B · Prédateur", "museau long, crête d'épines, regard plissé"),
-        ("C", "C · Ancien", "couronne de cornes, collerette, barbe"),
+        ("lame", "1 · Lame", "fer de lance Neon"),
+        ("massue", "2 · Massue", "boule hérissée"),
+        ("nageoire", "3 · Nageoire", "voile, pointes Neon"),
     ]):
         y = 160 + i * 270
-        cv.text((1180, y), nom, 20, "#ffd27a", bold=True)
-        cv.text((1180, y + 26), desc, 16, "#9aa3b8")
-        head(cv, k, (1520, y + 180), 1.45, F)
+        cv.text((1180, y + 100), nom, 20, "#ffd27a", bold=True)
+        cv.text((1180, y + 126), desc, 16, "#9aa3b8")
+        dragon(cv, (1375, y + 40), 0.42, F, "A", queue=k)
 
-    # lignées
     cv.text((40, 985), "Une forme par lignée (pas seulement la couleur)", 22, bold=True)
     for i, (nom, trait, desc) in enumerate([
         ("Feu", None, "grandes cornes, braises"),
@@ -366,10 +387,10 @@ def main():
         ("Ombre", "dechire", "ailes déchirées"),
     ]):
         x = 40 + i * 465
-        dragon(cv, (x - 10, 995), 0.38, LIGNEES[nom], "A", trait)
-        cv.text((x + 50, 1232), f"{nom} — {desc}", 16, "#c8cede")
+        dragon(cv, (x - 60, 990), 0.42, LIGNEES[nom], "A", trait)
+        cv.text((x + 50, 1250), f"{nom} — {desc}", 16, "#c8cede")
 
-    cv.finish("../concept-dragon-v2.png")
+    cv.finish("../concept-dragon-v2b.png")
 
 
 if __name__ == "__main__":
