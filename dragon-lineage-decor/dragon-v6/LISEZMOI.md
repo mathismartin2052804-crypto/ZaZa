@@ -28,7 +28,15 @@ ailes : WingUpper / WingLower / WingFinger1-4 (R et L). 4 os maximum par sommet.
    d:squint(0.4)      -- plisser les yeux
    ```
 
-## À vérifier au premier import (pas encore testé dans Studio)
+## Déjà vérifié hors Studio
+- `Dragon_V6.glb` passe le validateur glTF officiel (Khronos) sans erreur ni avertissement.
+- `AnimDragon.lua` exécuté tel quel (Lune, faux Model) : ses `Bone.Transform` appliqués au GLB à la manière de Roblox
+  redonnent exactement les poses du générateur (écart 0,0000 stud sur tous les sommets ; course, vol, rugissement, repos).
+  Relancer : `generateur/verif_anim_v6.luau` puis `generateur/verif_glb_v6.py` (instructions en tête des fichiers).
+
+## À vérifier au premier import (dans Studio)
+- Unité : le GLB est en studs (dragon ≈ 20 studs de long). Si l'importeur propose une unité, choisir « Stud » ;
+  s'il arrive 3,57 fois trop grand ou trop petit, c'est cette conversion mètre/stud.
 - Orientation : le modèle regarde vers -Z (l'avant de Roblox). S'il arrive tourné de 180°, le tourner au niveau du Model.
 - Si l'importeur sépare les deux maillages en deux squelettes, garder un seul jeu d'os ou réexporter en un seul maillage
   (le Neon se ferait alors avec un SurfaceAppearance émissif).

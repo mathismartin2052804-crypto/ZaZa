@@ -65,8 +65,15 @@ def gather(rig, neon, slots, grid):
     key = np.concatenate([P.round(4), Nn.round(3), UV.round(4)], 1)
     _, first, inv = np.unique(key, axis=0, return_index=True, return_inverse=True)
     inv = inv.ravel()
-    Nn = Nn[first] / np.maximum(np.linalg.norm(Nn[first], axis=1, keepdims=True), 1e-9)
-    return P[first], Nn, UV[first], J[first], W[first], inv[I]
+    P, I = P[first], inv[I]
+    T = P[I]
+    area = np.linalg.norm(np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0]), axis=1)
+    I = I[area > 1e-8]                                             # triangles plats : refusés par le validateur glTF
+    Nn = Nn[first]
+    ln = np.linalg.norm(Nn, axis=1)
+    Nn[ln < 1e-6] = (0, 1, 0)                                      # normale nulle (sommet isolé) : valeur par défaut
+    Nn = Nn / np.linalg.norm(Nn, axis=1, keepdims=True)
+    return P, Nn, UV[first], J[first], W[first], I
 
 
 class Glb:
