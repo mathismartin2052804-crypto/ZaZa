@@ -34,7 +34,8 @@ ailes : WingUpper / WingLower / WingFinger1-4 (R et L). 4 os maximum par sommet.
   redonnent exactement les poses du générateur (écart 0,0000 stud sur tous les sommets ; course, vol, rugissement, repos).
   Relancer : `generateur/verif_anim_v6.luau` puis `generateur/verif_glb_v6.py` (instructions en tête des fichiers).
 
-## À vérifier au premier import (dans Studio)
+## Import dans Studio : testé le 2026-10-07, sans erreur, rendu convaincant
+Points à garder en tête si on réimporte :
 - Unité : le GLB est en studs (dragon ≈ 20 studs de long). Si l'importeur propose une unité, choisir « Stud » ;
   s'il arrive 3,57 fois trop grand ou trop petit, c'est cette conversion mètre/stud.
 - Orientation : le modèle regarde vers -Z (l'avant de Roblox). S'il arrive tourné de 180°, le tourner au niveau du Model.
