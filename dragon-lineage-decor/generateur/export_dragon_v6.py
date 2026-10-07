@@ -1,11 +1,13 @@
-# Exporte le dragon v6 riggé : GLB avec squelette et poids (skinning) + palette + manifeste + script Luau d'animation.
-#   Dragon_V6.glb (Feu), Dragon_V6_Glace.glb, Dragon_V6_Foret.glb, Dragon_V6_Ombre.glb : même maillage et même
-#   squelette (42 os), seule la texture palette change (corps_v6.palette) ; deux maillages par fichier
+# Exporte le dragon v6 riggé : GLB avec squelette et poids (skinning) + palette + manifeste + scripts Luau.
+#   Dragon_V6.glb (Feu), Dragon_V6_Glace.glb, Dragon_V6_Foret.glb, Dragon_V6_Ombre.glb : même squelette (42 os),
+#   même corps, ornements propres à chaque lignée (lignees_v6.orner) et palette de la lignée ; deux maillages
 #     - « Dragon »     : tout le corps, couleurs par face via une petite texture palette
 #     - « DragonNeon » : yeux, narines, lame de queue, lueur de gorge (à passer en Neon dans Studio)
-#   AnimDragon.lua (commun aux lignées) : généré depuis AnimDragon_modele.lua ; animations (repos, marche, course,
-#     vol, rugissement, décollage, atterrissage, souffle de feu) + yeux + fonctions de jeu, en pilotant
-#     Bone.Transform ; marche, course et séquences y sont copiées en tables (allures_v6.py, sequences_v6.py)
+#   AnimDragon.lua (commun aux lignées) : généré depuis AnimDragon_modele.lua ; animations (repos, marche, vol,
+#     rugissement, décollage, atterrissage, souffle) + yeux + fonctions de jeu, en pilotant Bone.Transform ;
+#     marche et séquences y sont copiées en tables (allures_v6.py, sequences_v6.py) ; style de vol et particules
+#     du souffle de chaque lignée (lignees_v6.STYLE)
+#   LigneesDragon.lua : caractéristiques de jeu des lignées (lignees_v6.CARAC : stats, souffle, passif, affinités)
 # Le glTF est écrit à la main (pas de dépendance) ; repères de repos des os alignés sur le modèle (-Z = avant).
 # Usage (depuis dragon-lineage-decor/) : python3 generateur/export_dragon_v6.py [--lignee Glace Ombre]  ->  dragon-v6/
 import json
@@ -25,6 +27,7 @@ import allures_v6 as AL
 import demo_animations_v6 as D
 import sequences_v6 as SQ
 import palette_corps as PC
+import lignees_v6 as L6
 
 NAME = "Dragon_V6"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -201,6 +204,82 @@ def lua_cframe(pos, direction):
     return "CFrame.new(%s)" % ", ".join(f"{x:.4f}" for x in (*pos, *R.ravel()))
 
 
+def lua_val(v, ind="\t"):
+    """Valeur Python -> Luau (dict -> table à clés, liste/tuple -> tableau)."""
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float, np.floating, np.integer)):
+        return np.format_float_positional(float(v), trim="-")
+    if isinstance(v, str):
+        return '"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    if isinstance(v, dict):
+        items = [f"{k} = {lua_val(x, ind + chr(9))}" for k, x in v.items()]
+        one = "{ " + ", ".join(items) + " }"
+        if len(one) < 100:
+            return one
+        return "{\n" + "".join(f"{ind}\t{it},\n" for it in items) + ind + "}"
+    if isinstance(v, (list, tuple)):
+        items = [lua_val(x, ind + chr(9)) for x in v]
+        one = "{ " + ", ".join(items) + " }"
+        if len(one) < 100:
+            return one
+        return "{\n" + "".join(f"{ind}\t{it},\n" for it in items) + ind + "}"
+    raise TypeError(type(v))
+
+
+def lua_lignees():
+    """Style de chaque lignée pour AnimDragon.lua : vol, vitesses de référence, couleur des yeux, souffle."""
+    out = []
+    for lin in PC.LIGNEES:
+        st = L6.STYLE[lin]
+        d = {"vol": st["vol"], "vitesses": L6.CARAC[lin]["vitesses"], "oeil": C6.palette(lin)["eye"],
+             "souffle": st["souffle"]}
+        out.append(f"\t{lin} = {lua_val(d, chr(9))},")
+    return "\n".join(out)
+
+
+def write_lignees(path):
+    """LigneesDragon.lua : ModuleScript de données (caractéristiques de jeu) + affinités entre lignées."""
+    rows = "\n".join(f"\t{lin} = {lua_val(L6.CARAC[lin], chr(9))}," for lin in PC.LIGNEES)
+    src = f'''-- LigneesDragon : caractéristiques de jeu des lignées du dragon v6 (Feu, Glace, Foret, Ombre).
+-- Fichier généré par generateur/export_dragon_v6.py à partir de generateur/lignees_v6.py (CARAC) : modifier la source.
+-- Placement : ModuleScript dans ReplicatedStorage, lu par les scripts du jeu (serveur pour les dégâts).
+--   local Lignees = require(ReplicatedStorage.LigneesDragon)
+--   local c = Lignees.get("Glace")          -- stats (sur 100), vitesses (studs/s), souffle, passif, affinités
+--   local deg = c.souffle.degats * Lignees.affinite("Feu", "Glace")      -- x1,25 : le Feu bat la Glace
+-- Cycle des affinités : Feu > Glace > Foret > Ombre > Feu (x{str(L6.AFFINITE_FORT).replace('.', ',')} contre la lignée battue,
+-- x{str(L6.AFFINITE_FAIBLE).replace('.', ',')} contre celle qui vous bat). Valeurs de départ : à équilibrer en jeu.
+local Lignees = {{}}
+
+Lignees.LISTE = {{ {", ".join(f'"{l}"' for l in PC.LIGNEES)} }}
+Lignees.AFFINITE_FORT, Lignees.AFFINITE_FAIBLE = {L6.AFFINITE_FORT}, {L6.AFFINITE_FAIBLE}
+
+local DATA = {{
+{rows}
+}}
+Lignees.DATA = DATA
+
+function Lignees.get(nom: string)
+	return assert(DATA[nom], "Lignée inconnue : " .. tostring(nom))
+end
+
+-- multiplicateur de dégâts d'une lignée contre une autre
+function Lignees.affinite(attaquant: string, defenseur: string): number
+	local a = Lignees.get(attaquant)
+	if a.fort_contre == defenseur then
+		return Lignees.AFFINITE_FORT
+	elseif a.faible_contre == defenseur then
+		return Lignees.AFFINITE_FAIBLE
+	end
+	return 1
+end
+
+return Lignees
+'''
+    with open(path, "w") as fh:
+        fh.write(src)
+
+
 def write_luau(rig, path):
     _, _, u, _ = T8.eye_frame(RG.A)
     axR = C6.HEAD_R @ u
@@ -219,7 +298,7 @@ def write_luau(rig, path):
                  "LID": f"{T8.LID_CLOSE:.1f}", "BONES": ", ".join(f'"{b[0]}"' for b in rig.bones),
                  "SACCADES": sac, "SOL_ROOT": f"{AL.SOL - root[1]:.4f}",
                  "BOUCHE": lua_cframe(bouche, dirb),
-                 "PATTES": lua_pattes(sk), "TABLES": "\n".join(tables)}.items():
+                 "PATTES": lua_pattes(sk), "TABLES": "\n".join(tables), "LIGNEES": lua_lignees()}.items():
         assert "{{" + k + "}}" in src, k
         src = src.replace("{{" + k + "}}", v)
     assert "{{" not in src
@@ -234,22 +313,26 @@ def main():
                     help="lignées à exporter (toutes par défaut)")
     args = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
-    rig = RG.Rig()
     lignees = {}
     for lin in args.lignee:
         nom = NAME if lin == "Feu" else f"{NAME}_{lin}"            # Feu garde son nom (déjà importé dans Studio)
+        rig = RG.Rig(lignee=lin)                                   # ornements propres à la lignée
         data, slots, grid, tex, report = build_glb(rig, C6.palette(lin))
         with open(os.path.join(OUT, nom + ".glb"), "wb") as fh:
             fh.write(data)
         tex.save(os.path.join(OUT, f"Palette_{lin}.png"))
-        lignees[lin] = {"glb": nom + ".glb", "palette": f"Palette_{lin}.png", "meshes": report}
+        lignees[lin] = {"glb": nom + ".glb", "palette": f"Palette_{lin}.png", "meshes": report,
+                        "palette_slots": slots, "palette_grid": grid,
+                        "ornements": " ".join(L6.ORNEMENTS[lin].__doc__.split()),
+                        "caracteristiques": L6.CARAC[lin]}
         print(lin, json.dumps(report), len(data) // 1024, "Ko")
     write_luau(rig, os.path.join(OUT, "AnimDragon.lua"))
+    write_lignees(os.path.join(OUT, "LigneesDragon.lua"))
     manifest = {"name": NAME, "forward": "-Z", "up": "+Y", "units": "studs",
                 "bones": [{"name": b[0], "parent": b[1], "head": [round(float(x), 3) for x in b[2]]} for b in rig.bones],
-                "lignees": lignees, "palette_slots": slots, "palette_grid": grid,
+                "lignees": lignees,
                 "neon_layers": sorted(NEON), "max_influences": 4,
-                "animations": ["Repos", "Marche", "Course", "Vol", "Rugissement", "Decollage", "Atterrissage", "SouffleFeu"],
+                "animations": ["Repos", "Marche", "Vol", "Rugissement", "Decollage", "Atterrissage", "SouffleFeu"],
                 "vitesses": {n: round(A.vitesse, 3) for n, A in AL.ALLURES.items()}}
     with open(os.path.join(OUT, "manifest.json"), "w") as fh:
         json.dump(manifest, fh, indent=2, ensure_ascii=False)

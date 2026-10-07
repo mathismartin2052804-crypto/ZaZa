@@ -42,7 +42,7 @@ PAL.update(head=PAL["skin"], headback=PAL["back"], headlimb=PAL["limb"],
            skin="#A8231A", back="#5E120C", limb="#86190F", crest="#D8601A", membrane="#6A1A10", membrane2="#9A3418", belly="#FFD27A", belly2="#F0A848",
            bone="#B8301E", eye="#FFE14A", glow="#FFE14A",
            mouth=T8.PAL["mouth"], tongue=T8.PAL["tongue"], throat=T8.PAL["throat"], cheek="#C42A1E")
-EMISSIF = ("eye", "glow", "throat")
+EMISSIF = ("eye", "glow", "throat", "rune")      # rune : ornements lumineux des lignées (lignees_v6)
 
 
 # autres lignées : on reporte sur leur palette de tête les écarts Feu tête -> Feu corps (saturation et luminosité,
@@ -64,15 +64,17 @@ def _transfert(c, ref, cible):
 
 
 def palette(lin="Feu"):
-    """Palette complète du dragon v6 pour une lignée (Feu, Glace, Foret, Ombre)."""
+    """Palette complète du dragon v6 pour une lignée (Feu, Glace, Foret, Ombre), ornements compris."""
+    import lignees_v6 as L6                       # import tardif : lignees_v6 s'appuie sur ce module
     if lin == "Feu":
-        return dict(PAL)
+        return dict(PAL, rune=PAL["eye"], **L6.couleurs(lin))
     feu, src = PC.palette("Feu"), PC.palette(lin)
     p = dict(src)
     p.update(head=src["skin"], headback=src["back"], headlimb=src["limb"],
              mouth=PAL["mouth"], tongue=PAL["tongue"])
     for k, sk in SOURCE.items():
         p[k] = _transfert(src[sk], feu[sk], PAL[k])
+    p.update(rune=p["eye"], **L6.couleurs(lin))
     return p
 
 

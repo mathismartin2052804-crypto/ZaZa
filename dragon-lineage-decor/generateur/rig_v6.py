@@ -7,7 +7,8 @@
 #     les articulations ; commissures de la gueule partagées entre tête et mâchoire (elles s'étirent à l'ouverture)
 #   - pose : rotations locales autour de la tête de chaque os (repères de repos alignés sur le monde),
 #     mélange linéaire des transformations (LBS), comme Roblox
-# Usage : import rig_v6 ; R = rig_v6.Rig() ; items = R.items(pose)  (voir demo_animations_v6.py)
+#   - lignée : Rig(lignee="Glace") ajoute les ornements de la lignée (lignees_v6.py) sur le même squelette
+# Usage : import rig_v6 ; R = rig_v6.Rig(lignee="Feu") ; items = R.items(pose)  (voir demo_animations_v6.py)
 import numpy as np
 import trimesh
 import rendu
@@ -109,8 +110,10 @@ def seg_dist(P, a, b):
 
 
 class Rig:
-    def __init__(self, model=None, power=6.0):
-        self.model = model or C6.build(web=True)
+    def __init__(self, model=None, power=6.0, lignee="Feu"):
+        import lignees_v6 as L6
+        self.lignee = lignee
+        self.model = model or L6.orner(C6.build(web=True), lignee)       # ornements propres à la lignée
         self.bones = skeleton()
         self.index = {b[0]: i for i, b in enumerate(self.bones)}
         self.layers = []       # (part, layer, verts, normals, faces, couleurs (slots), émissif, idx (n,4), poids (n,4))
@@ -179,7 +182,7 @@ class Rig:
         return G
 
     def items(self, pose=None, offset=(0, 0, 0), pal=None, black=False):
-        pal = pal or C6.PAL
+        pal = pal or C6.palette(self.lignee)
         if black:
             pal = {k: "#000000" for k in pal}
         G = self.matrices(pose or {}, offset)

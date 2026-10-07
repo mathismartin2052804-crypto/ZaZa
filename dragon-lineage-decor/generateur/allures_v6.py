@@ -1,17 +1,15 @@
-# Allures du dragon v6 : course (galop lourd) et marche (pas à 4 temps), pieds posés au sol.
+# Allure du dragon v6 : marche (pas à 4 temps), pieds posés au sol. La course a été retirée : pour aller vite,
+# le dragon décolle et vole (sequences_v6.py, demo_animations_v6.vol).
 #   - chaque patte suit une vraie trajectoire de pied : appui (le pied reste à plat au sol et recule à vitesse
 #     constante, le talon se décolle en fin d'appui en roulant sur les griffes) puis lever (arc, patte repliée,
 #     orteils tendus vers l'avant juste avant de reposer) ; angles calculés par cinématique inverse (IK 2 os dans
 #     le plan de la patte + pied orienté dans le monde)
-#   - course v2 : le corps s'enfonce un peu à chaque réception (arrière puis avant) et s'allège pendant la suspension
-#     au lieu d'osciller en sinus, dos qui se ramasse et s'étend, foulée plus longue, ailes repliées qui s'entrouvrent
-#     pendant la suspension (équilibre), queue en contrepoids du tangage, tête stabilisée
 #   - marche : pas latéral (arrière G, avant G, arrière D, avant D), poids qui passe d'un côté à l'autre (roulis),
 #     dos en S, tête qui hoche à chaque pose d'une patte avant, queue qui balaie
 #   - toute la pose est échantillonnée (ECH points par foulée) : demo_animations_v6.py et AnimDragon.lua lisent les
 #     mêmes tables avec la même interpolation (Catmull-Rom périodique), donc Roblox = générateur
-# Le dragon avance sur place : le jeu le déplace à allure.vitesse studs/s (AnimDragon : d:setSpeed(v) choisit
-# l'allure et cale la cadence pour que les pieds ne patinent pas).
+# Le dragon avance sur place : le jeu le déplace à allure.vitesse studs/s (AnimDragon : d:setSpeed(v) cale la
+# cadence pour que les pieds ne patinent pas).
 import numpy as np
 import rendu
 import rig_v6 as RG
@@ -44,28 +42,6 @@ def stabilise(P, k=0.85, base=-8.0, extra=0.0):
 def ailes_repliees(P, haut=0.0, bas=0.0):
     P["WingUpperR"], P["WingUpperL"] = (0, -38, -22 + haut), (0, 38, 22 - haut)
     P["WingLowerR"], P["WingLowerL"] = (0, -68, bas), (0, 68, -bas)
-
-
-def corps_course(s):
-    ph = 2 * np.pi * s
-    P = {}
-    # réceptions : arrière vers s≈0.15, avant vers s≈0.65 ; suspension vers s≈0.97
-    charge_ar, charge_av, susp = bump(s, 0.15, 0.12), bump(s, 0.65, 0.12), bump(s, 0.97, 0.07)
-    P["Root"] = (3.0 * bump(s, 0.38, 0.14) - 2.0 * charge_av + 1.0 * susp, 2.2 * np.sin(ph), 1.2 * np.sin(ph + 0.3))
-    P["Spine"] = (-4.5 * np.sin(ph + 0.2), -2.0 * np.sin(ph + 0.5), 0)          # dos qui se ramasse / s'étend
-    P["Chest"] = (2.5 * np.sin(ph + 0.9) - 1.5 * charge_av, -1.5 * np.sin(ph + 0.9), -0.8 * np.sin(ph + 0.9))
-    P["Neck1"] = (-7 + 2.5 * np.sin(ph + 1.6) - 2.0 * charge_av, 1.5 * np.sin(ph + 1.3), 0)
-    P["Neck2"] = (-3 + 1.5 * np.sin(ph + 2.0), 1.0 * np.sin(ph + 1.7), 0)
-    P["Neck3"] = (1.0 * np.sin(ph + 2.4), 0, 0)
-    stabilise(P, extra=1.0 * np.sin(ph + 2.8))
-    P["Jaw"] = (-6 - 4 * (0.5 + 0.5 * np.sin(ph + 2.2)), 0, 0)              # halète
-    ailes_repliees(P, 3 * np.sin(ph - 0.8) + 7 * susp, 2 * np.sin(ph - 1.4) + 6 * bump(s, 0.02, 0.08))
-    tang = P["Root"][0]
-    for i in range(6):                         # contrepoids du tangage (en retard) + vague latérale
-        P[f"Tail{i + 1}"] = (-1.5 - 0.6 * tang * (i < 3) + 2.5 * np.sin(ph - 0.6 * i - 0.8)
-                             + 0.6 * np.sin(2 * ph - 0.9 * i), (3 + 1.2 * i) * np.sin(ph - 0.75 * i - 0.5), 0)
-    off = np.array([0, -0.30 - 0.10 * charge_ar - 0.12 * charge_av + 0.07 * susp, 0.14 * np.sin(ph - 1.2)])
-    return P, off, 0.15
 
 
 def corps_marche(s):
@@ -231,14 +207,9 @@ def catmull(tab, s):
 
 
 
-# galop transversal : arrière gauche, arrière droite, avant gauche, avant droite (fraction de foulée)
-COURSE = Allure("Course", duree=2.2, foulees=2, beta=0.42, pas=4.0, leve={"Front": 1.5, "Back": 1.2},
-                phase={"BackL": 0.0, "BackR": 0.11, "FrontL": 0.46, "FrontR": 0.57},
-                centre={"Front": -0.45, "Back": 0.3}, talon=55, replie={"Front": 90, "Back": 62},
-                corps=corps_course).bake()
 # pas latéral à 4 temps
 MARCHE = Allure("Marche", duree=1.7, foulees=1, beta=0.68, pas=2.8, leve={"Front": 0.9, "Back": 0.7},
                 phase={"BackL": 0.0, "FrontL": 0.25, "BackR": 0.5, "FrontR": 0.75},
                 centre={"Front": -0.2, "Back": 0.2}, talon=35, replie={"Front": 60, "Back": 40},
                 corps=corps_marche).bake()
-ALLURES = {"Course": COURSE, "Marche": MARCHE}
+ALLURES = {"Marche": MARCHE}

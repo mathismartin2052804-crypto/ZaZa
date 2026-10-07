@@ -1,15 +1,16 @@
 # Démo d'animations du dragon v6 sur le rig à os (rig_v6.py) : un seul maillage déformé, articulations sans trous.
-#   Course, Marche : allures_v6.py (pieds posés au sol par IK, corps qui s'enfonce aux réceptions, tête stabilisée)
+#   Marche : allures_v6.py (pieds posés au sol par IK, tête stabilisée) ; plus de course : il décolle et vole
 #   Décollage, Atterrissage, Souffle de feu : sequences_v6.py
-#   Vol    : battements avec le bout d'aile en retard ; pattes avant repliées sous le poitrail, pattes arrière
-#            qui traînent vers l'arrière (moins relevées qu'en v5)
+#   Vol v2 : battements asymétriques (aile repliée à la remontée, bout qui fouette), vol plané, corps qui ondule,
+#            tête stabilisée, pattes et queue qui suivent avec retard ; style propre à chaque lignée (lignees_v6)
 #   Rugissement : se cabre, ouvre la gueule (commissures étirées, lueur de gorge), plisse les yeux, ailes
 #            déployées d'un seul tenant (la membrane se plie au coude au lieu de se couper)
 #   Repos  : respiration ; les yeux sautent d'un point à l'autre (saccades, aussi en hauteur), la tête suit plus
 #            lentement pendant que l'œil revient au centre ; micro-mouvements, double clignement, paupières lourdes
 # Conventions de rendu.rot : +ex lève l'avant / balance vers l'avant ce qui pend sous l'os ; +ez lève l'aile droite ;
 # +ey tourne vers la GAUCHE du dragon (regard « + = vers la droite » => lacet négatif).
-# Usage : python3 demo_animations_v6.py  ->  ../demo-animations-v6.gif
+# Usage : python3 demo_animations_v6.py  ->  ../demo-animations-v6.gif, ../demo-animations-v6-nouvelles.gif,
+#                                             ../demo-vol-lignees-v6.gif
 import os
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -59,10 +60,6 @@ def allure(A, t):
     return P, off
 
 
-def course(t):
-    return allure(AL.COURSE, t)
-
-
 def marche(t):
     return allure(AL.MARCHE, t)
 
@@ -86,27 +83,104 @@ def souffle_feu(t):
     return sequence("SouffleFeu", t)
 
 
-def vol(t):
-    p = 2 * np.pi * 2 * t                                      # 2 battements par boucle
-    P = {"Root": (-4 + 3 * np.sin(p + 0.6), 0, 0), "Spine": (2 * np.sin(p + 1.0), 0, 0),
-         "Chest": (2 * np.sin(p + 1.4), 0, 0),
-         "Neck1": (-8 + 3 * np.sin(p + 1.4), 0, 0), "Neck2": (-4 + 2 * np.sin(p + 1.8), 0, 0),
-         "Head": (8 - 3 * np.sin(p + 2.2), 0, 0), "Jaw": (-4, 0, 0)}
-    P.update(sides("WingUpper", (0, 4 * np.cos(p), 38 * np.sin(p) + 8)))
-    P.update(sides("WingLower", (0, 6 * np.cos(p), 30 * np.sin(p - 0.7) - 4)))
-    for j in range(4):                                         # doigts : le bout de l'aile fouette
-        P.update(sides(f"WingFinger{j + 1}", (0, 3 * j * np.cos(p - 1.2), 10 * np.sin(p - 1.3 - 0.2 * j))))
-    # pattes : avant repliées sous le poitrail, arrière qui traînent (moins relevées qu'en v5)
-    P.update(sides("FrontUpperLeg", (-22, 0, 0)))
-    P.update(sides("FrontLowerLeg", (48, 0, 0)))
-    P.update(sides("FrontFoot", (-35, 0, 0)))
-    P.update(sides("BackUpperLeg", (-28 + 3 * np.sin(p), 0, 0)))
-    P.update(sides("BackLowerLeg", (-12, 0, 0)))
-    P.update(sides("BackFoot", (-35, 0, 0)))
+# ---------- vol v2 ----------
+# Repère : au repos (pose de liaison) l'aile monte déjà de ~42° ; ez = -32 la met presque à l'horizontale.
+# Une boucle = 4 battements puis du vol plané (part « plane » du style de la lignée) :
+#   - battement asymétrique : descente rapide (42 % du temps), remontée lente ; l'avant-bras et les doigts suivent
+#     avec retard (le bout de l'aile fouette) ; à la remontée l'aile se replie et se balaie vers l'arrière, à la
+#     descente elle est tendue, bord d'attaque un peu en avant
+#   - le corps monte pendant la descente des ailes (en retard) et pique légèrement du nez à la remontée
+#   - le dos, le cou et la queue ondulent en vagues décalées (lacet lent + tangage au rythme des ailes), la tête
+#     compense (stabilisée comme un oiseau), les pattes ballottent avec retard
+#   - vol plané : ailes tendues en dièdre, petites corrections de rafales (roulis), queue qui gouverne, regard qui
+#     balaie le sol ; effort (0..1, montée) le remplace par des battements, plane_force (0..1, piqué) l'impose
+VOL_BATTEMENTS = 4
+VOL_DESCENTE = 0.42
+
+
+def style_vol(lin="Feu"):
+    import lignees_v6 as L6
+    return L6.STYLE[lin]["vol"]
+
+
+def coup(u, d=VOL_DESCENTE):
+    """Position de l'aile dans le battement (1 en haut, -1 en bas) et phase « angulaire » x (0..1)."""
+    u = u % 1
+    x = 0.5 * u / d if u < d else 0.5 + 0.5 * (u - d) / (1 - d)
+    return np.cos(2 * np.pi * x), x
+
+
+def plie(x):
+    """Repli de l'aile pendant la remontée (0..1)."""
+    return max(0.0, -np.sin(2 * np.pi * x)) ** 2
+
+
+def appui(x):
+    """Aile tendue pendant la descente (0..1)."""
+    return max(0.0, np.sin(2 * np.pi * x)) ** 2
+
+
+def vol_plane(t, st, effort=0.0, plane_force=0.0):
+    """Poids du vol plané à l'instant t (0 : bat des ailes, 1 : plane)."""
+    a = 1 - st["plane"] - 0.06
+    env = ease(a, a + 0.1, t) * (1 - ease(0.9, 0.99, t)) if st["plane"] > 0 else 0.0
+    return max((1 - effort) * env, plane_force)
+
+
+def vol(t, st=None, effort=0.0, plane_force=0.0):
+    st = st or style_vol()
+    A, O, H, Bal = st["amplitude"], st["ondulation"], st["lourdeur"], st["balayage"]
+    tau = 2 * np.pi
+    b = VOL_BATTEMENTS * t
+    g = vol_plane(t, st, effort, plane_force)
+    fl = 1 - g
+    raf = 0.6 * np.sin(tau * 7 * t) + 0.4 * np.sin(tau * 11 * t + 1)          # rafales (vol plané)
+    lent = tau * 2 * t                                                      # ondulation lente : 2 par boucle
+    P = {}
+    # ailes : battement (fl) et pose de plané (g)
+    s0, x0 = coup(b)
+    s1, x1 = coup(b - 0.07)
+    hautR = (fl * (-6 * appui(x0) + 8 * plie(x0)), fl * (5 * appui(x0) - 16 * plie(x0)) + g * (-4 - 14 * Bal),
+             fl * (-8 + 38 * A * s0) + g * (-30 - 4 * Bal + 3 * raf))
+    basR = (0, fl * (4 * appui(x1) - 22 * plie(x1)) + g * (4 - 24 * Bal),
+            fl * (-2 + 18 * A * s1 - 30 * plie(x1)) + g * (8 + 1.5 * raf))
+    roulis = 2.5 * raf * g                                                   # l'aile du côté qui tombe se relève
+    P["WingUpperR"], P["WingUpperL"] = (hautR[0], hautR[1], hautR[2] + roulis), (hautR[0], -hautR[1], -(hautR[2] - roulis))
+    P.update(sides("WingLower", basR))
+    for j in range(4):
+        sj, xj = coup(b - 0.13 - 0.03 * j)
+        P.update(sides(f"WingFinger{j + 1}", (0, fl * (3 * j * (1 - 1.3 * plie(xj)) + 2 * appui(xj)) + g * (2.5 * j - 3 * Bal * j),
+                                              fl * (12 * A * sj - 10 * plie(xj)) + g * (2 + 1.5 * raf))))
+    # corps : monte pendant la descente des ailes, ondule ; plus à plat en vol plané
+    lift = -coup(b - 0.18)[0]
+    P["Root"] = (-4 + fl * 2.5 * A * -coup(b - 0.1)[0] + 1.5 * g, 2.5 * O * np.sin(lent + 0.3),
+                 2 * O * np.sin(lent + 1.1) + 3 * raf * g)
+    P["Spine"] = (fl * 2 * O * np.sin(tau * b + 1.0), -2 * O * np.sin(lent + 0.9), 0)
+    P["Chest"] = (fl * 2 * O * np.sin(tau * b + 1.4), -1.5 * O * np.sin(lent + 1.5), -1.0 * O * np.sin(lent + 1.8))
+    P["Neck1"] = (-8 + fl * 3 * O * np.sin(tau * b + 1.6), 2 * O * np.sin(lent + 1.9), 0)
+    P["Neck2"] = (-4 + fl * 2 * O * np.sin(tau * b + 2.0), 1.5 * O * np.sin(lent + 2.3), 0)
+    P["Neck3"] = (fl * 1.5 * O * np.sin(tau * b + 2.4), 1.0 * O * np.sin(lent + 2.7), 0)
+    tang = sum(P[n][0] for n in ("Root", "Spine", "Chest", "Neck1", "Neck2", "Neck3"))
+    lac = sum(P[n][1] for n in ("Root", "Spine", "Chest", "Neck1", "Neck2", "Neck3"))
+    P["Head"] = (-0.9 * tang - 6.5, -0.8 * lac, -0.6 * (P["Root"][2] + P["Chest"][2]))      # tête stabilisée
+    P["Jaw"] = (-4 - 2.5 * fl * appui(x0), 0, 0)
+    # pattes : avant repliées, arrière qui traînent ; ballottent en retard (droite et gauche décalées)
+    for sd, d in (("R", 0.0), ("L", 0.35)):
+        ph = tau * b - d
+        P["FrontUpperLeg" + sd] = (-22 + fl * 4 * H * np.sin(ph - 1.0), 0, 0)
+        P["FrontLowerLeg" + sd] = (48 + fl * 5 * H * np.sin(ph - 1.5), 0, 0)
+        P["FrontFoot" + sd] = (-35 + fl * 6 * H * np.sin(ph - 2.0), 0, 0)
+        P["BackUpperLeg" + sd] = (-28 - 4 * g + fl * 4 * H * np.sin(ph - 1.2), 0, 0)
+        P["BackLowerLeg" + sd] = (-12 + fl * 6 * H * np.sin(ph - 1.7), 0, 0)
+        P["BackFoot" + sd] = (-35 + fl * 8 * H * np.sin(ph - 2.2), 0, 0)
+    # queue : vague verticale au rythme des ailes (amplitude croissante vers le bout) + S lent (gouvernail)
     for i in range(6):
-        P[f"Tail{i + 1}"] = (3 * np.sin(p - 0.8 * i) + (3 if i == 0 else 0), 5 * np.sin(0.5 * p - 0.6 * i), 0)
-    P.update(eyes(blink(t, 0.62), 8 * np.sin(2 * np.pi * t)))
-    return P, np.array([0, 4.5 - 0.7 * np.sin(p), 0])
+        P[f"Tail{i + 1}"] = ((3 if i == 0 else 0) + fl * (1.5 + 0.8 * i) * O * np.sin(tau * b - 0.7 * i - 0.5),
+                             (2.5 + 1.6 * i) * O * np.sin(lent - 0.6 * i) + 4 * g * raf * (i + 1) / 6, 0)
+    regard = 10 * np.sin(tau * t) + 12 * g * np.sin(tau * 2 * t)
+    P.update(eyes(blink(t, 0.37), regard, -4 * g))
+    return P, np.array([0, 4.5 + fl * 0.55 * H * A * lift - 0.25 * g + 0.15 * np.sin(tau * t),
+                        fl * 0.1 * np.sin(tau * b)])
 
 
 def rugit(t):
@@ -171,8 +245,12 @@ def repos(t):
     return P, np.array([0, 0.05 * br, 0])
 
 
-ANIMS = [("Course (galop)", course, C + [-30, 7, -30], C + [0, 0.5, -1.5], 42),
-         ("Vol", vol, C + [-34, 2, -26], C + [0, 4.0, -1.0], 50),
+def vol_face(t):
+    return vol(t)
+
+
+ANIMS = [("Vol v2 (Feu) : battements puis plané", vol, C + [-34, 2, -26], C + [0, 4.0, -1.0], 50),
+         ("Vol v2, de face", vol_face, C + [0, 9, -40], C + [0, 4.5, -1.0], 50),
          ("Rugissement", rugit, C + [-26, 4, -32], C + [0, 2.0, -2.5], 44),
          ("Repos : regard, saccades et clignements", repos, None, None, 34)]
 # deuxième GIF : nouvelles animations (les séquences jouent une fois par boucle du GIF)
@@ -218,10 +296,10 @@ def main():
     hc = RG.hl((0, 0.6, -1.4))
     cw, ch = 470, 380
     font = ImageFont.truetype(FONT_B, 18)
-    for anims, nom in ((ANIMS, "demo-animations-v6.gif"), (ANIMS2, "demo-animations-v6-nouvelles.gif")):
+    for anims, nom, nb in ((ANIMS, "demo-animations-v6.gif", 64), (ANIMS2, "demo-animations-v6-nouvelles.gif", N)):
         frames = []
-        for i in range(N):
-            t = i / N
+        for i in range(nb):
+            t = i / nb
             im = Image.new("RGB", (cw * 2, ch * 2), (16, 19, 28))
             dr = ImageDraw.Draw(im)
             for j, (titre, fn, eye, tg, fov) in enumerate(anims):
@@ -240,6 +318,31 @@ def main():
             print(nom, i, flush=True)
         out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", nom)
         frames[0].save(out, save_all=True, append_images=frames[1:], duration=55, loop=0, optimize=True)
+    vol_lignees(cw, ch, font)
+
+
+def vol_lignees(cw, ch, font, n=64):
+    """Les 4 lignées en vol, chacune avec son style (boucles ramenées à la même longueur dans le GIF)."""
+    import lignees_v6 as L6
+    import palette_corps as PC
+    rigs = {lin: RG.Rig(lignee=lin) for lin in PC.LIGNEES}
+    frames = []
+    for i in range(n):
+        t = i / n
+        im = Image.new("RGB", (cw * 2, ch * 2), (16, 19, 28))
+        dr = ImageDraw.Draw(im)
+        for j, lin in enumerate(PC.LIGNEES):
+            st = L6.STYLE[lin]["vol"]
+            pose, off = vol(t, st)
+            x0, y0 = (j % 2) * cw, (j // 2) * ch
+            im.paste(rendu.render(rigs[lin].items(pose, off), C + [-30, 10, -28], C + [0, 4.0, -0.5],
+                                  size=(cw - 6, ch - 6), fov=52, ss=1), (x0, y0))
+            dr.text((x0 + 14, y0 + 10), f"{PC.NOMS[lin]} : boucle de {st['duree']:.1f} s, plané {st['plane']:.0%}".replace(".", ","),
+                    font=font, fill=(255, 210, 122))
+        frames.append(im.convert("P", palette=Image.ADAPTIVE, colors=200))
+        print("vol lignées", i, flush=True)
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "demo-vol-lignees-v6.gif")
+    frames[0].save(out, save_all=True, append_images=frames[1:], duration=60, loop=0, optimize=True)
 
 
 if __name__ == "__main__":

@@ -3,18 +3,21 @@
 -- Placement : ModuleScript dans ReplicatedStorage ; à utiliser depuis un LocalScript (rendu fluide côté client)
 -- ou un Script serveur. Les deux MeshParts (Dragon, DragonNeon) doivent être dans le même Model que les os.
 --   local Anim = require(ReplicatedStorage.AnimDragon)
---   local d = Anim.new(workspace.Dragon_V6)
---   d:play("Course")            -- "Repos", "Marche", "Course", "Vol", "Rugissement", "Decollage", "Atterrissage",
+--   local d = Anim.new(workspace.Dragon_V6_Glace)   -- lignée lue sur l'attribut « Lignee » ou le nom du Model
+--   d:play("Marche")            -- "Repos", "Marche", "Vol", "Rugissement", "Decollage", "Atterrissage",
 --                               -- "SouffleFeu" (fondu de 0,25 s ; d:play(nom, 0) pour couper net)
---   d:setSpeed(v)               -- choisit Repos / Marche / Course selon la vitesse (studs/s) et cale la foulée
+--   d:setSpeed(v)               -- au sol : Repos ou Marche selon la vitesse (studs/s), cadence calée sur v
 --   d:follow(humanoid)          -- pareil, branché sur Humanoid.Running
+--   d:decoller() ; d:atterrir() -- pas de course : pour aller vite, il décolle et vole
+--   d:setFlight(v, montee)      -- en vol : vitesse et vitesse verticale (studs/s) ; nil : mesurées sur le Model
 --   d:lookAt(cible)             -- suit du regard un Vector3, une BasePart ou un Model (nil : rend la main)
 --   d:setTurn(x)                -- virage de -1 (gauche) à 1 (droite) ; nil : mesuré tout seul sur le Model
 --   d:setGroundIK(true)         -- pieds posés sur le relief (rayons sous chaque patte)
 --   d:blink() ; d:squint(0.4) ; d:look(20, 5)   -- clignement, plisser les yeux, regard imposé (degrés)
 -- Mêmes poses que les scripts Python du générateur (angles en degrés, ordre YXZ, autour de la tête de chaque os) ;
--- marche, course, décollage, atterrissage et souffle de feu sont copiés sous forme de tables (allures_v6.py,
--- sequences_v6.py : pattes calculées par cinématique inverse pour que les pieds restent au sol).
+-- marche, décollage, atterrissage et souffle de feu sont copiés sous forme de tables (allures_v6.py,
+-- sequences_v6.py : pattes calculées par cinématique inverse pour que les pieds restent au sol) ; le vol v2 est
+-- calculé ici comme dans demo_animations_v6.vol, avec le style de vol de la lignée (lignees_v6.STYLE).
 local RunService = game:GetService("RunService")
 
 local Anim = {}
@@ -45,8 +48,14 @@ local TABLES = {
 {{TABLES}}
 }
 
+-- style de chaque lignée (lignees_v6.py) : vol (durée de la boucle, amplitude, part de plané, ondulation,
+-- lourdeur, balayage), vitesses de référence (studs/s), couleur des yeux, particules et lumière du souffle
+local LIGNEES = {
+{{LIGNEES}}
+}
+
 Anim.VITESSE_MARCHE = TABLES.Marche.vitesse   -- studs/s où les pieds ne patinent pas, à cadence normale
-Anim.VITESSE_COURSE = TABLES.Course.vitesse
+Anim.LIGNEES = LIGNEES
 
 local function ease(a, b, t)
 	local x = clamp((t - a) / (b - a), 0, 1)
@@ -152,26 +161,86 @@ for name, def in TABLES do
 		end }
 end
 
-ANIMS.Vol = { duree = 2.2, fn = function(t)
-	local p = TAU * 2 * t
-	local P = { Root = { -4 + 3 * sin(p + 0.6), 0, 0 }, Spine = { 2 * sin(p + 1.0), 0, 0 }, Chest = { 2 * sin(p + 1.4), 0, 0 },
-		Neck1 = { -8 + 3 * sin(p + 1.4), 0, 0 }, Neck2 = { -4 + 2 * sin(p + 1.8), 0, 0 },
-		Head = { 8 - 3 * sin(p + 2.2), 0, 0 }, Jaw = { -4, 0, 0 } }
-	sides(P, "WingUpper", 0, 4 * cos(p), 38 * sin(p) + 8)
-	sides(P, "WingLower", 0, 6 * cos(p), 30 * sin(p - 0.7) - 4)
+-- vol v2 (demo_animations_v6.vol) : 4 battements asymétriques puis du vol plané ; effort (montée) remplace le
+-- plané par des battements, force (piqué) impose le plané
+local VOL_BATTEMENTS, VOL_DESCENTE = 4, 0.42
+
+local function coup(u)                         -- 1 aile en haut, -1 en bas ; descente rapide, remontée lente
+	u %= 1
+	local x = u < VOL_DESCENTE and 0.5 * u / VOL_DESCENTE or 0.5 + 0.5 * (u - VOL_DESCENTE) / (1 - VOL_DESCENTE)
+	return cos(TAU * x), x
+end
+
+local function plie(x)                         -- repli de l'aile à la remontée
+	return max(0, -sin(TAU * x)) ^ 2
+end
+
+local function appui(x)                        -- aile tendue à la descente
+	return max(0, sin(TAU * x)) ^ 2
+end
+
+local function volPlane(t, st, effort, force)
+	local env = 0
+	if st.plane > 0 then
+		local a = 1 - st.plane - 0.06
+		env = ease(a, a + 0.1, t) * (1 - ease(0.9, 0.99, t))
+	end
+	return max((1 - effort) * env, force)
+end
+
+ANIMS.Vol = { vol = true, fn = function(t, self)             -- durée : style de la lignée (vol.duree)
+	local st = self.style.vol
+	local A, O, H, Bal = st.amplitude, st.ondulation, st.lourdeur, st.balayage
+	local b = VOL_BATTEMENTS * t
+	local g = volPlane(t, st, self.volEffort, self.volForce)
+	local fl = 1 - g
+	local raf = 0.6 * sin(TAU * 7 * t) + 0.4 * sin(TAU * 11 * t + 1)
+	local lent = TAU * 2 * t
+	local P = {}
+	local s0, x0 = coup(b)
+	local s1, x1 = coup(b - 0.07)
+	local hx = fl * (-6 * appui(x0) + 8 * plie(x0))
+	local hy = fl * (5 * appui(x0) - 16 * plie(x0)) + g * (-4 - 14 * Bal)
+	local hz = fl * (-8 + 38 * A * s0) + g * (-30 - 4 * Bal + 3 * raf)
+	local roulis = 2.5 * raf * g
+	P.WingUpperR, P.WingUpperL = { hx, hy, hz + roulis }, { hx, -hy, -(hz - roulis) }
+	sides(P, "WingLower", 0, fl * (4 * appui(x1) - 22 * plie(x1)) + g * (4 - 24 * Bal),
+		fl * (-2 + 18 * A * s1 - 30 * plie(x1)) + g * (8 + 1.5 * raf))
 	for j = 0, 3 do
-		sides(P, "WingFinger" .. (j + 1), 0, 3 * j * cos(p - 1.2), 10 * sin(p - 1.3 - 0.2 * j))
+		local sj, xj = coup(b - 0.13 - 0.03 * j)
+		sides(P, "WingFinger" .. (j + 1), 0, fl * (3 * j * (1 - 1.3 * plie(xj)) + 2 * appui(xj)) + g * (2.5 * j - 3 * Bal * j),
+			fl * (12 * A * sj - 10 * plie(xj)) + g * (2 + 1.5 * raf))
 	end
-	sides(P, "FrontUpperLeg", -22, 0, 0)
-	sides(P, "FrontLowerLeg", 48, 0, 0)
-	sides(P, "FrontFoot", -35, 0, 0)
-	sides(P, "BackUpperLeg", -28 + 3 * sin(p), 0, 0)
-	sides(P, "BackLowerLeg", -12, 0, 0)
-	sides(P, "BackFoot", -35, 0, 0)
+	local lift = -(coup(b - 0.18))
+	P.Root = { -4 + fl * 2.5 * A * -(coup(b - 0.1)) + 1.5 * g, 2.5 * O * sin(lent + 0.3), 2 * O * sin(lent + 1.1) + 3 * raf * g }
+	P.Spine = { fl * 2 * O * sin(TAU * b + 1.0), -2 * O * sin(lent + 0.9), 0 }
+	P.Chest = { fl * 2 * O * sin(TAU * b + 1.4), -1.5 * O * sin(lent + 1.5), -1.0 * O * sin(lent + 1.8) }
+	P.Neck1 = { -8 + fl * 3 * O * sin(TAU * b + 1.6), 2 * O * sin(lent + 1.9), 0 }
+	P.Neck2 = { -4 + fl * 2 * O * sin(TAU * b + 2.0), 1.5 * O * sin(lent + 2.3), 0 }
+	P.Neck3 = { fl * 1.5 * O * sin(TAU * b + 2.4), 1.0 * O * sin(lent + 2.7), 0 }
+	local tang, lac = 0, 0
+	for _, n in { "Root", "Spine", "Chest", "Neck1", "Neck2", "Neck3" } do
+		tang += P[n][1]
+		lac += P[n][2]
+	end
+	P.Head = { -0.9 * tang - 6.5, -0.8 * lac, -0.6 * (P.Root[3] + P.Chest[3]) }       -- tête stabilisée
+	P.Jaw = { -4 - 2.5 * fl * appui(x0), 0, 0 }
+	for sd, d in { R = 0, L = 0.35 } do
+		local ph = TAU * b - d
+		P["FrontUpperLeg" .. sd] = { -22 + fl * 4 * H * sin(ph - 1.0), 0, 0 }
+		P["FrontLowerLeg" .. sd] = { 48 + fl * 5 * H * sin(ph - 1.5), 0, 0 }
+		P["FrontFoot" .. sd] = { -35 + fl * 6 * H * sin(ph - 2.0), 0, 0 }
+		P["BackUpperLeg" .. sd] = { -28 - 4 * g + fl * 4 * H * sin(ph - 1.2), 0, 0 }
+		P["BackLowerLeg" .. sd] = { -12 + fl * 6 * H * sin(ph - 1.7), 0, 0 }
+		P["BackFoot" .. sd] = { -35 + fl * 8 * H * sin(ph - 2.2), 0, 0 }
+	end
 	for i = 0, 5 do
-		P["Tail" .. (i + 1)] = { 3 * sin(p - 0.8 * i) + (i == 0 and 3 or 0), 5 * sin(0.5 * p - 0.6 * i), 0 }
+		P["Tail" .. (i + 1)] = { (i == 0 and 3 or 0) + fl * (1.5 + 0.8 * i) * O * sin(TAU * b - 0.7 * i - 0.5),
+			(2.5 + 1.6 * i) * O * sin(lent - 0.6 * i) + 4 * g * raf * (i + 1) / 6, 0 }
 	end
-	return P, Vector3.new(0, 4.5 - 0.7 * sin(p), 0), blink(t, 0.62), 0, 8 * sin(TAU * t)
+	local regard = 10 * sin(TAU * t) + 12 * g * sin(TAU * 2 * t)
+	return P, Vector3.new(0, 4.5 + fl * 0.55 * H * A * lift - 0.25 * g + 0.15 * sin(TAU * t), fl * 0.1 * sin(TAU * b)),
+		blink(t, 0.37), 0, regard, -4 * g
 end }
 
 ANIMS.Rugissement = { duree = 2.2, boucle = false, suite = "Repos", sol = true, fn = function(t)
@@ -232,9 +301,34 @@ local function enCF(v)
 	return v and rot(v) or CFrame.identity
 end
 
-function Anim.new(model: Model)
+-- lignée : argument, sinon attribut « Lignee » du Model, sinon son nom (Dragon_V6_Glace…), sinon Feu
+local function lignee(model, nom)
+	if not nom then
+		local ok, a = pcall(function()
+			return model:GetAttribute("Lignee")
+		end)
+		nom = ok and a or nil
+	end
+	if not nom then
+		local ok, n = pcall(function()
+			return model.Name
+		end)
+		if ok and type(n) == "string" then
+			for k in LIGNEES do
+				if n:find(k) then
+					nom = k
+				end
+			end
+		end
+	end
+	return LIGNEES[nom] and nom or "Feu"
+end
+
+function Anim.new(model: Model, nomLignee: string?)
 	local self = setmetatable({}, Anim)
 	self.model = model
+	self.lignee = lignee(model, nomLignee)
+	self.style = LIGNEES[self.lignee]
 	self.bones = {}
 	for _, b in model:GetDescendants() do
 		if b:IsA("Bone") then
@@ -256,6 +350,7 @@ function Anim.new(model: Model)
 	self.lookTarget, self.lookW, self.headYaw, self.headPitch, self.eyeYaw, self.eyePitch = nil, 0, 0, 0, 0, 0
 	self.groundIK, self.groundDy, self.groundShift = false, {}, 0
 	self.fire = 0
+	self.volEffort, self.volForce, self.volPitch, self.flightV, self.flightM, self.lastPos = 0, 0, 0, nil, nil, nil
 	self:_creerFeu()
 	self.conns = { RunService.Heartbeat:Connect(function(dt)
 		self:step(dt)
@@ -263,38 +358,60 @@ function Anim.new(model: Model)
 	return self
 end
 
--- particules et lumière du souffle de feu, sur un os « Souffle » ajouté sous Head (couleur prise sur DragonNeon)
+local function seqN(pts)
+	local k = {}
+	for _, p in pts do
+		table.insert(k, NumberSequenceKeypoint.new(p[1], p[2]))
+	end
+	return NumberSequence.new(k)
+end
+
+-- particules et lumière du souffle, sur un os « Souffle » ajouté sous Head ; réglages et couleurs propres à la
+-- lignée (flammes et braises, givre et éclats, spores et pollen, ténèbres et volutes) ; « oeil » = couleur des yeux
 function Anim:_creerFeu()
 	local head = self.bones.Head
 	if typeof(head) ~= "Instance" then
 		return
 	end
-	local c = self.baseColor or Color3.fromRGB(255, 200, 60)
+	local st = self.style or LIGNEES.Feu
+	local oeil = Color3.fromHex(st.oeil)
 	local att = Instance.new("Bone")                      -- os enfant sans poids : ne déforme rien, sert de point
 	att.Name = "Souffle"                                  -- d'émission (un Bone est un Attachment)
 	att.CFrame = BOUCHE
 	att.Parent = head
-	local pe = Instance.new("ParticleEmitter")
-	pe.Name = "Feu"
-	pe.Enabled = false
-	pe.EmissionDirection = Enum.NormalId.Front
-	pe.Rate = 160
-	pe.Lifetime = NumberRange.new(0.35, 0.6)
-	pe.Speed = NumberRange.new(28, 38)
-	pe.SpreadAngle = Vector2.new(9, 9)
-	pe.Drag = 2
-	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(0.4, 2.6),
-		NumberSequenceKeypoint.new(1, 4.5) })
-	pe.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(0.7, 0.4),
-		NumberSequenceKeypoint.new(1, 1) })
-	pe.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.new(1, 1, 0.9)), ColorSequenceKeypoint.new(0.25, c),
-		ColorSequenceKeypoint.new(1, c:Lerp(Color3.new(0.1, 0.05, 0.05), 0.7)) })
-	pe.LightEmission = 1
-	pe.Parent = att
+	self.feux = {}
+	for _, p in st.souffle.particules do
+		local pe = Instance.new("ParticleEmitter")
+		pe.Name = p.nom
+		pe.Enabled = false
+		pe.EmissionDirection = Enum.NormalId.Front
+		pe.Rate = p.taux
+		pe.Lifetime = NumberRange.new(p.vie[1], p.vie[2])
+		pe.Speed = NumberRange.new(p.vitesse[1], p.vitesse[2])
+		pe.SpreadAngle = Vector2.new(p.angle, p.angle)
+		pe.Drag = p.frein
+		pe.Size = seqN(p.taille)
+		pe.Transparency = seqN(p.transparence)
+		local k = {}
+		for _, c in p.couleurs do
+			table.insert(k, ColorSequenceKeypoint.new(c[1], c[2] == "oeil" and oeil or Color3.fromHex(c[2])))
+		end
+		pe.Color = ColorSequence.new(k)
+		pe.LightEmission = p.lumineux
+		if p.acceleration then
+			pe.Acceleration = Vector3.new(p.acceleration[1], p.acceleration[2], p.acceleration[3])
+		end
+		if p.rotation then
+			pe.Rotation = NumberRange.new(p.rotation[1], p.rotation[2])
+			pe.RotSpeed = NumberRange.new(p.vitesse_rotation[1], p.vitesse_rotation[2])
+		end
+		pe.Parent = att
+		table.insert(self.feux, pe)
+	end
 	local light = Instance.new("PointLight")
-	light.Color, light.Range, light.Brightness = c, 16, 0
+	light.Color, light.Range, light.Brightness = oeil, st.souffle.lumiere.portee, 0
 	light.Parent = att
-	self.feu, self.feuLight, self.feuAtt = pe, light, att
+	self.feu, self.feuLight, self.feuAtt = self.feux[1], light, att
 end
 
 function Anim:play(name: string, fondu: number?)
@@ -337,26 +454,43 @@ function Anim:squint(v: number)
 	self.squintV = clamp(v, 0, 1)
 end
 
--- choisit l'allure selon la vitesse au sol (studs/s) et cale la cadence ; sans effet en vol ou pendant une séquence
+-- au sol : Repos ou Marche selon la vitesse (studs/s), cadence calée sur v pour que les pieds ne patinent pas
+-- (x0,5 à x2) ; pas de course : au-delà, le jeu fait décoller le dragon. Sans effet en vol ou pendant une séquence.
 function Anim:setSpeed(v: number)
 	local cur = self.current
-	if cur ~= "Repos" and cur ~= "Marche" and cur ~= "Course" then
+	if cur ~= "Repos" and cur ~= "Marche" then
 		return
 	end
-	local vm, vc = Anim.VITESSE_MARCHE, Anim.VITESSE_COURSE
-	local seuil = (vm + vc) / 2 + (cur == "Course" and -0.6 or 0.6)      -- hystérésis
-	local arret = cur == "Repos" and 0.6 or 0.3
-	local nom = v < arret and "Repos" or (v < seuil and "Marche" or "Course")
+	local nom = v < (cur == "Repos" and 0.6 or 0.3) and "Repos" or "Marche"       -- hystérésis
 	if nom ~= cur then
 		self:play(nom, 0.3)
 	end
-	if nom == "Marche" then
-		self.rate = clamp(v / vm, 0.5, 1.8)
-	elseif nom == "Course" then
-		self.rate = clamp(v / vc, 0.6, 1.6)
-	else
-		self.rate = 1
+	self.rate = nom == "Marche" and clamp(v / Anim.VITESSE_MARCHE, 0.5, 2) or 1
+end
+
+function Anim:enVol(): boolean
+	return self.current == "Vol" or self.current == "Decollage"
+end
+
+-- décolle (s'il est au sol) puis enchaîne sur Vol
+function Anim:decoller()
+	if not self:enVol() and self.current ~= "Atterrissage" then
+		self:play("Decollage")
 	end
+end
+
+-- se pose (s'il vole) puis enchaîne sur Repos
+function Anim:atterrir()
+	if self.current == "Vol" then
+		self:play("Atterrissage")
+	end
+end
+
+-- en vol : vitesse horizontale et verticale (studs/s) ; nil : mesurées sur les déplacements du Model.
+-- Monter ou faire du sur-place fait battre des ailes sans planer (monter cabre le corps) ; piquer replie les ailes
+-- en arrière et baisse le nez ; en croisière il alterne battements et plané.
+function Anim:setFlight(vitesse: number?, montee: number?)
+	self.flightV, self.flightM = vitesse, montee
 end
 
 function Anim:follow(humanoid: Humanoid)
@@ -403,7 +537,47 @@ function Anim:_lookAt(dt, P)
 	return self.eyeYaw * w, self.eyePitch * w, w
 end
 
+-- vol : effort (montée ou sur-place), plané forcé (piqué), tangage, d'après setFlight ou les déplacements du Model
+function Anim:_volCtrl(dt)
+	local v, m = self.flightV, self.flightM
+	local p = self:_pivot().Position
+	if self.lastPos and dt > 0 then
+		local d = (p - self.lastPos) / dt
+		v = v or Vector3.new(d.X, 0, d.Z).Magnitude
+		m = m or d.Y
+	end
+	self.lastPos = p
+	self.bouge = self.bouge or (v or 0) > 1
+	local connu = self.flightV ~= nil or self.bouge         -- Model immobile depuis le début : pas de sur-place
+	v, m = v or 0, m or 0
+	local vit = self.style.vitesses
+	local enVol = ANIMS[self.current].vol
+	local surPlace = connu and clamp(1 - v / (0.35 * vit.vol), 0, 1) or 0          -- lent : il bat pour se tenir
+	local effort = enVol and max(clamp(m / vit.montee, 0, 1), surPlace) or 0
+	local force = enVol and clamp((-m - 0.25 * vit.pique) / (0.5 * vit.pique), 0, 1) or 0
+	local pitch = enVol and (clamp(m / vit.montee, -1, 1) * 12 - 10 * force) or 0
+	self.volEffort = suivre(self.volEffort, effort, 3, dt)
+	self.volForce = suivre(self.volForce, force, 3, dt)
+	self.volPitch = suivre(self.volPitch, pitch, 3, dt)
+end
+
+-- calque du vol : tangage (montée / piqué) et ailes balayées vers l'arrière en piqué
+function Anim:_vol(P)
+	if abs(self.volPitch) > 1e-4 then
+		P.Root = CFrame.fromEulerAnglesYXZ(rad(self.volPitch), 0, 0) * P.Root
+	end
+	local f = self.volForce
+	if f > 1e-4 then
+		for _, sd in { "R", "L" } do
+			local k = sd == "R" and 1 or -1
+			P["WingUpper" .. sd] = CFrame.fromEulerAnglesYXZ(0, rad(-25 * f * k), rad(-10 * f * k)) * P["WingUpper" .. sd]
+			P["WingLower" .. sd] = CFrame.fromEulerAnglesYXZ(0, rad(-30 * f * k), 0) * P["WingLower" .. sd]
+		end
+	end
+end
+
 -- virage : le corps se courbe vers l'intérieur, la tête mène, la queue part vers l'extérieur, roulis
+-- (en vol : grand roulis, le dragon s'incline sur l'aile intérieure)
 function Anim:_turn(dt, P)
 	local x = self.turnV
 	if x == nil then
@@ -427,7 +601,8 @@ function Anim:_turn(dt, P)
 	for i = 1, 6 do
 		P["Tail" .. i] = CFrame.fromEulerAnglesYXZ(0, rad(4 * k), 0) * P["Tail" .. i]
 	end
-	P.Root = CFrame.fromEulerAnglesYXZ(0, 0, rad(-6 * k)) * P.Root          -- penche dans le virage
+	local roulis = ANIMS[self.current].vol and 24 or 6
+	P.Root = CFrame.fromEulerAnglesYXZ(0, 0, rad(-roulis * k)) * P.Root     -- penche dans le virage
 end
 
 -- hauteur du sol sous une patte par rapport au plan du modèle (rayon) ; remplaçable pour les tests
@@ -495,8 +670,10 @@ function Anim:_ground(dt, cf)
 end
 
 function Anim:step(dt)
+	self:_volCtrl(dt)
 	local A = ANIMS[self.current]
-	self.t += dt * self.rate / A.duree
+	local duree = A.vol and self.style.vol.duree or A.duree
+	self.t += dt * self.rate * (A.vol and 1 + 0.4 * self.volEffort or 1) / duree   -- en montée, il bat plus vite
 	if self.t >= 1 then
 		if A.boucle == false then
 			self:play(A.suite or "Repos")
@@ -505,7 +682,7 @@ function Anim:step(dt)
 			self.t %= 1
 		end
 	end
-	local P, off, squint, glow, look, lookUp, fire = A.fn(self.t)
+	local P, off, squint, glow, look, lookUp, fire = A.fn(self.t, self)
 	-- clignement : à la demande + un au hasard toutes les 3 à 6 s
 	self.blinkT += dt
 	if self.blinkT > 0.25 and math.random() < dt / 4.5 then
@@ -519,6 +696,7 @@ function Anim:step(dt)
 		cf[n] = enCF(P[n])
 	end
 	self:_turn(dt, cf)
+	self:_vol(cf)
 	local eyeYaw, eyePitch, w = self:_lookAt(dt, cf)
 	look = self.lookV or look or 0
 	lookUp = self.lookUpV or lookUp or 0
@@ -550,9 +728,11 @@ function Anim:step(dt)
 	self.last = cf
 	-- feu : particules et lumière pendant le souffle
 	self.fire = fire or 0
-	if self.feu then
-		self.feu.Enabled = self.fire > 0.5
-		self.feuLight.Brightness = 4 * self.fire
+	if self.feux then
+		for _, pe in self.feux do
+			pe.Enabled = self.fire > 0.5
+		end
+		self.feuLight.Brightness = self.style.souffle.lumiere.eclat * self.fire
 	end
 	-- lueur des yeux : pulsation lente, plus vive pendant le rugissement et le souffle
 	if self.neon then
