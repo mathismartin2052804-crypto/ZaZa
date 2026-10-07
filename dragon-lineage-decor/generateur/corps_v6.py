@@ -1,6 +1,6 @@
 # Corps de dragon v6 : corps v5 « Athlétique » (masse 0,5) + tête Prédateur v8, avec les corrections retenues
 # sur le comparatif tête / corps et un corps « taillé » au lieu de « pâte à modeler » :
-#   proportions : tête x1,45, cou raccourci de 20 %, queue raccourcie de 38 % (et un peu relevée)
+#   proportions : tête x1,45, cou raccourci de 20 %, queue raccourcie de 20 %, plus épaisse et un peu relevée
 #   hiérarchie   : corps, crête et ailes un cran plus sombres que la tête ; la tête garde les couleurs vives
 #   taillé       : muscles en prismes à facettes (plus de boules lisses), tronc à pans nets
 #   os saillants : omoplates, côtes, bréchet, bassin, coudes, genoux, poignets, jarrets
@@ -30,7 +30,8 @@ N0 = np.array(V4.NECK[0], float)
 NECK = [tuple(N0 + (np.array(p) - N0) * 0.8) for p in V4.NECK]          # cou -20 %
 HB = N0 + (V4.HB - N0) * 0.8
 HEAD_R = V4.HEAD_R
-TAIL = [(x, y + 0.06 * max(z - 5, 0), 5 + (z - 5) * 0.62 if z > 5 else z) for x, y, z in V4.TAIL]   # queue -38 %
+TAIL = [(x, y + 0.05 * max(z - 5, 0), 5 + (z - 5) * 0.8 if z > 5 else z) for x, y, z in V4.TAIL]    # queue -20 %
+TAIL_RAD = [r * f for r, f in zip(V4.TAIL_RAD, (1.2, 1.3, 1.35, 1.4, 1.4, 1.35, 1.3))]          # et plus épaisse
 # tronc à pans nets (10 points au lieu de 14 arrondis) : dos plat, flanc droit, carène
 SHAPE_TRONC = [(0, 1.0), (0.62, 0.9), (1.0, 0.35), (0.97, -0.28), (0.6, -0.82), (0, -1.0),
                (-0.6, -0.82), (-0.97, -0.28), (-1.0, 0.35), (-0.62, 0.9)]
@@ -47,9 +48,9 @@ EMISSIF = ("eye", "glow", "throat")
 @contextmanager
 def squelette():
     """Les fonctions v4/v5 lisent le squelette dans corps_v4 : on y met celui de la v6 le temps de construire."""
-    old = {n: getattr(V4, n) for n in ("NECK", "HB", "HS", "TAIL", "SHAPE_TRONC")}
+    old = {n: getattr(V4, n) for n in ("NECK", "HB", "HS", "TAIL", "TAIL_RAD", "SHAPE_TRONC")}
     old_muscle = C5.muscle
-    V4.NECK, V4.HB, V4.HS, V4.TAIL, V4.SHAPE_TRONC = NECK, HB, HS, TAIL, SHAPE_TRONC
+    V4.NECK, V4.HB, V4.HS, V4.TAIL, V4.TAIL_RAD, V4.SHAPE_TRONC = NECK, HB, HS, TAIL, TAIL_RAD, SHAPE_TRONC
     C5.muscle = muscle
     try:
         yield
@@ -70,10 +71,10 @@ def muscle(c, d, r):
     w = np.cross(u, v)
     c = np.asarray(c, float)
     rings = []
-    for t, s, rot in ((-0.55, 0.72, 0.0), (0.0, 1.0, 0.5), (0.55, 0.7, 0.0)):
+    for t, s, rot in ((-0.7, 0.55, 0.0), (-0.3, 0.95, 0.5), (0.3, 0.95, 0.0), (0.7, 0.55, 0.5)):
         ang = (np.arange(6) + rot) * np.pi / 3
         rings.append([c + u * t * r[0] + s * (np.cos(a) * r[1] * v + np.sin(a) * r[2] * w) for a in ang])
-    return loft(rings, c - u * r[0], c + u * r[0])
+    return loft(rings, c - u * r[0] * 0.88, c + u * r[0] * 0.88)
 
 
 def ridge(a, b, out, h, w):
@@ -168,12 +169,12 @@ def leg(fn, s, front, upper):
     return L
 
 
-def head_model(open_deg=0.0):
+def head_model(open_deg=0.0, web=False):
     """Tête Prédateur v8 posée au bout du cou v6 ; mâchoire articulée sous l'oreille."""
     a = T8.ARCHETYPES[TETE]
     hp, hsl = T8.head_parts(TETE, a)
-    if open_deg > 0:
-        for k, v in T8.mouth_web(a, open_deg).items():
+    if open_deg > 0 or web:                      # web : commissures au repos (rig), qui s'étirent avec la mâchoire
+        for k, v in T8.mouth_web(a, open_deg, throat=True).items():
             hp.setdefault(k if k != "skin" else "cheek", []).extend(v)
     jp, jsl = T8.jaw_parts(TETE, a, open_deg)
     remap = {"skin": "head", "back": "headback"}
@@ -185,7 +186,7 @@ def head_model(open_deg=0.0):
             w.vertices = HB + HS * (w.vertices @ HEAD_R.T)
             lay[k] = T7.finish(w, False)
         slots = {"skin": [remap.get(x, x) for x in sl["skin"]]}
-        for k, name in (("back", "headback"), ("limb", "headlimb")):
+        for k, name in (("back", "headback"), ("limb", "headlimb"), ("lid", "head")):
             if k in lay:
                 slots[k] = [name] * len(lay[k].faces)
         out[part] = {"layers": lay, "slots": slots}
@@ -212,7 +213,7 @@ def body_slots(m, kind):
     return out
 
 
-def build(open_deg=0.0):
+def build(open_deg=0.0, web=False):
     out = {}
 
     def add(name, parent, pivot, L, kind=None):
@@ -232,7 +233,7 @@ def build(open_deg=0.0):
         add("Torso", None, (0, 7.0, 0), torso("Feu"), "body")
         nk = C5.neck("Feu", K)
         add("Neck", "Torso", NECK[0], nk, "neck")
-        out.update(head_model(open_deg))
+        out.update(head_model(open_deg, web))
         for i in range(4):
             add(f"Tail{i + 1}", "Torso" if i == 0 else f"Tail{i}", TAIL[V4.TAIL_CUT[i]], C5.tail(i, "Feu", K), "body")
         for s, n in ((1, "R"), (-1, "L")):
@@ -279,7 +280,7 @@ def main():
     dr = ImageDraw.Draw(board)
     dr.text((24, 18), "Dragon — corps v6 : tête Prédateur, proportions corrigées, corps taillé (Feu)", font=f(30, True),
             fill=(230, 232, 240))
-    dr.text((24, 60), "Tête x1,45, cou -20 %, queue -38 % ; corps et ailes plus sombres que la tête ; muscles à facettes, "
+    dr.text((24, 60), "Tête x1,45, cou -20 %, queue -20 % et plus épaisse ; corps et ailes plus sombres que la tête ; muscles à facettes, "
                       "os saillants, contre-ombrage ; peau et muscles fusionnés.", font=f(17), fill=(150, 160, 184))
     v5 = C5.build("Feu", K)
     v6 = build()

@@ -1,0 +1,432 @@
+{
+  "name": "Dragon_V6",
+  "forward": "-Z",
+  "up": "+Y",
+  "units": "studs",
+  "bones": [
+    {
+      "name": "Root",
+      "parent": null,
+      "head": [
+        0.0,
+        7.0,
+        2.6
+      ]
+    },
+    {
+      "name": "Spine",
+      "parent": "Root",
+      "head": [
+        0.0,
+        7.2,
+        -0.4
+      ]
+    },
+    {
+      "name": "Chest",
+      "parent": "Spine",
+      "head": [
+        0.0,
+        7.4,
+        -3.2
+      ]
+    },
+    {
+      "name": "Neck1",
+      "parent": "Chest",
+      "head": [
+        0.0,
+        7.9,
+        -4.3
+      ]
+    },
+    {
+      "name": "Neck2",
+      "parent": "Neck1",
+      "head": [
+        0.0,
+        9.9,
+        -6.54
+      ]
+    },
+    {
+      "name": "Neck3",
+      "parent": "Neck2",
+      "head": [
+        0.0,
+        10.78,
+        -7.18
+      ]
+    },
+    {
+      "name": "Head",
+      "parent": "Neck3",
+      "head": [
+        0.0,
+        10.98,
+        -7.86
+      ]
+    },
+    {
+      "name": "Jaw",
+      "parent": "Head",
+      "head": [
+        0.0,
+        10.64,
+        -7.543
+      ]
+    },
+    {
+      "name": "EyelidR",
+      "parent": "Head",
+      "head": [
+        0.903,
+        11.354,
+        -10.181
+      ]
+    },
+    {
+      "name": "PupilR",
+      "parent": "Head",
+      "head": [
+        0.653,
+        11.353,
+        -10.04
+      ]
+    },
+    {
+      "name": "EyelidL",
+      "parent": "Head",
+      "head": [
+        -0.903,
+        11.354,
+        -10.181
+      ]
+    },
+    {
+      "name": "PupilL",
+      "parent": "Head",
+      "head": [
+        -0.653,
+        11.353,
+        -10.04
+      ]
+    },
+    {
+      "name": "Tail1",
+      "parent": "Root",
+      "head": [
+        0.0,
+        6.75,
+        5.0
+      ]
+    },
+    {
+      "name": "Tail2",
+      "parent": "Tail1",
+      "head": [
+        0.0,
+        6.48,
+        7.08
+      ]
+    },
+    {
+      "name": "Tail3",
+      "parent": "Tail2",
+      "head": [
+        0.0,
+        5.67,
+        9.32
+      ]
+    },
+    {
+      "name": "Tail4",
+      "parent": "Tail3",
+      "head": [
+        0.0,
+        4.615,
+        11.64
+      ]
+    },
+    {
+      "name": "Tail5",
+      "parent": "Tail4",
+      "head": [
+        0.0,
+        3.96,
+        13.96
+      ]
+    },
+    {
+      "name": "Tail6",
+      "parent": "Tail5",
+      "head": [
+        0.0,
+        4.0,
+        16.2
+      ]
+    },
+    {
+      "name": "FrontUpperLegR",
+      "parent": "Chest",
+      "head": [
+        2.125,
+        7.0,
+        -3.1
+      ]
+    },
+    {
+      "name": "FrontLowerLegR",
+      "parent": "FrontUpperLegR",
+      "head": [
+        3.0,
+        4.25,
+        -2.2
+      ]
+    },
+    {
+      "name": "FrontFootR",
+      "parent": "FrontLowerLegR",
+      "head": [
+        3.0,
+        1.35,
+        -3.15
+      ]
+    },
+    {
+      "name": "BackUpperLegR",
+      "parent": "Root",
+      "head": [
+        1.95,
+        7.1,
+        3.2
+      ]
+    },
+    {
+      "name": "BackLowerLegR",
+      "parent": "BackUpperLegR",
+      "head": [
+        2.6,
+        4.7,
+        1.3
+      ]
+    },
+    {
+      "name": "BackFootR",
+      "parent": "BackLowerLegR",
+      "head": [
+        2.5,
+        2.2,
+        4.3
+      ]
+    },
+    {
+      "name": "WingUpperR",
+      "parent": "Chest",
+      "head": [
+        1.575,
+        8.575,
+        -2.5
+      ]
+    },
+    {
+      "name": "WingLowerR",
+      "parent": "WingUpperR",
+      "head": [
+        4.71,
+        11.378,
+        -1.17
+      ]
+    },
+    {
+      "name": "WingFinger1R",
+      "parent": "WingLowerR",
+      "head": [
+        7.94,
+        13.467,
+        -2.31
+      ]
+    },
+    {
+      "name": "WingFinger2R",
+      "parent": "WingLowerR",
+      "head": [
+        7.94,
+        13.467,
+        -2.31
+      ]
+    },
+    {
+      "name": "WingFinger3R",
+      "parent": "WingLowerR",
+      "head": [
+        7.94,
+        13.467,
+        -2.31
+      ]
+    },
+    {
+      "name": "WingFinger4R",
+      "parent": "WingLowerR",
+      "head": [
+        7.94,
+        13.467,
+        -2.31
+      ]
+    },
+    {
+      "name": "FrontUpperLegL",
+      "parent": "Chest",
+      "head": [
+        -2.125,
+        7.0,
+        -3.1
+      ]
+    },
+    {
+      "name": "FrontLowerLegL",
+      "parent": "FrontUpperLegL",
+      "head": [
+        -3.0,
+        4.25,
+        -2.2
+      ]
+    },
+    {
+      "name": "FrontFootL",
+      "parent": "FrontLowerLegL",
+      "head": [
+        -3.0,
+        1.35,
+        -3.15
+      ]
+    },
+    {
+      "name": "BackUpperLegL",
+      "parent": "Root",
+      "head": [
+        -1.95,
+        7.1,
+        3.2
+      ]
+    },
+    {
+      "name": "BackLowerLegL",
+      "parent": "BackUpperLegL",
+      "head": [
+        -2.6,
+        4.7,
+        1.3
+      ]
+    },
+    {
+      "name": "BackFootL",
+      "parent": "BackLowerLegL",
+      "head": [
+        -2.5,
+        2.2,
+        4.3
+      ]
+    },
+    {
+      "name": "WingUpperL",
+      "parent": "Chest",
+      "head": [
+        -1.575,
+        8.575,
+        -2.5
+      ]
+    },
+    {
+      "name": "WingLowerL",
+      "parent": "WingUpperL",
+      "head": [
+        -4.71,
+        11.378,
+        -1.17
+      ]
+    },
+    {
+      "name": "WingFinger1L",
+      "parent": "WingLowerL",
+      "head": [
+        -7.94,
+        13.467,
+        -2.31
+      ]
+    },
+    {
+      "name": "WingFinger2L",
+      "parent": "WingLowerL",
+      "head": [
+        -7.94,
+        13.467,
+        -2.31
+      ]
+    },
+    {
+      "name": "WingFinger3L",
+      "parent": "WingLowerL",
+      "head": [
+        -7.94,
+        13.467,
+        -2.31
+      ]
+    },
+    {
+      "name": "WingFinger4L",
+      "parent": "WingLowerL",
+      "head": [
+        -7.94,
+        13.467,
+        -2.31
+      ]
+    }
+  ],
+  "meshes": {
+    "Dragon": {
+      "vertices": 19912,
+      "triangles": 9724
+    },
+    "DragonNeon": {
+      "vertices": 400,
+      "triangles": 192
+    }
+  },
+  "palette_slots": [
+    "belly",
+    "belly2",
+    "skin",
+    "back",
+    "marking",
+    "crest",
+    "bone",
+    "headback",
+    "head",
+    "mouth",
+    "horn",
+    "spike",
+    "teeth",
+    "headlimb",
+    "tip",
+    "glow",
+    "eye",
+    "pupil",
+    "cheek",
+    "throat",
+    "limb",
+    "tongue",
+    "tailblade",
+    "claw",
+    "wingbone",
+    "membrane",
+    "membrane2"
+  ],
+  "palette_grid": 6,
+  "neon_layers": [
+    "eye",
+    "glow",
+    "throat"
+  ],
+  "max_influences": 4
+}

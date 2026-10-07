@@ -45,7 +45,7 @@ ARCHETYPES = {
                    up=[(-2.6, 0.5, 0.1), (-2.15, 0.28, 0.07)], low=[(-2.4, 0.3, 0.07)],
                    texte="arcade massive qui ombre les yeux, corne de nez, barbe d'épines"),
 }
-PAL = dict(V.VARIANTS["Feu"], mouth="#3C0A12", tongue="#D2465A", throat="#FF6A18", glow="#FFC21A")
+PAL = dict(V.VARIANTS["Feu"], lid=V.VARIANTS["Feu"]["skin"], mouth="#3C0A12", tongue="#D2465A", throat="#FF6A18", glow="#FFC21A")
 EMISSIF = ("eye", "glow", "throat")
 
 
@@ -113,6 +113,38 @@ def eye(c, s, n=(1.0, 0.12, -0.55)):
     pv = [pc + v * h, pc + u * w, pc - v * h, pc - u * w, pc + n * 0.02, pc - n * 0.03]
     pf = [(0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4), (1, 0, 5), (2, 1, 5), (3, 2, 5), (0, 3, 5)]
     return mesh(vs, fs), mesh(pv, pf), (inner, inner + u * L, n, u)
+
+
+def eye_frame(a):
+    """Centre, axe (coin intérieur -> extérieur), normale et échelle de l'œil droit, repère tête déformé."""
+    c = warp_head((0.70, 0.56, -1.32), a)[0] + np.array([0.04 * (a["eye"] - 1), 0, 0])
+    _, _, (inner, outer, n, u) = eye(c, a["eye"])
+    return c, n, u, a["eye"]
+
+
+LID_OPEN, LID_CLOSE = (55, 118), 100       # paupière ouverte : repliée sous l'arcade ; fermer = tourner de 100° autour de u
+
+
+def lid_axis(c, n):
+    """Axe de rotation de la paupière : parallèle à l'œil, un peu en arrière de sa surface."""
+    return c - n * 0.12
+
+
+def eyelid(c, n, u, s):
+    """Paupière du haut : coque courbe autour de l'axe de l'œil, repliée (ouverte) au-dessus de l'œil."""
+    v = np.cross(n, u); v /= np.linalg.norm(v)
+    v = v if v[1] > 0 else -v
+    A = lid_axis(c, n)
+    L = 1.02 * s
+    rings = []
+    for t in np.linspace(0, 1, 6):
+        rho = 0.05 + 0.27 * s * np.sin(np.pi * t) ** 0.5
+        x = A + u * (t - 0.5) * L
+        phis = np.radians(np.linspace(*LID_OPEN, 4))
+        outer = [x + (rho + 0.04) * (np.cos(f) * n + np.sin(f) * v) for f in phis]
+        inner = [x + max(rho - 0.03, 0.02) * (np.cos(f) * n + np.sin(f) * v) for f in phis[::-1]]
+        rings.append(outer + inner)
+    return loft(rings, A - u * L * 0.55, A + u * L * 0.55)
 
 
 def brow_ridge(inner, outer, n, size, tilt):
@@ -210,6 +242,7 @@ def head_parts(name, a):
     e, p, (inner, outer, n, _) = eye(c, a["eye"])
     out["eye"] = both(e)
     out["pupil"] = both(p)
+    out["lid"] = both(eyelid(c, n, _, a["eye"]))
     out["back"] = out.get("back", []) + both(brow_ridge(inner, outer, n, a["brow"], a["tilt"]))
     return out, {"skin": slots}
 
@@ -242,7 +275,7 @@ def jaw_parts(name, a, open_deg):
     return out, {"skin": slots}
 
 
-def mouth_web(a, open_deg):
+def mouth_web(a, open_deg, throat=None):
     """Commissures : membrane de joue entre les lèvres quand la gueule s'ouvre (peau dehors, gueule dedans)
     + lueur au fond de la gorge."""
     J = jaw_rot(open_deg)
@@ -267,7 +300,7 @@ def mouth_web(a, open_deg):
             fs += [(q[0], q[2], q[1]), (q[0], q[3], q[2])] if not flip else [(q[0], q[1], q[2]), (q[0], q[2], q[3])]
         m = trimesh.Trimesh(np.asarray(vs), np.asarray(fs), process=False)
         out[layer] += [m, mirror(m)]
-    if open_deg > 0:
+    if open_deg > 0 if throat is None else throat:
         g = trimesh.creation.icosphere(1, 0.3)
         g.vertices *= (1.0, 0.6, 0.9)
         g.vertices += warp_head((0, -0.42, -0.15), a)[0] + (0, -0.1 * open_deg / 30, 0)
