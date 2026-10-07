@@ -12,8 +12,9 @@ Aperçus : `demo-animations-v6.gif` (vol v2 de profil et de face, rugissement, r
   - `DragonNeon` : yeux, narines, lame de queue, lueur de gorge, et pour Feu et Ombre leurs ornements lumineux
     (192 à 1 344 triangles, passé en Neon par le script)
 - `Palette_<Lignée>.png` : les textures palette (déjà incluses dans les GLB)
-- `AnimDragon.lua` : ModuleScript d'animation, commun aux 4 lignées (style de vol et souffle propres à chacune)
-- `LigneesDragon.lua` : ModuleScript de données, caractéristiques de jeu des lignées (stats, souffle, passif, affinités)
+- `AnimDragon.lua` : ModuleScript d'animation, commun aux 4 lignées (style de vol propre à chacune)
+- `LigneesDragon.lua` : ModuleScript de données, caractéristiques de jeu des lignées (stats, vitesses, passif,
+  affinités) et souffle commun
 - `manifest.json` : os (nom, parent, position), lignées (triangles, cases de la palette, ornements, caractéristiques),
   animations, vitesses
 
@@ -26,15 +27,14 @@ Source unique : `generateur/lignees_v6.py`. Valeurs de départ, à équilibrer e
 | Rôle | attaque | défense, planeur | endurance, zone | vitesse, embuscade |
 | Vie / Att / Déf / Vit / Agi | 100 / 72 / 50 / 55 / 50 | 110 / 50 / 75 / 45 / 40 | 130 / 55 / 60 / 48 / 42 | 85 / 62 / 38 / 75 / 80 |
 | Vol (studs/s) | 34 | 30 | 28 | 42 |
-| Souffle | Flammes, cône 28 studs : brûlure 4/s pendant 4 s | Givre, rayon 34 studs : ralentit de 40 %, gèle 1,5 s après 2 s | Spores, nuage 18 studs : poison 3/s pendant 6 s, le nuage reste 5 s | Ténèbres, cône 22 studs : aveugle 3 s |
-| Particules | flammes + braises qui montent | givre + éclats qui tournoient | spores lourdes + pollen lumineux | ténèbres (sans lumière) + volutes |
 | Passif | Sang de lave : immunisé à la brûlure, +20 % d'attaque sous 30 % de vie | Carapace de givre : -15 % de dégâts, plane sans endurance | Racines : immobile au sol, +2 % de vie par seconde | Voile : immobile ou de nuit, presque invisible ; +30 % sur la première attaque |
 | Vol (style) | boucle 3,6 s, plané 30 % | ample et lent, 4,4 s, plané 42 % | lourd, battements rapides, plané 20 % | rapide, corps qui ondule, ailes balayées en plané |
 | Bat / craint | Glace / Ombre | Forêt / Feu | Ombre / Glace | Feu / Forêt |
 
 Affinités : cycle Feu > Glace > Forêt > Ombre > Feu, dégâts x1,25 contre la lignée battue, x0,8 contre celle qui
-vous bat (`Lignees.affinite(attaquant, defenseur)`). Les effets (brûlure, gel, poison, aveuglement, voile) sont
-décrits dans les données : c'est au code de combat du jeu de les appliquer.
+vous bat (`Lignees.affinite(attaquant, defenseur)`). Le souffle est le même pour toutes les lignées
+(`Lignees.SOUFFLE` : cône de 28 studs, 16 dégâts/s, brûlure) ; seule sa couleur suit celle des yeux. Les passifs et
+la brûlure sont décrits dans les données : c'est au code de combat du jeu de les appliquer.
 
 Couleurs : pour chaque lignée, le corps est un cran plus sombre que la tête. La règle reprend les écarts réglés à la
 main pour Feu (saturation et luminosité, teinte gardée), avec un plancher de luminosité pour que l'Ombre ne tourne pas
@@ -83,10 +83,9 @@ ailes : WingUpper / WingLower / WingFinger1-4 (R et L). 4 os maximum par sommet.
   monte à 4,5 studs et replie les pattes, puis enchaîne sur Vol.
 - **Atterrissage** (nouveau, 1,8 s) : descend ailes en frein, pattes tendues, touche (arrière puis avant), encaisse
   (corps qui s'enfonce, pattes qui plient), replie les ailes, puis enchaîne sur Repos.
-- **Souffle** (2,8 s) : inspire en se cabrant (la gorge s'allume), puis crache gueule grande ouverte en balayant de
-  droite à gauche. Le script ajoute sous l'os Head un os `Souffle` (sans poids) avec deux ParticleEmitter propres à la
-  lignée (Feu + Braises, Givre + Eclats, Spores + Pollen, Tenebres + Volutes) et une PointLight, aux couleurs de la
-  lignée. Il enchaîne sur Repos.
+- **Souffle de feu** (2,8 s) : inspire en se cabrant (la gorge s'allume), puis crache gueule grande ouverte en
+  balayant de droite à gauche. Le script ajoute sous l'os Head un os `Souffle` (sans poids) avec un ParticleEmitter
+  `Feu` et une PointLight, communs à toutes les lignées et teintés de la couleur de leurs yeux. Il enchaîne sur Repos.
 - **Vol** (v2, moins rigide) : une boucle = 4 battements puis du vol plané.
   - Battement asymétrique : descente rapide (42 % du temps), remontée lente. L'avant-bras et les doigts suivent avec
     retard, le bout de l'aile fouette. À la remontée, l'aile se replie et se balaie vers l'arrière ; à la descente,
@@ -131,11 +130,11 @@ Ils n'agissent pas pendant le vol ni pendant une séquence (décollage, souffle�
 - Fonctions de jeu (`generateur/test_runtime_v6.luau`, 63 contrôles) : fondu sans à-coup, marche et hystérésis,
   plus de course, décoller / atterrir, enchaînements, vol v2 de chaque lignée (battements puis plané), montée
   (imposée et mesurée), sur-place, croisière et piqué, roulis en vol, virages imposés et mesurés, `lookAt`, choix de la lignée,
-  particules et lumière du souffle de chaque lignée, `LigneesDragon` (affinités, données complètes).
+  particules et lumière du souffle (teinte de la lignée), `LigneesDragon` (affinités, souffle commun).
   Pieds sur le relief contrôlés dans le maillage (`generateur/test_runtime_v6.py`) : chaque patte monte ou descend de la hauteur du sol à
   0,004 stud près, pied gardé à plat.
 - **Pas encore testé dans Studio** : les ornements des lignées (Feu compris : son GLB a changé, à réimporter), le
-  vol v2, le contrôle du vol, les particules des 4 souffles (réglages à ajuster à l'œil), les pieds sur le relief.
+  vol v2, le contrôle du vol, les particules du souffle (réglages à ajuster à l'œil), les pieds sur le relief.
   Triangles par maillage sous la limite de 20 000 de Roblox (18 248 au plus, Glace).
 
 ## Import dans Studio : Feu testé le 2026-10-07, sans erreur, rendu convaincant

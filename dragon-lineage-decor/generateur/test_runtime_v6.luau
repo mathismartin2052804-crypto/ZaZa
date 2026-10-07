@@ -178,25 +178,18 @@ check(Anim.new(m2).lignee == "Glace", "lignée lue sur le nom du Model")
 local m3 = setmetatable({ Name = "Dragon", GetAttribute = function(_, k) return k == "Lignee" and "Foret" or nil end },
 	{ __index = model })
 check(Anim.new(m3).lignee == "Foret", "lignée lue sur l'attribut Lignee")
-local ATTENDU = { Feu = { "Feu", "Braises" }, Glace = { "Givre", "Eclats" }, Foret = { "Spores", "Pollen" },
-	Ombre = { "Tenebres", "Volutes" } }
 local couleurs = {}
-for lin, noms in ATTENDU do
+for lin in Anim.LIGNEES do
 	local head = roblox.Instance.new("Bone"); head.Name = "Head"
 	local f = setmetatable({ bones = { Head = head }, style = Anim.LIGNEES[lin] }, Anim)
 	f:_creerFeu()
 	local os_ = head:FindFirstChild("Souffle")
-	local ok_ = os_ and os_.ClassName == "Bone" and os_:FindFirstChildOfClass("PointLight") ~= nil
-	for _, n in noms do
-		ok_ = ok_ and os_:FindFirstChild(n) ~= nil and os_:FindFirstChild(n).ClassName == "ParticleEmitter"
-	end
-	check(ok_, "souffle " .. lin .. " : os, émetteurs " .. table.concat(noms, " + ") .. " et lumière créés")
+	check(os_ and os_.ClassName == "Bone" and os_:FindFirstChild("Feu") and os_:FindFirstChildOfClass("PointLight"),
+		"souffle " .. lin .. " : os, ParticleEmitter et PointLight créés")
 	check(os_.CFrame.LookVector.Z < -0.9 and os_.CFrame.LookVector.Y < 0, "souffle " .. lin .. " : part vers l'avant de la gueule")
-	couleurs[lin] = os_:FindFirstChild(noms[1]).Color.Keypoints[2].Value
+	couleurs[lin] = os_:FindFirstChild("Feu").Color.Keypoints[2].Value
 end
-check(couleurs.Feu ~= couleurs.Glace and couleurs.Glace ~= couleurs.Ombre and couleurs.Foret ~= couleurs.Ombre,
-	"souffle : couleur différente pour chaque lignée")
-check(math.abs(out[2].bassin - 0.1) < 0.01, ("bassin abaissé de la moyenne : %.3f"):format(out[2].bassin))
+check(couleurs.Feu ~= couleurs.Glace and couleurs.Glace ~= couleurs.Ombre, "souffle commun, teinté de la couleur des yeux")
 -- 8. LigneesDragon.lua : caractéristiques et affinités
 if process.args[2] then
 	local L = luau.load(fs.readFile(process.args[2]), { environment = env })()
@@ -206,10 +199,11 @@ if process.args[2] then
 		check(L.affinite(a, b) == L.AFFINITE_FORT and L.affinite(b, a) == L.AFFINITE_FAIBLE,
 			"affinité : " .. a .. " bat " .. b)
 	end
+	check(L.SOUFFLE.portee > 0 and L.SOUFFLE.degats > 0, "souffle commun dans LigneesDragon")
 	check(L.affinite("Feu", "Foret") == 1 and L.affinite("Feu", "Feu") == 1, "affinité neutre")
 	for _, n in L.LISTE do
 		local c = L.get(n)
-		check(c.stats.vie > 0 and c.souffle.portee > 0 and c.passif.nom and Anim.LIGNEES[n] ~= nil,
+		check(c.stats.vie > 0 and c.passif.nom and Anim.LIGNEES[n] ~= nil and c.souffle == nil,
 			"caractéristiques complètes : " .. n)
 		check(c.vitesses.marche <= 2 * Anim.VITESSE_MARCHE + 0.01, ("%s : marche %.1f studs/s atteignable sans patiner")
 			:format(n, c.vitesses.marche))

@@ -434,7 +434,7 @@
         "nom": "Feu",
         "element": "Feu",
         "titre": "Le Brasier",
-        "description": "Dragon d'attaque : souffle de flammes qui brûle dans la durée, colère qui monte quand il est blessé.",
+        "description": "Dragon d'attaque : frappe fort, colère qui monte quand il est blessé.",
         "stats": {
           "vie": 100,
           "attaque": 72,
@@ -448,19 +448,6 @@
           "vol": 34,
           "montee": 12,
           "pique": 60
-        },
-        "souffle": {
-          "nom": "Flammes",
-          "forme": "cone",
-          "portee": 28,
-          "angle": 25,
-          "degats": 18,
-          "duree": 2.0,
-          "recharge": 6,
-          "effet": "Brulure",
-          "effet_duree": 4,
-          "effet_valeur": 4,
-          "texte": "Brûlure : 4 dégâts par seconde pendant 4 s."
         },
         "passif": {
           "nom": "Sang de lave",
@@ -522,7 +509,7 @@
         "nom": "Glace",
         "element": "Glace",
         "titre": "Le Givre éternel",
-        "description": "Dragon défensif : carapace de givre, souffle qui ralentit puis fige la cible, grand planeur.",
+        "description": "Dragon défensif : carapace de givre, grand planeur.",
         "stats": {
           "vie": 110,
           "attaque": 50,
@@ -536,19 +523,6 @@
           "vol": 30,
           "montee": 9,
           "pique": 55
-        },
-        "souffle": {
-          "nom": "Givre",
-          "forme": "rayon",
-          "portee": 34,
-          "angle": 10,
-          "degats": 12,
-          "duree": 2.4,
-          "recharge": 7,
-          "effet": "Gel",
-          "effet_duree": 3,
-          "effet_valeur": 0.4,
-          "texte": "Gel : ralentit de 40 % ; 2 s dans le souffle figent la cible 1,5 s."
         },
         "passif": {
           "nom": "Carapace de givre",
@@ -611,7 +585,7 @@
         "nom": "Forêt",
         "element": "Foret",
         "titre": "Le Gardien sylvestre",
-        "description": "Dragon endurant : beaucoup de vie, se régénère au sol, souffle de spores qui empoisonne une zone.",
+        "description": "Dragon endurant : beaucoup de vie, se régénère au sol.",
         "stats": {
           "vie": 130,
           "attaque": 55,
@@ -625,20 +599,6 @@
           "vol": 28,
           "montee": 8,
           "pique": 50
-        },
-        "souffle": {
-          "nom": "Spores",
-          "forme": "nuage",
-          "portee": 18,
-          "angle": 40,
-          "degats": 8,
-          "duree": 2.6,
-          "recharge": 8,
-          "effet": "Poison",
-          "effet_duree": 6,
-          "effet_valeur": 3,
-          "zone_duree": 5,
-          "texte": "Poison : 3 dégâts par seconde pendant 6 s ; le nuage reste 5 s au sol."
         },
         "passif": {
           "nom": "Racines",
@@ -700,7 +660,7 @@
         "nom": "Ombre",
         "element": "Ombre",
         "titre": "Le Voile de nuit",
-        "description": "Dragon rapide et fragile : vole vite, se fond dans l'ombre, souffle qui aveugle.",
+        "description": "Dragon rapide et fragile : vole vite, se fond dans l'ombre.",
         "stats": {
           "vie": 85,
           "attaque": 62,
@@ -714,19 +674,6 @@
           "vol": 42,
           "montee": 14,
           "pique": 70
-        },
-        "souffle": {
-          "nom": "Ténèbres",
-          "forme": "cone",
-          "portee": 22,
-          "angle": 30,
-          "degats": 14,
-          "duree": 1.8,
-          "recharge": 5,
-          "effet": "Aveuglement",
-          "effet_duree": 3,
-          "effet_valeur": 0.7,
-          "texte": "Aveuglement : la vue de la cible se brouille (70 %) pendant 3 s."
         },
         "passif": {
           "nom": "Voile",

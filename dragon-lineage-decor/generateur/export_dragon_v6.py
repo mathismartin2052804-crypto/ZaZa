@@ -5,9 +5,10 @@
 #     - « DragonNeon » : yeux, narines, lame de queue, lueur de gorge (à passer en Neon dans Studio)
 #   AnimDragon.lua (commun aux lignées) : généré depuis AnimDragon_modele.lua ; animations (repos, marche, vol,
 #     rugissement, décollage, atterrissage, souffle) + yeux + fonctions de jeu, en pilotant Bone.Transform ;
-#     marche et séquences y sont copiées en tables (allures_v6.py, sequences_v6.py) ; style de vol et particules
-#     du souffle de chaque lignée (lignees_v6.STYLE)
-#   LigneesDragon.lua : caractéristiques de jeu des lignées (lignees_v6.CARAC : stats, souffle, passif, affinités)
+#     marche et séquences y sont copiées en tables (allures_v6.py, sequences_v6.py) ; style de vol de chaque
+#     lignée (lignees_v6.STYLE)
+#   LigneesDragon.lua : caractéristiques de jeu des lignées (lignees_v6.CARAC : stats, passif, affinités ;
+#     lignees_v6.SOUFFLE : souffle commun)
 # Le glTF est écrit à la main (pas de dépendance) ; repères de repos des os alignés sur le modèle (-Z = avant).
 # Usage (depuis dragon-lineage-decor/) : python3 generateur/export_dragon_v6.py [--lignee Glace Ombre]  ->  dragon-v6/
 import json
@@ -228,12 +229,11 @@ def lua_val(v, ind="\t"):
 
 
 def lua_lignees():
-    """Style de chaque lignée pour AnimDragon.lua : vol, vitesses de référence, couleur des yeux, souffle."""
+    """Style de chaque lignée pour AnimDragon.lua : vol, vitesses de référence, couleur des yeux."""
     out = []
     for lin in PC.LIGNEES:
         st = L6.STYLE[lin]
-        d = {"vol": st["vol"], "vitesses": L6.CARAC[lin]["vitesses"], "oeil": C6.palette(lin)["eye"],
-             "souffle": st["souffle"]}
+        d = {"vol": st["vol"], "vitesses": L6.CARAC[lin]["vitesses"], "oeil": C6.palette(lin)["eye"]}
         out.append(f"\t{lin} = {lua_val(d, chr(9))},")
     return "\n".join(out)
 
@@ -245,14 +245,16 @@ def write_lignees(path):
 -- Fichier généré par generateur/export_dragon_v6.py à partir de generateur/lignees_v6.py (CARAC) : modifier la source.
 -- Placement : ModuleScript dans ReplicatedStorage, lu par les scripts du jeu (serveur pour les dégâts).
 --   local Lignees = require(ReplicatedStorage.LigneesDragon)
---   local c = Lignees.get("Glace")          -- stats (sur 100), vitesses (studs/s), souffle, passif, affinités
---   local deg = c.souffle.degats * Lignees.affinite("Feu", "Glace")      -- x1,25 : le Feu bat la Glace
+--   local c = Lignees.get("Glace")          -- stats (sur 100), vitesses (studs/s), passif, affinités
+--   local deg = Lignees.SOUFFLE.degats * Lignees.affinite("Feu", "Glace")   -- x1,25 : le Feu bat la Glace
+-- Le souffle est le même pour toutes les lignées (Lignees.SOUFFLE).
 -- Cycle des affinités : Feu > Glace > Foret > Ombre > Feu (x{str(L6.AFFINITE_FORT).replace('.', ',')} contre la lignée battue,
 -- x{str(L6.AFFINITE_FAIBLE).replace('.', ',')} contre celle qui vous bat). Valeurs de départ : à équilibrer en jeu.
 local Lignees = {{}}
 
 Lignees.LISTE = {{ {", ".join(f'"{l}"' for l in PC.LIGNEES)} }}
 Lignees.AFFINITE_FORT, Lignees.AFFINITE_FAIBLE = {L6.AFFINITE_FORT}, {L6.AFFINITE_FAIBLE}
+Lignees.SOUFFLE = {lua_val(L6.SOUFFLE)}
 
 local DATA = {{
 {rows}

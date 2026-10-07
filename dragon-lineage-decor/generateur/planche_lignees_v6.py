@@ -41,8 +41,6 @@ def main():
         y = 50 + 3 * h + 10
         s = c["stats"]
         lignes = [(" ".join(L6.ORNEMENTS[lin].__doc__.split()), (200, 205, 220)),
-                  (f"Souffle : {c['souffle']['nom']} ({c['souffle']['forme']}, {c['souffle']['portee']} studs)", col),
-                  (c["souffle"]["texte"], (170, 178, 196)),
                   (f"Passif : {c['passif']['nom']}", col),
                   (c["passif"]["texte"], (170, 178, 196)),
                   (f"Vie {s['vie']}  Att {s['attaque']}  Déf {s['defense']}  Vit {s['vitesse']}  Agi {s['agilite']}",

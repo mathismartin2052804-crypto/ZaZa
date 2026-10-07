@@ -303,149 +303,27 @@ local TABLES = {
 }
 
 -- style de chaque lignée (lignees_v6.py) : vol (durée de la boucle, amplitude, part de plané, ondulation,
--- lourdeur, balayage), vitesses de référence (studs/s), couleur des yeux, particules et lumière du souffle
+-- lourdeur, balayage), vitesses de référence (studs/s), couleur des yeux (teinte du souffle, commun à toutes)
 local LIGNEES = {
 	Feu = {
 		vol = { duree = 3.6, amplitude = 1, plane = 0.3, ondulation = 1, lourdeur = 1, balayage = 0.2 },
 		vitesses = { marche = 4, vol = 34, montee = 12, pique = 60 },
 		oeil = "#FFE14A",
-		souffle = {
-			lumiere = { portee = 16, eclat = 4 },
-			particules = {
-				{
-					nom = "Feu",
-					taux = 160,
-					vie = { 0.35, 0.6 },
-					vitesse = { 28, 38 },
-					angle = 9,
-					frein = 2,
-					taille = { { 0, 0.6 }, { 0.4, 2.6 }, { 1, 4.5 } },
-					transparence = { { 0, 0.1 }, { 0.7, 0.4 }, { 1, 1 } },
-					couleurs = { { 0, "#FFFFE6" }, { 0.25, "oeil" }, { 1, "#3A140C" } },
-					lumineux = 1,
-				},
-				{
-					nom = "Braises",
-					taux = 40,
-					vie = { 0.6, 1.1 },
-					vitesse = { 18, 30 },
-					angle = 18,
-					frein = 1,
-					taille = { { 0, 0.25 }, { 1, 0.05 } },
-					transparence = { { 0, 0 }, { 1, 1 } },
-					couleurs = { { 0, "#FFE14A" }, { 1, "#FF5A10" } },
-					lumineux = 1,
-					acceleration = { 0, 6, 0 },
-				},
-			},
-		},
 	},
 	Glace = {
 		vol = { duree = 4.4, amplitude = 1.1, plane = 0.42, ondulation = 0.7, lourdeur = 0.8, balayage = 0.1 },
 		vitesses = { marche = 3.5, vol = 30, montee = 9, pique = 55 },
 		oeil = "#9AF6FF",
-		souffle = {
-			lumiere = { portee = 14, eclat = 2.5 },
-			particules = {
-				{
-					nom = "Givre",
-					taux = 140,
-					vie = { 0.5, 0.8 },
-					vitesse = { 30, 40 },
-					angle = 5,
-					frein = 1.5,
-					taille = { { 0, 0.4 }, { 0.5, 1.8 }, { 1, 3.2 } },
-					transparence = { { 0, 0.2 }, { 0.6, 0.5 }, { 1, 1 } },
-					couleurs = { { 0, "#FFFFFF" }, { 0.3, "oeil" }, { 1, "#DDF4FF" } },
-					lumineux = 0.6,
-				},
-				{
-					nom = "Eclats",
-					taux = 60,
-					vie = { 0.4, 0.7 },
-					vitesse = { 35, 45 },
-					angle = 8,
-					frein = 0.5,
-					taille = { { 0, 0.35 }, { 1, 0.15 } },
-					transparence = { { 0, 0 }, { 1, 0.6 } },
-					couleurs = { { 0, "#FFFFFF" }, { 1, "oeil" } },
-					lumineux = 0.8,
-					rotation = { -180, 180 },
-					vitesse_rotation = { -360, 360 },
-				},
-			},
-		},
 	},
 	Foret = {
 		vol = { duree = 3.2, amplitude = 1.15, plane = 0.2, ondulation = 0.9, lourdeur = 1.35, balayage = 0 },
 		vitesses = { marche = 3.8, vol = 28, montee = 8, pique = 50 },
 		oeil = "#E0FF63",
-		souffle = {
-			lumiere = { portee = 12, eclat = 1.5 },
-			particules = {
-				{
-					nom = "Spores",
-					taux = 90,
-					vie = { 1.2, 2 },
-					vitesse = { 12, 18 },
-					angle = 22,
-					frein = 1.2,
-					taille = { { 0, 0.8 }, { 0.5, 3 }, { 1, 4.5 } },
-					transparence = { { 0, 0.3 }, { 0.7, 0.6 }, { 1, 1 } },
-					couleurs = { { 0, "oeil" }, { 0.5, "#8CC23E" }, { 1, "#3A5A1E" } },
-					lumineux = 0.3,
-					acceleration = { 0, -1.5, 0 },
-				},
-				{
-					nom = "Pollen",
-					taux = 50,
-					vie = { 1.5, 2.5 },
-					vitesse = { 8, 14 },
-					angle = 30,
-					frein = 0.8,
-					taille = { { 0, 0.2 }, { 1, 0.12 } },
-					transparence = { { 0, 0 }, { 1, 1 } },
-					couleurs = { { 0, "oeil" }, { 1, "#FFF6A0" } },
-					lumineux = 1,
-					acceleration = { 0, 1, 0 },
-				},
-			},
-		},
 	},
 	Ombre = {
 		vol = { duree = 3, amplitude = 0.85, plane = 0.36, ondulation = 1.5, lourdeur = 0.7, balayage = 1 },
 		vitesses = { marche = 4.5, vol = 42, montee = 14, pique = 70 },
 		oeil = "#ED68FF",
-		souffle = {
-			lumiere = { portee = 10, eclat = 1.2 },
-			particules = {
-				{
-					nom = "Tenebres",
-					taux = 150,
-					vie = { 0.4, 0.7 },
-					vitesse = { 24, 32 },
-					angle = 12,
-					frein = 2,
-					taille = { { 0, 0.8 }, { 0.5, 3 }, { 1, 5 } },
-					transparence = { { 0, 0.15 }, { 0.6, 0.45 }, { 1, 1 } },
-					couleurs = { { 0, "oeil" }, { 0.35, "#2A1440" }, { 1, "#05030A" } },
-					lumineux = 0,
-				},
-				{
-					nom = "Volutes",
-					taux = 45,
-					vie = { 0.8, 1.3 },
-					vitesse = { 14, 22 },
-					angle = 20,
-					frein = 1.5,
-					taille = { { 0, 0.3 }, { 0.5, 0.6 }, { 1, 0.1 } },
-					transparence = { { 0, 0 }, { 1, 1 } },
-					couleurs = { { 0, "oeil" }, { 1, "#6A3E9A" } },
-					lumineux = 1,
-					acceleration = { 0, 2.5, 0 },
-				},
-			},
-		},
 	},
 }
 
@@ -753,60 +631,39 @@ function Anim.new(model: Model, nomLignee: string?)
 	return self
 end
 
-local function seqN(pts)
-	local k = {}
-	for _, p in pts do
-		table.insert(k, NumberSequenceKeypoint.new(p[1], p[2]))
-	end
-	return NumberSequence.new(k)
-end
-
--- particules et lumière du souffle, sur un os « Souffle » ajouté sous Head ; réglages et couleurs propres à la
--- lignée (flammes et braises, givre et éclats, spores et pollen, ténèbres et volutes) ; « oeil » = couleur des yeux
+-- particules et lumière du souffle (communes aux lignées), sur un os « Souffle » ajouté sous Head ; teintées de la
+-- couleur des yeux de la lignée
 function Anim:_creerFeu()
 	local head = self.bones.Head
 	if typeof(head) ~= "Instance" then
 		return
 	end
-	local st = self.style or LIGNEES.Feu
-	local oeil = Color3.fromHex(st.oeil)
+	local c = Color3.fromHex((self.style or LIGNEES.Feu).oeil)
 	local att = Instance.new("Bone")                      -- os enfant sans poids : ne déforme rien, sert de point
 	att.Name = "Souffle"                                  -- d'émission (un Bone est un Attachment)
 	att.CFrame = BOUCHE
 	att.Parent = head
-	self.feux = {}
-	for _, p in st.souffle.particules do
-		local pe = Instance.new("ParticleEmitter")
-		pe.Name = p.nom
-		pe.Enabled = false
-		pe.EmissionDirection = Enum.NormalId.Front
-		pe.Rate = p.taux
-		pe.Lifetime = NumberRange.new(p.vie[1], p.vie[2])
-		pe.Speed = NumberRange.new(p.vitesse[1], p.vitesse[2])
-		pe.SpreadAngle = Vector2.new(p.angle, p.angle)
-		pe.Drag = p.frein
-		pe.Size = seqN(p.taille)
-		pe.Transparency = seqN(p.transparence)
-		local k = {}
-		for _, c in p.couleurs do
-			table.insert(k, ColorSequenceKeypoint.new(c[1], c[2] == "oeil" and oeil or Color3.fromHex(c[2])))
-		end
-		pe.Color = ColorSequence.new(k)
-		pe.LightEmission = p.lumineux
-		if p.acceleration then
-			pe.Acceleration = Vector3.new(p.acceleration[1], p.acceleration[2], p.acceleration[3])
-		end
-		if p.rotation then
-			pe.Rotation = NumberRange.new(p.rotation[1], p.rotation[2])
-			pe.RotSpeed = NumberRange.new(p.vitesse_rotation[1], p.vitesse_rotation[2])
-		end
-		pe.Parent = att
-		table.insert(self.feux, pe)
-	end
+	local pe = Instance.new("ParticleEmitter")
+	pe.Name = "Feu"
+	pe.Enabled = false
+	pe.EmissionDirection = Enum.NormalId.Front
+	pe.Rate = 160
+	pe.Lifetime = NumberRange.new(0.35, 0.6)
+	pe.Speed = NumberRange.new(28, 38)
+	pe.SpreadAngle = Vector2.new(9, 9)
+	pe.Drag = 2
+	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(0.4, 2.6),
+		NumberSequenceKeypoint.new(1, 4.5) })
+	pe.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(0.7, 0.4),
+		NumberSequenceKeypoint.new(1, 1) })
+	pe.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.new(1, 1, 0.9)), ColorSequenceKeypoint.new(0.25, c),
+		ColorSequenceKeypoint.new(1, c:Lerp(Color3.new(0.1, 0.05, 0.05), 0.7)) })
+	pe.LightEmission = 1
+	pe.Parent = att
 	local light = Instance.new("PointLight")
-	light.Color, light.Range, light.Brightness = oeil, st.souffle.lumiere.portee, 0
+	light.Color, light.Range, light.Brightness = c, 16, 0
 	light.Parent = att
-	self.feu, self.feuLight, self.feuAtt = self.feux[1], light, att
+	self.feu, self.feuLight, self.feuAtt = pe, light, att
 end
 
 function Anim:play(name: string, fondu: number?)
@@ -1123,11 +980,9 @@ function Anim:step(dt)
 	self.last = cf
 	-- feu : particules et lumière pendant le souffle
 	self.fire = fire or 0
-	if self.feux then
-		for _, pe in self.feux do
-			pe.Enabled = self.fire > 0.5
-		end
-		self.feuLight.Brightness = self.style.souffle.lumiere.eclat * self.fire
+	if self.feu then
+		self.feu.Enabled = self.fire > 0.5
+		self.feuLight.Brightness = 4 * self.fire
 	end
 	-- lueur des yeux : pulsation lente, plus vive pendant le rugissement et le souffle
 	if self.neon then

@@ -5,10 +5,10 @@
 #        Glace : grappes de cristaux de glace sur le dos, la queue et la nuque, givre sur les cornes
 #        Forêt : cornes ramifiées en bois de cerf, feuilles le long du dos et de la queue
 #        Ombre : longues épines recourbées sur le dos, runes lumineuses sur les flancs et la queue
-#   2. Caractéristiques de jeu (CARAC) : statistiques, souffle (élément, effet, portée…), passif, affinités.
+#   2. Caractéristiques de jeu (CARAC) : statistiques, vitesses, passif, affinités (souffle commun : SOUFFLE).
 #      Exportées dans LigneesDragon.lua (ModuleScript de données pour les scripts du jeu).
-#   3. Style d'animation (STYLE) : façon de voler (durée de la boucle, amplitude, part de vol plané, ondulation, lourdeur)
-#      et particules du souffle ; exportés dans AnimDragon.lua.
+#   3. Style d'animation (STYLE) : façon de voler (durée de la boucle, amplitude, part de vol plané, ondulation,
+#      lourdeur, balayage) ; exporté dans AnimDragon.lua.
 # Usage : import lignees_v6 as L6 ; L6.orner(model, "Glace") ; L6.CARAC["Glace"] ; L6.STYLE["Glace"]
 import numpy as np
 import trimesh
@@ -366,58 +366,49 @@ ORNEMENTS = {"Feu": feu, "Glace": glace, "Foret": foret, "Ombre": ombre}
 
 # ---------- caractéristiques de jeu ----------
 # Statistiques sur 100 (le dragon de référence a 50 partout) ; vitesses en studs/s (marche : la cadence de
-# AnimDragon suit jusqu'à ~4,8 studs/s sans que les pieds patinent ; au-delà, le dragon décolle). Cycle des affinités :
-# Feu > Glace > Forêt > Ombre > Feu (dégâts x1,25 contre la lignée battue, x0,8 contre celle qui vous bat).
-# souffle : degats = dégâts par seconde passée dans le souffle, duree et recharge en s, portee en studs, angle en
-# degrés (demi-ouverture du cône) ; effet appliqué à la cible (effet_duree en s, effet_valeur selon l'effet).
+# AnimDragon suit jusqu'à ~4,8 studs/s sans que les pieds patinent ; au-delà, le dragon décolle). Cycle des
+# affinités : Feu > Glace > Forêt > Ombre > Feu (dégâts x1,25 contre la lignée battue, x0,8 contre celle qui
+# vous bat). Le souffle est le même pour toutes les lignées (SOUFFLE).
 # Ce sont des valeurs de départ pour l'équilibrage : le jeu les lit dans LigneesDragon.lua.
 CARAC = {
     "Feu": dict(
         nom="Feu", element="Feu", titre="Le Brasier",
-        description="Dragon d'attaque : souffle de flammes qui brûle dans la durée, colère qui monte quand il est blessé.",
+        description="Dragon d'attaque : frappe fort, colère qui monte quand il est blessé.",
         stats=dict(vie=100, attaque=72, defense=50, vitesse=55, agilite=50, endurance=55),
         vitesses=dict(marche=4.0, vol=34, montee=12, pique=60),
-        souffle=dict(nom="Flammes", forme="cone", portee=28, angle=25, degats=18, duree=2.0,
-                     recharge=6, effet="Brulure", effet_duree=4, effet_valeur=4,
-                     texte="Brûlure : 4 dégâts par seconde pendant 4 s."),
         passif=dict(nom="Sang de lave", texte="Immunisé contre la brûlure ; +20 % d'attaque sous 30 % de vie.",
                     immunite="Brulure", seuil_vie=0.3, bonus_attaque=0.2),
         fort_contre="Glace", faible_contre="Ombre"),
     "Glace": dict(
         nom="Glace", element="Glace", titre="Le Givre éternel",
-        description="Dragon défensif : carapace de givre, souffle qui ralentit puis fige la cible, grand planeur.",
+        description="Dragon défensif : carapace de givre, grand planeur.",
         stats=dict(vie=110, attaque=50, defense=75, vitesse=45, agilite=40, endurance=65),
         vitesses=dict(marche=3.5, vol=30, montee=9, pique=55),
-        souffle=dict(nom="Givre", forme="rayon", portee=34, angle=10, degats=12, duree=2.4,
-                     recharge=7, effet="Gel", effet_duree=3, effet_valeur=0.4,
-                     texte="Gel : ralentit de 40 % ; 2 s dans le souffle figent la cible 1,5 s."),
         passif=dict(nom="Carapace de givre", texte="-15 % de dégâts subis ; plane sans perdre d'endurance.",
                     reduction=0.15, plane_gratuit=True),
         fort_contre="Foret", faible_contre="Feu"),
     "Foret": dict(
         nom="Forêt", element="Foret", titre="Le Gardien sylvestre",
-        description="Dragon endurant : beaucoup de vie, se régénère au sol, souffle de spores qui empoisonne une zone.",
+        description="Dragon endurant : beaucoup de vie, se régénère au sol.",
         stats=dict(vie=130, attaque=55, defense=60, vitesse=48, agilite=42, endurance=75),
         vitesses=dict(marche=3.8, vol=28, montee=8, pique=50),
-        souffle=dict(nom="Spores", forme="nuage", portee=18, angle=40, degats=8, duree=2.6,
-                     recharge=8, effet="Poison", effet_duree=6, effet_valeur=3, zone_duree=5,
-                     texte="Poison : 3 dégâts par seconde pendant 6 s ; le nuage reste 5 s au sol."),
         passif=dict(nom="Racines", texte="Au sol et immobile depuis 2 s : régénère 2 % de vie par seconde.",
                     regen=0.02, delai=2),
         fort_contre="Ombre", faible_contre="Glace"),
     "Ombre": dict(
         nom="Ombre", element="Ombre", titre="Le Voile de nuit",
-        description="Dragon rapide et fragile : vole vite, se fond dans l'ombre, souffle qui aveugle.",
+        description="Dragon rapide et fragile : vole vite, se fond dans l'ombre.",
         stats=dict(vie=85, attaque=62, defense=38, vitesse=75, agilite=80, endurance=50),
         vitesses=dict(marche=4.5, vol=42, montee=14, pique=70),
-        souffle=dict(nom="Ténèbres", forme="cone", portee=22, angle=30, degats=14, duree=1.8,
-                     recharge=5, effet="Aveuglement", effet_duree=3, effet_valeur=0.7,
-                     texte="Aveuglement : la vue de la cible se brouille (70 %) pendant 3 s."),
         passif=dict(nom="Voile", texte="Immobile ou de nuit : presque invisible (transparence 0,7) ; "
                                        "première attaque depuis le voile +30 %.",
                     transparence=0.7, bonus_embuscade=0.3),
         fort_contre="Feu", faible_contre="Foret"),
 }
+# souffle commun : degats = dégâts par seconde passée dans le souffle (multipliés par l'attaque et l'affinité
+# côté jeu), duree et recharge en s, portee en studs, angle en degrés (demi-ouverture du cône)
+SOUFFLE = dict(nom="Souffle", forme="cone", portee=28, angle=25, degats=16, duree=2.0, recharge=6,
+               effet="Brulure", effet_duree=4, effet_valeur=4, texte="Brûlure : 4 dégâts par seconde pendant 4 s.")
 AFFINITE_FORT, AFFINITE_FAIBLE = 1.25, 0.8
 
 
@@ -431,51 +422,14 @@ def affinite(attaquant, defenseur):
 
 
 # ---------- style d'animation ----------
-# vol : duree (s, boucle de 4 battements + plané : plus court = bat plus vite), amplitude (x angle des ailes), plane (part de vol plané dans la boucle,
-# 0 = bat tout le temps), ondulation (x mouvements du corps, du cou et de la queue), lourdeur (x montée et
-# descente du corps, x balancement des pattes), balayage (ailes repliées vers l'arrière en vol plané, faucon)
-# souffle : particules (liste d'émetteurs), lumière ; « oeil » = couleur des yeux de la lignée (DragonNeon)
+# vol : duree (s, boucle de 4 battements + plané : plus court = bat plus vite), amplitude (x angle des ailes),
+# plane (part de vol plané dans la boucle, 0 = bat tout le temps), ondulation (x mouvements du corps, du cou et de
+# la queue), lourdeur (x montée et descente du corps, x balancement des pattes), balayage (ailes repliées vers
+# l'arrière en vol plané, faucon). Les particules du souffle sont communes (AnimDragon_modele.lua), teintées de la
+# couleur des yeux de la lignée.
 STYLE = {
-    "Feu": dict(
-        vol=dict(duree=3.6, amplitude=1.0, plane=0.3, ondulation=1.0, lourdeur=1.0, balayage=0.2),
-        souffle=dict(lumiere=dict(portee=16, eclat=4), particules=[
-            dict(nom="Feu", taux=160, vie=(0.35, 0.6), vitesse=(28, 38), angle=9, frein=2,
-                 taille=[(0, 0.6), (0.4, 2.6), (1, 4.5)], transparence=[(0, 0.1), (0.7, 0.4), (1, 1)],
-                 couleurs=[(0, "#FFFFE6"), (0.25, "oeil"), (1, "#3A140C")], lumineux=1),
-            dict(nom="Braises", taux=40, vie=(0.6, 1.1), vitesse=(18, 30), angle=18, frein=1,
-                 taille=[(0, 0.25), (1, 0.05)], transparence=[(0, 0), (1, 1)],
-                 couleurs=[(0, "#FFE14A"), (1, "#FF5A10")], lumineux=1, acceleration=(0, 6, 0))]),
-    ),
-    "Glace": dict(
-        vol=dict(duree=4.4, amplitude=1.1, plane=0.42, ondulation=0.7, lourdeur=0.8, balayage=0.1),
-        souffle=dict(lumiere=dict(portee=14, eclat=2.5), particules=[
-            dict(nom="Givre", taux=140, vie=(0.5, 0.8), vitesse=(30, 40), angle=5, frein=1.5,
-                 taille=[(0, 0.4), (0.5, 1.8), (1, 3.2)], transparence=[(0, 0.2), (0.6, 0.5), (1, 1)],
-                 couleurs=[(0, "#FFFFFF"), (0.3, "oeil"), (1, "#DDF4FF")], lumineux=0.6),
-            dict(nom="Eclats", taux=60, vie=(0.4, 0.7), vitesse=(35, 45), angle=8, frein=0.5,
-                 taille=[(0, 0.35), (1, 0.15)], transparence=[(0, 0), (1, 0.6)],
-                 couleurs=[(0, "#FFFFFF"), (1, "oeil")], lumineux=0.8, rotation=(-180, 180),
-                 vitesse_rotation=(-360, 360))]),
-    ),
-    "Foret": dict(
-        vol=dict(duree=3.2, amplitude=1.15, plane=0.2, ondulation=0.9, lourdeur=1.35, balayage=0.0),
-        souffle=dict(lumiere=dict(portee=12, eclat=1.5), particules=[
-            dict(nom="Spores", taux=90, vie=(1.2, 2.0), vitesse=(12, 18), angle=22, frein=1.2,
-                 taille=[(0, 0.8), (0.5, 3.0), (1, 4.5)], transparence=[(0, 0.3), (0.7, 0.6), (1, 1)],
-                 couleurs=[(0, "oeil"), (0.5, "#8CC23E"), (1, "#3A5A1E")], lumineux=0.3,
-                 acceleration=(0, -1.5, 0)),
-            dict(nom="Pollen", taux=50, vie=(1.5, 2.5), vitesse=(8, 14), angle=30, frein=0.8,
-                 taille=[(0, 0.2), (1, 0.12)], transparence=[(0, 0), (1, 1)],
-                 couleurs=[(0, "oeil"), (1, "#FFF6A0")], lumineux=1, acceleration=(0, 1.0, 0))]),
-    ),
-    "Ombre": dict(
-        vol=dict(duree=3.0, amplitude=0.85, plane=0.36, ondulation=1.5, lourdeur=0.7, balayage=1.0),
-        souffle=dict(lumiere=dict(portee=10, eclat=1.2), particules=[
-            dict(nom="Tenebres", taux=150, vie=(0.4, 0.7), vitesse=(24, 32), angle=12, frein=2,
-                 taille=[(0, 0.8), (0.5, 3.0), (1, 5.0)], transparence=[(0, 0.15), (0.6, 0.45), (1, 1)],
-                 couleurs=[(0, "oeil"), (0.35, "#2A1440"), (1, "#05030A")], lumineux=0),
-            dict(nom="Volutes", taux=45, vie=(0.8, 1.3), vitesse=(14, 22), angle=20, frein=1.5,
-                 taille=[(0, 0.3), (0.5, 0.6), (1, 0.1)], transparence=[(0, 0), (1, 1)],
-                 couleurs=[(0, "oeil"), (1, "#6A3E9A")], lumineux=1, acceleration=(0, 2.5, 0))]),
-    ),
+    "Feu": dict(vol=dict(duree=3.6, amplitude=1.0, plane=0.3, ondulation=1.0, lourdeur=1.0, balayage=0.2)),
+    "Glace": dict(vol=dict(duree=4.4, amplitude=1.1, plane=0.42, ondulation=0.7, lourdeur=0.8, balayage=0.1)),
+    "Foret": dict(vol=dict(duree=3.2, amplitude=1.15, plane=0.2, ondulation=0.9, lourdeur=1.35, balayage=0.0)),
+    "Ombre": dict(vol=dict(duree=3.0, amplitude=0.85, plane=0.36, ondulation=1.5, lourdeur=0.7, balayage=1.0)),
 }

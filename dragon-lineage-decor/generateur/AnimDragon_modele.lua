@@ -49,7 +49,7 @@ local TABLES = {
 }
 
 -- style de chaque lignée (lignees_v6.py) : vol (durée de la boucle, amplitude, part de plané, ondulation,
--- lourdeur, balayage), vitesses de référence (studs/s), couleur des yeux, particules et lumière du souffle
+-- lourdeur, balayage), vitesses de référence (studs/s), couleur des yeux (teinte du souffle, commun à toutes)
 local LIGNEES = {
 {{LIGNEES}}
 }
@@ -358,60 +358,39 @@ function Anim.new(model: Model, nomLignee: string?)
 	return self
 end
 
-local function seqN(pts)
-	local k = {}
-	for _, p in pts do
-		table.insert(k, NumberSequenceKeypoint.new(p[1], p[2]))
-	end
-	return NumberSequence.new(k)
-end
-
--- particules et lumière du souffle, sur un os « Souffle » ajouté sous Head ; réglages et couleurs propres à la
--- lignée (flammes et braises, givre et éclats, spores et pollen, ténèbres et volutes) ; « oeil » = couleur des yeux
+-- particules et lumière du souffle (communes aux lignées), sur un os « Souffle » ajouté sous Head ; teintées de la
+-- couleur des yeux de la lignée
 function Anim:_creerFeu()
 	local head = self.bones.Head
 	if typeof(head) ~= "Instance" then
 		return
 	end
-	local st = self.style or LIGNEES.Feu
-	local oeil = Color3.fromHex(st.oeil)
+	local c = Color3.fromHex((self.style or LIGNEES.Feu).oeil)
 	local att = Instance.new("Bone")                      -- os enfant sans poids : ne déforme rien, sert de point
 	att.Name = "Souffle"                                  -- d'émission (un Bone est un Attachment)
 	att.CFrame = BOUCHE
 	att.Parent = head
-	self.feux = {}
-	for _, p in st.souffle.particules do
-		local pe = Instance.new("ParticleEmitter")
-		pe.Name = p.nom
-		pe.Enabled = false
-		pe.EmissionDirection = Enum.NormalId.Front
-		pe.Rate = p.taux
-		pe.Lifetime = NumberRange.new(p.vie[1], p.vie[2])
-		pe.Speed = NumberRange.new(p.vitesse[1], p.vitesse[2])
-		pe.SpreadAngle = Vector2.new(p.angle, p.angle)
-		pe.Drag = p.frein
-		pe.Size = seqN(p.taille)
-		pe.Transparency = seqN(p.transparence)
-		local k = {}
-		for _, c in p.couleurs do
-			table.insert(k, ColorSequenceKeypoint.new(c[1], c[2] == "oeil" and oeil or Color3.fromHex(c[2])))
-		end
-		pe.Color = ColorSequence.new(k)
-		pe.LightEmission = p.lumineux
-		if p.acceleration then
-			pe.Acceleration = Vector3.new(p.acceleration[1], p.acceleration[2], p.acceleration[3])
-		end
-		if p.rotation then
-			pe.Rotation = NumberRange.new(p.rotation[1], p.rotation[2])
-			pe.RotSpeed = NumberRange.new(p.vitesse_rotation[1], p.vitesse_rotation[2])
-		end
-		pe.Parent = att
-		table.insert(self.feux, pe)
-	end
+	local pe = Instance.new("ParticleEmitter")
+	pe.Name = "Feu"
+	pe.Enabled = false
+	pe.EmissionDirection = Enum.NormalId.Front
+	pe.Rate = 160
+	pe.Lifetime = NumberRange.new(0.35, 0.6)
+	pe.Speed = NumberRange.new(28, 38)
+	pe.SpreadAngle = Vector2.new(9, 9)
+	pe.Drag = 2
+	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(0.4, 2.6),
+		NumberSequenceKeypoint.new(1, 4.5) })
+	pe.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(0.7, 0.4),
+		NumberSequenceKeypoint.new(1, 1) })
+	pe.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.new(1, 1, 0.9)), ColorSequenceKeypoint.new(0.25, c),
+		ColorSequenceKeypoint.new(1, c:Lerp(Color3.new(0.1, 0.05, 0.05), 0.7)) })
+	pe.LightEmission = 1
+	pe.Parent = att
 	local light = Instance.new("PointLight")
-	light.Color, light.Range, light.Brightness = oeil, st.souffle.lumiere.portee, 0
+	light.Color, light.Range, light.Brightness = c, 16, 0
 	light.Parent = att
-	self.feu, self.feuLight, self.feuAtt = self.feux[1], light, att
+	self.feu, self.feuLight, self.feuAtt = pe, light, att
 end
 
 function Anim:play(name: string, fondu: number?)
@@ -728,11 +707,9 @@ function Anim:step(dt)
 	self.last = cf
 	-- feu : particules et lumière pendant le souffle
 	self.fire = fire or 0
-	if self.feux then
-		for _, pe in self.feux do
-			pe.Enabled = self.fire > 0.5
-		end
-		self.feuLight.Brightness = self.style.souffle.lumiere.eclat * self.fire
+	if self.feu then
+		self.feu.Enabled = self.fire > 0.5
+		self.feuLight.Brightness = 4 * self.fire
 	end
 	-- lueur des yeux : pulsation lente, plus vive pendant le rugissement et le souffle
 	if self.neon then
