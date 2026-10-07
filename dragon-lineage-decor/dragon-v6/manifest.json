@@ -385,8 +385,8 @@
   ],
   "meshes": {
     "Dragon": {
-      "vertices": 19912,
-      "triangles": 9724
+      "vertices": 23352,
+      "triangles": 15180
     },
     "DragonNeon": {
       "vertices": 400,

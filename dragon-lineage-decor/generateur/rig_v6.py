@@ -1,7 +1,8 @@
 # Rig du dragon v6 : un seul maillage déformé par un squelette (skinning), au lieu de 20 morceaux rigides.
 #   - squelette : bassin / dos / poitrail (tronc souple), 3 os de cou, tête, mâchoire, paupières et pupilles,
 #     6 os de queue, pattes en 3 os (avant : bras, avant-bras, main ; arrière : cuisse, jambe, pied = 3 morceaux),
-#     ailes en 3 os + 4 doigts (la membrane se plie au coude au lieu de se couper)
+#     ailes en 3 os + 4 doigts ; membrane redécoupée et pondérée en douceur sur les mêmes os pour les deux
+#     morceaux de l'aile (elle se courbe et reste attachée au flanc au lieu de se casser en se déployant)
 #   - poids : par distance aux os autorisés pour chaque morceau d'origine (4 os max par sommet), ce qui adoucit
 #     les articulations ; commissures de la gueule partagées entre tête et mâchoire (elles s'étirent à l'ouverture)
 #   - pose : rotations locales autour de la tête de chaque os (repères de repos alignés sur le monde),
@@ -82,11 +83,23 @@ def allowed(part, layer, sd):
         return ["Chest"] + [n + sd for n in ("FrontUpperLeg", "FrontLowerLeg", "FrontFoot")]
     if part.startswith("Back"):
         return ["Root"] + [n + sd for n in ("BackUpperLeg", "BackLowerLeg", "BackFoot")]
-    if part.startswith("WingUpper"):
-        return ["Chest", "Spine", "Root"] + [n + sd for n in ("WingUpper", "WingLower")]
-    if part.startswith("WingLower"):
-        return [n + sd for n in ("WingUpper", "WingLower")] + [f"WingFinger{j + 1}" + sd for j in range(4)]
+    if part.startswith("Wing"):                # mêmes os pour les deux morceaux : la membrane reste d'un seul tenant
+        return (["Chest", "Spine", "Root"] + [n + sd for n in ("WingUpper", "WingLower")]
+                + [f"WingFinger{j + 1}" + sd for j in range(4)])
     raise KeyError(part)
+
+
+MEMBRANE = ("membrane", "membrane2")
+MEMBRANE_SIZE = 0.9        # longueur max d'arête de la membrane avant skinning (studs)
+MEMBRANE_POWER = 3.5       # poids plus doux que les os : la membrane s'étire au lieu de se plier net
+
+
+def soft(m):
+    """Membrane redécoupée en petits triangles pour qu'elle se courbe au lieu de casser le long d'une diagonale."""
+    V, F = trimesh.remesh.subdivide_to_size(np.asarray(m.vertices), np.asarray(m.faces), MEMBRANE_SIZE)
+    out = trimesh.Trimesh(V, F, process=False)
+    out.unmerge_vertices()                     # facettes plates, comme le reste du modèle
+    return out
 
 
 def seg_dist(P, a, b):
@@ -104,10 +117,15 @@ class Rig:
         for part, seg in self.model.items():
             sd = "L" if part.endswith("L") else "R"
             for layer, m in seg["layers"].items():
+                slots = seg.get("slots", {}).get(layer)
+                pw = power
+                if part.startswith("Wing") and layer in MEMBRANE and slots is None:
+                    m = soft(m)
+                    pw = MEMBRANE_POWER
                 V = np.asarray(m.vertices, float)
-                idx, w = self.weights(part, layer, sd, V, power)
+                idx, w = self.weights(part, layer, sd, V, pw)
                 self.layers.append((part, layer, V, np.asarray(m.vertex_normals, float), np.asarray(m.faces),
-                                    seg.get("slots", {}).get(layer), idx, w))
+                                    slots, idx, w))
 
     def weights(self, part, layer, sd, V, power):
         names = allowed(part, layer, sd)
