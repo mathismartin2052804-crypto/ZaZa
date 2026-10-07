@@ -44,12 +44,8 @@ for case in lua:
         W[j] = (world(parent[j]) if j in parent else np.eye(4)) @ M
         return W[j]
     Mj = np.stack([world(j) @ IBM[k] for k, j in enumerate(joints)])
-    # poses du générateur ; paupières et pupilles prises du Luau (le regard/clignement diffère volontairement)
+    # poses du générateur, yeux compris (clignements, saccades et regard sont les mêmes des deux côtés)
     P, off = FN[case["anim"]](case["t"])
-    P = dict(P)
-    for n in names:
-        if n.startswith(("Eyelid", "Pupil")):
-            P[n] = T[n][:3, :3]
     ref = np.concatenate([it[0] for it in rig.items(P, off)])
     err = 0
     for m in g["meshes"]:

@@ -1,11 +1,12 @@
 # Démo d'animations du dragon v6 sur le rig à os (rig_v6.py) : un seul maillage déformé, articulations sans trous.
-#   Course : galop (pattes avant puis arrière, côtés décalés), patte arrière en 3 segments (cuisse, jambe, pied),
-#            tronc souple (le dos ondule de haut en bas et de côté), cou et queue en contrepoids
+#   Course : galop lourd refait (course_v6.py) : pieds posés au sol par IK (à plat pendant l'appui, roulent sur
+#            les griffes au décollage), corps qui ne rebondit plus, tête stabilisée, cou et queue en retard
 #   Vol    : battements avec le bout d'aile en retard ; pattes avant repliées sous le poitrail, pattes arrière
 #            qui traînent vers l'arrière (moins relevées qu'en v5)
 #   Rugissement : se cabre, ouvre la gueule (commissures étirées, lueur de gorge), plisse les yeux, ailes
 #            déployées d'un seul tenant (la membrane se plie au coude au lieu de se couper)
-#   Repos  : respiration, la tête regarde autour, les pupilles suivent, clignements
+#   Repos  : respiration ; les yeux sautent d'un point à l'autre (saccades, aussi en hauteur), la tête suit plus
+#            lentement pendant que l'œil revient au centre ; micro-mouvements, double clignement, paupières lourdes
 # Conventions de rendu.rot : +ex lève l'avant / balance vers l'avant ce qui pend sous l'os ; +ez lève l'aile droite.
 # Usage : python3 demo_animations_v6.py  ->  ../demo-animations-v6.gif
 import os
@@ -13,6 +14,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import rendu
 import rig_v6 as RG
+import course_v6 as CO
 import corps_v4 as V4
 from tete_v5 import FONT_B
 
@@ -32,10 +34,11 @@ def ease(a, b, t):
     return x * x * (3 - 2 * x)
 
 
-def eyes(close=0.0, look=0.0):
-    """Paupières (0 ouvertes, 1 fermées) et regard (degrés, + = vers la droite du dragon)."""
+def eyes(close=0.0, look=0.0, up=0.0):
+    """Paupières (0 ouvertes, 1 fermées) et regard (degrés, + = vers la droite du dragon / vers le haut)."""
+    close = float(np.clip(close, 0, 1))
     P = {"EyelidR": RG.lid_pose(close, "R"), "EyelidL": RG.lid_pose(close, "L")}
-    P["PupilR"] = P["PupilL"] = (0, -look, 0)
+    P["PupilR"], P["PupilL"] = RG.pupil_pose(look, up, "R"), RG.pupil_pose(look, up, "L")
     return P
 
 
@@ -50,30 +53,9 @@ def folded(P):
 
 
 def course(t):
-    w = 2 * np.pi * 2 * t                                      # 2 foulées par boucle
-    P = folded({})
-    # tronc souple : le dos se plie (galop) et ondule de côté
-    P["Root"] = (3 * np.sin(2 * w), 4 * np.sin(w), 0)
-    P["Spine"] = (-5 * np.sin(2 * w + 0.6), -5 * np.sin(w + 0.4), 0)
-    P["Chest"] = (-4 * np.sin(2 * w + 1.2), -4 * np.sin(w + 0.8), 0)
-    P["Neck1"] = (-6 + 5 * np.sin(2 * w + 1.8), 3 * np.sin(w + 1.2), 0)
-    P["Neck2"] = (-3 + 3 * np.sin(2 * w + 2.2), 0, 0)
-    P["Head"] = (6 - 6 * np.sin(2 * w + 2.6), 0, 0)
-    P["Jaw"] = (-5 - 6 * max(0, np.sin(2 * w)), 0, 0)
+    P, off = CO.pose(t)
     P.update(eyes(0.15, 0))
-    # galop transversal : avant droite, avant gauche, arrière droite, arrière gauche
-    for sd, ph_f, ph_b in (("R", 0.0, np.pi), ("L", 0.6, np.pi + 0.6)):
-        f, b = w + ph_f, w + ph_b
-        sf, sb = max(0, np.cos(f)), max(0, np.cos(b))           # phase de retour (patte en l'air) : on replie
-        P["FrontUpperLeg" + sd] = (36 * np.sin(f), 0, 0)
-        P["FrontLowerLeg" + sd] = (30 * sf, 0, 0)
-        P["FrontFoot" + sd] = (-75 * sf, 0, 0)
-        P["BackUpperLeg" + sd] = (32 * np.sin(b) + 4, 0, 0)
-        P["BackLowerLeg" + sd] = (-45 * sb, 0, 0)               # jambe : genou vers l'avant, jarret vers l'arrière
-        P["BackFoot" + sd] = (60 * sb - 10 * (1 - sb), 0, 0)    # pied : se replie puis repousse le sol
-    for i in range(6):
-        P[f"Tail{i + 1}"] = (2 * np.sin(2 * w - 0.5 * i), 7 * np.sin(w - 0.7 * i), 0)
-    return P, np.array([0, 0.5 * abs(np.sin(2 * w)) - 0.25, 0])
+    return P, off
 
 
 def vol(t):
@@ -124,23 +106,47 @@ def rugit(t):
     return P, np.array([0, 0.45 * a - 0.15 * r, 0])
 
 
+# regard au repos : (instant, cap, hauteur) en degrés ; l'œil y saute en ~50 ms, la tête suit en ~0,4 s
+SACCADES = [(0.06, 18, 4), (0.20, 25, -3), (0.34, -3, 1), (0.45, -22, 5), (0.58, -27, -4), (0.72, -6, 7),
+            (0.84, 3, -1)]
+
+
+def cible(t, k, dur, delai=0.0):
+    """Valeur k (1 cap, 2 hauteur) du regard à l'instant t, transitions de durée dur (boucle sans à-coup)."""
+    v = SACCADES[-1][k]
+    for i, s in enumerate(SACCADES):
+        v += (s[k] - SACCADES[i - 1][k]) * ease(s[0] + delai, s[0] + delai + dur, t)
+    return v
+
+
+def regard_repos(t):
+    """(cap de la tête, hauteur de la tête, cap de l'œil, hauteur de l'œil, paupières) au repos."""
+    tete_cap, tete_haut = 0.65 * cible(t, 1, 0.1, 0.02), 0.5 * cible(t, 2, 0.1, 0.02)
+    tau = 2 * np.pi * t
+    cap = np.clip(cible(t, 1, 0.012) - tete_cap, -18, 18) + 0.7 * np.sin(19 * tau) + 0.4 * np.sin(31 * tau + 1)
+    haut = np.clip(cible(t, 2, 0.012) - tete_haut, -9, 9) + 0.5 * np.sin(23 * tau + 2)
+    lourd = 0.35 * ease(0.58, 0.62, t) * (1 - ease(0.70, 0.73, t))          # paupières lourdes un instant
+    lid = 0.08 + lourd - 0.02 * haut + max(blink(t, 0.45, 0.03), blink(t, 0.83, 0.03), blink(t, 0.89, 0.03))
+    return tete_cap, tete_haut, cap, haut, lid
+
+
 def repos(t):
     br = np.sin(2 * np.pi * t)                                # une respiration par boucle
-    look = 22 * np.sin(2 * np.pi * t + 0.5)
+    tc, th, cap, haut, lid = regard_repos(t)
     P = folded({"Chest": (1.5 * br, 0, 0), "Spine": (-1 * br, 0, 0),
-                "Neck1": (2 * br, 0.3 * look, 0), "Neck2": (1 * br, 0.3 * look, 0), "Neck3": (0, 0.2 * look, 0),
-                "Head": (-2 * br, 0.2 * look, 0), "Jaw": (-3 - 3 * max(0, br), 0, 0)})
+                "Neck1": (2 * br, 0.3 * tc, 0), "Neck2": (1 * br, 0.3 * tc, 0), "Neck3": (0.4 * th, 0.2 * tc, 0),
+                "Head": (-2 * br + 0.6 * th, 0.2 * tc, 0), "Jaw": (-3 - 3 * max(0, br), 0, 0)})
     P.update(sides("WingUpper", (0, -38, -22 + 2 * br)))
     for i in range(6):
         P[f"Tail{i + 1}"] = (1.5 * np.sin(2 * np.pi * t - 0.5 * i), 6 * np.sin(2 * np.pi * t - 0.6 * i), 0)
-    P.update(eyes(max(blink(t, 0.3), blink(t, 0.78)), 0.6 * look))
+    P.update(eyes(lid, cap, haut))
     return P, np.array([0, 0.05 * br, 0])
 
 
 ANIMS = [("Course (galop)", course, C + [-30, 7, -30], C + [0, 0.5, -1.5], 42),
          ("Vol", vol, C + [-34, 2, -26], C + [0, 4.0, -1.0], 50),
          ("Rugissement", rugit, C + [-26, 4, -32], C + [0, 2.0, -2.5], 44),
-         ("Repos : regard et clignements", repos, None, None, 30)]
+         ("Repos : regard, saccades et clignements", repos, None, None, 34)]
 
 
 def main():
@@ -156,7 +162,7 @@ def main():
         for j, (nom, fn, eye, tg, fov) in enumerate(ANIMS):
             pose, off = fn(t)
             if eye is None:                                   # gros plan sur la tête pour le repos
-                eye, tg = hc + [-10, 3, -12], hc
+                eye, tg = hc + [-17, 4, -19], hc + [0.3, 0.4, 0.8]
             x0, y0 = (j % 2) * cw, (j // 2) * ch
             im.paste(rendu.render(rig.items(pose, off), eye, tg, size=(cw - 6, ch - 6), fov=fov, ss=1), (x0, y0))
             dr.text((x0 + 14, y0 + 10), nom, font=font, fill=(255, 210, 122))

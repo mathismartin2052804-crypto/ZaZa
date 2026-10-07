@@ -24,7 +24,9 @@ for name in string.gmatch(string.match(src, "local BONES = {(.-)}"), '"(%w+)"') 
 	table.insert(list, b); bones[name] = b
 end
 local out = {}
-for _, case in { { "Course", 0.1 }, { "Vol", 0.125 }, { "Vol", 0.3 }, { "Rugissement", 0.6 }, { "Repos", 0.5 } } do
+for _, case in { { "Course", 0.1 }, { "Course", 0.37 }, { "Course", 0.8113 }, { "Vol", 0.125 }, { "Vol", 0.62 },
+	{ "Rugissement", 0.12 }, { "Rugissement", 0.6 }, { "Repos", 0.0625 }, { "Repos", 0.45 }, { "Repos", 0.66 },
+	{ "Repos", 0.887 } } do
 	local d = Anim.new(model)
 	d:play(case[1])
 	d.blinkT = 10

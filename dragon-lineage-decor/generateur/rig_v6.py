@@ -207,3 +207,16 @@ def axis_angle(ax, ang):
     ax = np.asarray(ax, float) / np.linalg.norm(ax)
     K = np.array([[0, -ax[2], ax[1]], [ax[2], 0, -ax[0]], [-ax[1], ax[0], 0]])
     return np.eye(3) + np.sin(ang) * K + (1 - np.cos(ang)) * K @ K
+
+
+def pupil_axis(side="R"):
+    """Axe (monde) pour lever/baisser le regard : perpendiculaire à l'axe de l'œil et à la verticale."""
+    sk = {b[0]: b for b in skeleton()}
+    _, _, h, t = sk["Pupil" + side]
+    ax = np.cross(np.subtract(t, h), (0, 1, 0))           # + = vers le haut, des deux côtés
+    return ax / np.linalg.norm(ax)
+
+
+def pupil_pose(look, up, side="R"):
+    """Pupille : regard horizontal (degrés, + = vers la droite du dragon) puis vertical (+ = vers le haut)."""
+    return rendu.rot(0, -look, 0) @ axis_angle(pupil_axis(side), np.radians(up))
