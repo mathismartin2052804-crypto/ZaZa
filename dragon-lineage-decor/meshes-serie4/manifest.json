@@ -27,5 +27,104 @@
         "volume": 1.342
       }
     }
+  },
+  {
+    "name": "Dragon_Skull_v3_YeuxSombres",
+    "tris": 1188,
+    "size_studs": [
+      12.0,
+      10.1,
+      10.6
+    ],
+    "parts": {
+      "Bones": {
+        "tris": 620,
+        "color": "#CFC8B4",
+        "material": "SmoothPlastic",
+        "volume": 66.625
+      },
+      "Horns": {
+        "tris": 416,
+        "color": "#5E5548",
+        "material": "SmoothPlastic",
+        "volume": 17.135
+      },
+      "Sockets": {
+        "tris": 152,
+        "color": "#0E0E10",
+        "material": "SmoothPlastic",
+        "volume": 1.314
+      }
+    }
+  },
+  {
+    "name": "Dragon_Skull_v3_YeuxBraise",
+    "tris": 1220,
+    "size_studs": [
+      12.0,
+      10.1,
+      10.6
+    ],
+    "parts": {
+      "Bones": {
+        "tris": 620,
+        "color": "#CFC8B4",
+        "material": "SmoothPlastic",
+        "volume": 66.625
+      },
+      "Horns": {
+        "tris": 416,
+        "color": "#5E5548",
+        "material": "SmoothPlastic",
+        "volume": 17.135
+      },
+      "Sockets": {
+        "tris": 152,
+        "color": "#0E0E10",
+        "material": "SmoothPlastic",
+        "volume": 1.314
+      },
+      "Eyes": {
+        "tris": 32,
+        "color": "#FF5418",
+        "material": "Neon",
+        "volume": 0.1
+      }
+    }
+  },
+  {
+    "name": "Dragon_Skull_v3_YeuxCyan",
+    "tris": 1220,
+    "size_studs": [
+      12.0,
+      10.1,
+      10.6
+    ],
+    "parts": {
+      "Bones": {
+        "tris": 620,
+        "color": "#CFC8B4",
+        "material": "SmoothPlastic",
+        "volume": 66.625
+      },
+      "Horns": {
+        "tris": 416,
+        "color": "#5E5548",
+        "material": "SmoothPlastic",
+        "volume": 17.135
+      },
+      "Sockets": {
+        "tris": 152,
+        "color": "#0E0E10",
+        "material": "SmoothPlastic",
+        "volume": 1.314
+      },
+      "Eyes": {
+        "tris": 32,
+        "color": "#6FE3FF",
+        "material": "Neon",
+        "volume": 0.1
+      }
+    }
   }
 ]

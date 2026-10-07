@@ -12,7 +12,8 @@ import assets2
 from assets3 import C, PART_STYLE, _section
 
 
-def skull_v3(rng, s=1.0):
+def skull_v3(rng, s=1.0, eyes="sombre"):
+    # eyes : "v3" (première proposition), "sombre", "braise" (lueur orange) ou "cyan" (comme les runes)
     out = {"Bones": [], "Horns": [], "Sockets": []}
     up = math.pi / 2
     brow = [(up - 0.7, 0.42, 0.26), (up + 0.7, 0.42, 0.26)]
@@ -69,13 +70,28 @@ def skull_v3(rng, s=1.0):
             tip = base + [side * 0.9, 0.35, -L]
             v, f = tube([base, (base + tip) / 2, tip], [0.38, 0.24, 0], 4, tip=True)
             out["Horns"].append((v, f))
-        # orbite : grande, profonde, inclinée vers le museau (regard méchant)
-        v, f = blob([0, 0, 0], 1.0, (0.36, 0.5, 0.78), 0.05, rng, subdiv=1)
-        v = transform(v, rot_matrix_y(side * 0.45) @ rot_matrix_z(side * 0.4), [side * 1.5, 3.3, -0.35])
-        out["Sockets"].append((v, f))
+        # orbite : amande anguleuse inclinée (coin avant bas, coin arrière haut = regard méchant),
+        # sortie un peu de la surface et sous l'arcade pour être lisible de face et de profil
+        if eyes != "v3":
+            ex = side * 1.66
+            path = [[ex - side * 0.08, 2.9, 0.75], [ex + side * 0.1, 3.12, 0.1], [ex + side * 0.14, 3.42, -0.6], [ex, 3.8, -1.35]]
+            v, f = tube(path, [0.0, 0.58, 0.5, 0.0], 6, tip=True)
+            v = np.array(v)
+            v[:, 0] = ex + (v[:, 0] - ex) * 0.6           # aplatie contre le crâne
+            out["Sockets"].append((v.tolist(), f))
+            if eyes in ("braise", "cyan"):
+                # petite lueur au fond de l'orbite (pupille fendue)
+                v, f = tube([[ex + side * 0.2, 3.0, 0.3], [ex + side * 0.3, 3.28, -0.3], [ex + side * 0.22, 3.6, -0.85]],
+                            [0.0, 0.24, 0.0], 4, tip=True)
+                out.setdefault("Eyes", []).append((v, f))
+        else:
+            v, f = blob([0, 0, 0], 1.0, (0.36, 0.5, 0.78), 0.05, rng, subdiv=1)
+            v = transform(v, rot_matrix_y(side * 0.45) @ rot_matrix_z(side * 0.4), [side * 1.5, 3.3, -0.35])
+            out["Sockets"].append((v, f))
         # fenêtre temporale
-        v, f = blob([0, 0, 0], 1.0, (0.22, 0.42, 0.55), 0.05, rng, subdiv=0)
-        v = transform(v, rot_matrix_y(side * 0.2), [side * 1.85, 2.6, -2.2])
+        ts = (0.22, 0.42, 0.55) if eyes == "v3" else (0.18, 0.26, 0.38)   # plus discrète : ne doit pas passer pour un 2e œil
+        v, f = blob([0, 0, 0], 1.0, ts, 0.05, rng, subdiv=0)
+        v = transform(v, rot_matrix_y(side * 0.2), [side * 1.85, 2.5 if eyes == "v3" else 2.2, -2.4])
         out["Sockets"].append((v, f))
         # narine
         v, f = blob([0, 0, 0], 1.0, (0.2, 0.17, 0.4), 0.05, rng, subdiv=0)
@@ -104,17 +120,24 @@ def skull_v3(rng, s=1.0):
     return {p: [(np.array(v) * s, f) for v, f in items] for p, items in out.items()}
 
 
-def dragon_skull_v3(name, seed):
+EYE_COLORS = {"braise": "#FF5418", "cyan": "#6FE3FF"}
+
+
+def dragon_skull_v3(name, seed, eyes="sombre"):
     old = assets2.skull_parts
-    assets2.skull_parts = skull_v3
+    assets2.skull_parts = lambda rng, s=1.0: skull_v3(rng, s, eyes)
     try:
         a = assets2.dragon_skull(name, seed, 1.0)
     finally:
         assets2.skull_parts = old
     for pname, p in a.parts.items():
         p["color"], p["material"] = PART_STYLE.get(pname, (C["bone"], "SmoothPlastic"))
+        if pname == "Eyes":
+            p["color"], p["material"] = EYE_COLORS[eyes], "Neon"
     return a
 
 
 def all_assets():
-    return [dragon_skull_v3("Dragon_Skull_v3", 22)]
+    return [dragon_skull_v3("Dragon_Skull_v3_YeuxSombres", 22, "sombre"),
+            dragon_skull_v3("Dragon_Skull_v3_YeuxBraise", 22, "braise"),
+            dragon_skull_v3("Dragon_Skull_v3_YeuxCyan", 22, "cyan")]
