@@ -137,7 +137,43 @@ def dragon_skull_v3(name, seed, eyes="sombre"):
     return a
 
 
+# ---------------- squelette / portes avec le crâne v3 (yeux braise, choisi par Will) ----------------
+import assets3
+
+
+def _with_skull_v3(builder, *args, skull_scale=1.0, eyes="braise"):
+    old = assets2.skull_parts
+    assets2.skull_parts = lambda rng, s=1.0: skull_v3(rng, s * skull_scale, eyes)
+    try:
+        a = builder(*args)
+    finally:
+        assets2.skull_parts = old
+    for pname, p in a.parts.items():  # parties créées sans couleur (Horns, Eyes)
+        if pname == "Eyes":
+            p["color"], p["material"] = EYE_COLORS[eyes], "Neon"
+        elif p["color"] is None or pname in PART_STYLE:
+            p["color"], p["material"] = PART_STYLE.get(pname, (C["bone"], "SmoothPlastic"))
+    return a
+
+
+def gate_lair_v3(name, seed):
+    # le crâne v3 a des cornes plus larges : un peu plus petit que le v2 (0.62 × 1.45) pour rester entre les piliers
+    a = _with_skull_v3(assets2.lair_gate, name, seed, skull_scale=1.25)
+    del a.parts["Flame"]
+    for side in (-1, 1):
+        assets3.flame_cluster(a, (side * 8.0, 12.6, 0.9), 3.0, 0.95, seed + side, outer=5, coals=False)
+    return a
+
+
 def all_assets():
+    return [dragon_skull_v3("Dragon_Skull_v3", 22, "braise"),
+            _with_skull_v3(assets2.dragon_skeleton, "Dragon_Skeleton_v3", 21),
+            gate_lair_v3("Gate_Lair_v3", 23),
+            _with_skull_v3(assets2.egg_road_arch, "Gate_EggRoad_v3", 24, skull_scale=1.1)]
+
+
+def eye_variants():
+    """Les 3 variantes d'yeux comparées avant le choix (gardées pour mémoire)."""
     return [dragon_skull_v3("Dragon_Skull_v3_YeuxSombres", 22, "sombre"),
             dragon_skull_v3("Dragon_Skull_v3_YeuxBraise", 22, "braise"),
             dragon_skull_v3("Dragon_Skull_v3_YeuxCyan", 22, "cyan")]

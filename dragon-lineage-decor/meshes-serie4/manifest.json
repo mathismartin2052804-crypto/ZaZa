@@ -1,64 +1,6 @@
 [
   {
     "name": "Dragon_Skull_v3",
-    "tris": 1276,
-    "size_studs": [
-      12.0,
-      10.1,
-      10.6
-    ],
-    "parts": {
-      "Bones": {
-        "tris": 620,
-        "color": "#CFC8B4",
-        "material": "SmoothPlastic",
-        "volume": 66.625
-      },
-      "Horns": {
-        "tris": 416,
-        "color": "#5E5548",
-        "material": "SmoothPlastic",
-        "volume": 17.135
-      },
-      "Sockets": {
-        "tris": 240,
-        "color": "#0E0E10",
-        "material": "SmoothPlastic",
-        "volume": 1.342
-      }
-    }
-  },
-  {
-    "name": "Dragon_Skull_v3_YeuxSombres",
-    "tris": 1188,
-    "size_studs": [
-      12.0,
-      10.1,
-      10.6
-    ],
-    "parts": {
-      "Bones": {
-        "tris": 620,
-        "color": "#CFC8B4",
-        "material": "SmoothPlastic",
-        "volume": 66.625
-      },
-      "Horns": {
-        "tris": 416,
-        "color": "#5E5548",
-        "material": "SmoothPlastic",
-        "volume": 17.135
-      },
-      "Sockets": {
-        "tris": 152,
-        "color": "#0E0E10",
-        "material": "SmoothPlastic",
-        "volume": 1.314
-      }
-    }
-  },
-  {
-    "name": "Dragon_Skull_v3_YeuxBraise",
     "tris": 1220,
     "size_studs": [
       12.0,
@@ -93,37 +35,155 @@
     }
   },
   {
-    "name": "Dragon_Skull_v3_YeuxCyan",
-    "tris": 1220,
+    "name": "Dragon_Skeleton_v3",
+    "tris": 3322,
     "size_studs": [
-      12.0,
-      10.1,
-      10.6
+      27.4,
+      18.4,
+      65.0
     ],
     "parts": {
       "Bones": {
-        "tris": 620,
+        "tris": 2722,
         "color": "#CFC8B4",
         "material": "SmoothPlastic",
-        "volume": 66.625
-      },
-      "Horns": {
-        "tris": 416,
-        "color": "#5E5548",
-        "material": "SmoothPlastic",
-        "volume": 17.135
+        "volume": 262.353
       },
       "Sockets": {
         "tris": 152,
         "color": "#0E0E10",
         "material": "SmoothPlastic",
-        "volume": 1.314
+        "volume": 2.572
+      },
+      "Horns": {
+        "tris": 416,
+        "color": "#5E5548",
+        "material": "SmoothPlastic",
+        "volume": 33.467
       },
       "Eyes": {
         "tris": 32,
-        "color": "#6FE3FF",
+        "color": "#FF5418",
         "material": "Neon",
-        "volume": 0.1
+        "volume": 0.195
+      }
+    }
+  },
+  {
+    "name": "Gate_Lair_v3",
+    "tris": 3056,
+    "size_studs": [
+      20.8,
+      19.7,
+      8.4
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 192,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 189.89
+      },
+      "Bones": {
+        "tris": 716,
+        "color": "#CFC8B4",
+        "material": "SmoothPlastic",
+        "volume": 46.748
+      },
+      "Sign": {
+        "tris": 36,
+        "color": "#4A3426",
+        "material": "Wood",
+        "volume": 7.179
+      },
+      "Sockets": {
+        "tris": 152,
+        "color": "#0E0E10",
+        "material": "SmoothPlastic",
+        "volume": 0.612
+      },
+      "Horns": {
+        "tris": 416,
+        "color": "#5E5548",
+        "material": "SmoothPlastic",
+        "volume": 7.976
+      },
+      "Eyes": {
+        "tris": 32,
+        "color": "#FF5418",
+        "material": "Neon",
+        "volume": 0.046
+      },
+      "Flame": {
+        "tris": 1008,
+        "color": "#FF5418",
+        "material": "Neon",
+        "volume": 3.311
+      },
+      "FlameCore": {
+        "tris": 504,
+        "color": "#FFC23A",
+        "material": "Neon",
+        "volume": 0.578
+      }
+    }
+  },
+  {
+    "name": "Gate_EggRoad_v3",
+    "tris": 1524,
+    "size_studs": [
+      27.2,
+      31.7,
+      9.2
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 168,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 385.969
+      },
+      "StoneDark": {
+        "tris": 60,
+        "color": "#3A3A40",
+        "material": "Slate",
+        "volume": 133.477
+      },
+      "Bones": {
+        "tris": 660,
+        "color": "#CFC8B4",
+        "material": "SmoothPlastic",
+        "volume": 44.497
+      },
+      "Sign": {
+        "tris": 12,
+        "color": "#4A3426",
+        "material": "Wood",
+        "volume": 17.55
+      },
+      "Iron": {
+        "tris": 24,
+        "color": "#26262A",
+        "material": "Metal",
+        "volume": 0.397
+      },
+      "Sockets": {
+        "tris": 152,
+        "color": "#0E0E10",
+        "material": "SmoothPlastic",
+        "volume": 0.737
+      },
+      "Horns": {
+        "tris": 416,
+        "color": "#5E5548",
+        "material": "SmoothPlastic",
+        "volume": 9.622
+      },
+      "Eyes": {
+        "tris": 32,
+        "color": "#FF5418",
+        "material": "Neon",
+        "volume": 0.056
       }
     }
   }
