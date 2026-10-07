@@ -383,14 +383,62 @@
       ]
     }
   ],
-  "meshes": {
-    "Dragon": {
-      "vertices": 23352,
-      "triangles": 15176
+  "lignees": {
+    "Feu": {
+      "glb": "Dragon_V6.glb",
+      "palette": "Palette_Feu.png",
+      "meshes": {
+        "Dragon": {
+          "vertices": 23352,
+          "triangles": 15176
+        },
+        "DragonNeon": {
+          "vertices": 400,
+          "triangles": 192
+        }
+      }
     },
-    "DragonNeon": {
-      "vertices": 400,
-      "triangles": 192
+    "Glace": {
+      "glb": "Dragon_V6_Glace.glb",
+      "palette": "Palette_Glace.png",
+      "meshes": {
+        "Dragon": {
+          "vertices": 23352,
+          "triangles": 15176
+        },
+        "DragonNeon": {
+          "vertices": 400,
+          "triangles": 192
+        }
+      }
+    },
+    "Foret": {
+      "glb": "Dragon_V6_Foret.glb",
+      "palette": "Palette_Foret.png",
+      "meshes": {
+        "Dragon": {
+          "vertices": 23352,
+          "triangles": 15176
+        },
+        "DragonNeon": {
+          "vertices": 400,
+          "triangles": 192
+        }
+      }
+    },
+    "Ombre": {
+      "glb": "Dragon_V6_Ombre.glb",
+      "palette": "Palette_Ombre.png",
+      "meshes": {
+        "Dragon": {
+          "vertices": 23352,
+          "triangles": 15176
+        },
+        "DragonNeon": {
+          "vertices": 400,
+          "triangles": 192
+        }
+      }
     }
   },
   "palette_slots": [
@@ -428,5 +476,19 @@
     "glow",
     "throat"
   ],
-  "max_influences": 4
+  "max_influences": 4,
+  "animations": [
+    "Repos",
+    "Marche",
+    "Course",
+    "Vol",
+    "Rugissement",
+    "Decollage",
+    "Atterrissage",
+    "SouffleFeu"
+  ],
+  "vitesses": {
+    "Course": 8.658,
+    "Marche": 2.422
+  }
 }

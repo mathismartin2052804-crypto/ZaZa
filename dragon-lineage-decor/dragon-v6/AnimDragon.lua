@@ -30,7 +30,7 @@ local TAU = 2 * math.pi
 
 -- géométrie de repos utile au jeu (repère du modèle, studs)
 local SOL_ROOT = -7.6200                  -- hauteur du sol sous l'os Root (y, par rapport à sa tête)
-local BOUCHE = CFrame.lookAt(Vector3.new(0.0000, -1.1460, -4.2407), Vector3.new(0.0000, -1.3539, -5.2188))                      -- sortie du feu : CFrame relative à l'os Head (-Z = direction)
+local BOUCHE = CFrame.new(0.0000, -1.1460, -4.2407, 1.0000, 0.0000, -0.0000, -0.0000, 0.9781, 0.2079, 0.0000, -0.2079, 0.9781)                      -- sortie du feu : CFrame relative à l'os Head (-Z = direction)
 -- pattes : épaule/hanche, coude/genou, poignet/jarret dans le plan (y, z) du parent, sens de pliure, bout des griffes
 local PATTES = {
 	FrontR = { up = "FrontUpperLegR", low = "FrontLowerLegR", foot = "FrontFootR", l1y = -2.7500, l1z = 0.9000, l2y = -2.9000, l2z = -0.9500, l1 = 2.8935, l2 = 3.0516, sens = 1, griffe = Vector3.new(0.0000, -1.9700, -2.5000) },
@@ -568,15 +568,15 @@ function Anim.new(model: Model)
 	return self
 end
 
--- particules et lumière du souffle de feu, attachées à l'os Head (couleur prise sur DragonNeon)
+-- particules et lumière du souffle de feu, sur un os « Souffle » ajouté sous Head (couleur prise sur DragonNeon)
 function Anim:_creerFeu()
 	local head = self.bones.Head
 	if typeof(head) ~= "Instance" then
 		return
 	end
 	local c = self.baseColor or Color3.fromRGB(255, 200, 60)
-	local att = Instance.new("Attachment")
-	att.Name = "Souffle"
+	local att = Instance.new("Bone")                      -- os enfant sans poids : ne déforme rien, sert de point
+	att.Name = "Souffle"                                  -- d'émission (un Bone est un Attachment)
 	att.CFrame = BOUCHE
 	att.Parent = head
 	local pe = Instance.new("ParticleEmitter")

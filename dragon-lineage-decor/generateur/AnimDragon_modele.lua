@@ -263,15 +263,15 @@ function Anim.new(model: Model)
 	return self
 end
 
--- particules et lumière du souffle de feu, attachées à l'os Head (couleur prise sur DragonNeon)
+-- particules et lumière du souffle de feu, sur un os « Souffle » ajouté sous Head (couleur prise sur DragonNeon)
 function Anim:_creerFeu()
 	local head = self.bones.Head
 	if typeof(head) ~= "Instance" then
 		return
 	end
 	local c = self.baseColor or Color3.fromRGB(255, 200, 60)
-	local att = Instance.new("Attachment")
-	att.Name = "Souffle"
+	local att = Instance.new("Bone")                      -- os enfant sans poids : ne déforme rien, sert de point
+	att.Name = "Souffle"                                  -- d'émission (un Bone est un Attachment)
 	att.CFrame = BOUCHE
 	att.Parent = head
 	local pe = Instance.new("ParticleEmitter")

@@ -175,6 +175,42 @@ ANIMS = [("Course (galop)", course, C + [-30, 7, -30], C + [0, 0.5, -1.5], 42),
          ("Vol", vol, C + [-34, 2, -26], C + [0, 4.0, -1.0], 50),
          ("Rugissement", rugit, C + [-26, 4, -32], C + [0, 2.0, -2.5], 44),
          ("Repos : regard, saccades et clignements", repos, None, None, 34)]
+# deuxième GIF : nouvelles animations (les séquences jouent une fois par boucle du GIF)
+ANIMS2 = [("Marche (pas à 4 temps)", marche, C + [-30, 7, -30], C + [0, 0.5, -1.5], 42),
+          ("Décollage", decollage, C + [-36, 6, -30], C + [0, 3.0, -1.5], 50),
+          ("Atterrissage", atterrissage, C + [-36, 6, -30], C + [0, 3.0, -1.5], 50),
+          ("Souffle de feu", souffle_feu, C + [-34, 9, -22], C + [0, 1.0, -8.0], 54)]
+
+
+def sol_items():
+    """Sol (dessous des pattes au repos) pour voir les appuis et la hauteur."""
+    y = AL.SOL - 0.005
+    v = np.array([[-16, y, -22], [16, y, -22], [16, y, 16], [-16, y, 16]], float) + [C[0], 0, C[2]]
+    return [(v, np.tile([0, 1, 0], (4, 1)), np.array([[0, 2, 1], [0, 3, 2]]), rendu.hex_rgb("#2A3040"), False)]
+
+
+def flammes(pose, off, feu, t):
+    """Aperçu du souffle (dans Roblox ce sont des particules) : chapelet de flammes lumineuses depuis la gueule."""
+    if feu < 0.05:
+        return []
+    import trimesh
+    sk = AL._Os()
+    G = sk.matrices(pose, off)
+    Gh = G[sk.index["Head"]]
+    a, b = RG.hl((0, -0.15, -2.75)), RG.hl((0, -0.15, -3.75))
+    p0 = Gh[:3, :3] @ a + Gh[:3, 3]
+    d = Gh[:3, :3] @ (b - a); d /= np.linalg.norm(d)
+    out = []
+    rng = np.random.default_rng(int(t * 1000))
+    for k in range(14):
+        x = (k + rng.random()) / 14 * 10 * feu
+        r = 0.3 + 0.16 * x
+        c = p0 + d * x + rng.normal(0, 0.12 * x, 3)
+        m = trimesh.creation.icosphere(1, r)
+        m.apply_translation(c)
+        col = "#FFF4C0" if x < 2.5 else ("#FFC21A" if x < 7 else "#FF6A18")
+        out.append((np.asarray(m.vertices), np.asarray(m.vertex_normals), np.asarray(m.faces), rendu.hex_rgb(col), True))
+    return out
 
 
 def main():
@@ -182,22 +218,28 @@ def main():
     hc = RG.hl((0, 0.6, -1.4))
     cw, ch = 470, 380
     font = ImageFont.truetype(FONT_B, 18)
-    frames = []
-    for i in range(N):
-        t = i / N
-        im = Image.new("RGB", (cw * 2, ch * 2), (16, 19, 28))
-        dr = ImageDraw.Draw(im)
-        for j, (nom, fn, eye, tg, fov) in enumerate(ANIMS):
-            pose, off = fn(t)
-            if eye is None:                                   # gros plan sur la tête pour le repos
-                eye, tg = hc + [-17, 4, -19], hc + [0.3, 0.4, 0.8]
-            x0, y0 = (j % 2) * cw, (j // 2) * ch
-            im.paste(rendu.render(rig.items(pose, off), eye, tg, size=(cw - 6, ch - 6), fov=fov, ss=1), (x0, y0))
-            dr.text((x0 + 14, y0 + 10), nom, font=font, fill=(255, 210, 122))
-        frames.append(im.convert("P", palette=Image.ADAPTIVE, colors=160))
-        print(i, flush=True)
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "demo-animations-v6.gif")
-    frames[0].save(out, save_all=True, append_images=frames[1:], duration=55, loop=0, optimize=True)
+    for anims, nom in ((ANIMS, "demo-animations-v6.gif"), (ANIMS2, "demo-animations-v6-nouvelles.gif")):
+        frames = []
+        for i in range(N):
+            t = i / N
+            im = Image.new("RGB", (cw * 2, ch * 2), (16, 19, 28))
+            dr = ImageDraw.Draw(im)
+            for j, (titre, fn, eye, tg, fov) in enumerate(anims):
+                pose, off = fn(t)
+                extra = sol_items()
+                if fn is souffle_feu:
+                    import sequences_v6 as SQ
+                    extra += flammes(pose, off, SQ.SOUFFLE.pose(t)[4], t)
+                if eye is None:                               # gros plan sur la tête pour le repos
+                    eye, tg = hc + [-17, 4, -19], hc + [0.3, 0.4, 0.8]
+                x0, y0 = (j % 2) * cw, (j // 2) * ch
+                im.paste(rendu.render(rig.items(pose, off) + extra, eye, tg, size=(cw - 6, ch - 6), fov=fov, ss=1),
+                         (x0, y0))
+                dr.text((x0 + 14, y0 + 10), titre, font=font, fill=(255, 210, 122))
+            frames.append(im.convert("P", palette=Image.ADAPTIVE, colors=160))
+            print(nom, i, flush=True)
+        out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", nom)
+        frames[0].save(out, save_all=True, append_images=frames[1:], duration=55, loop=0, optimize=True)
 
 
 if __name__ == "__main__":

@@ -1,12 +1,13 @@
 # Exporte le dragon v6 riggé : GLB avec squelette et poids (skinning) + palette + manifeste + script Luau d'animation.
-#   Dragon_V6.glb : deux maillages qui partagent le même squelette (42 os)
+#   Dragon_V6.glb (Feu), Dragon_V6_Glace.glb, Dragon_V6_Foret.glb, Dragon_V6_Ombre.glb : même maillage et même
+#   squelette (42 os), seule la texture palette change (corps_v6.palette) ; deux maillages par fichier
 #     - « Dragon »     : tout le corps, couleurs par face via une petite texture palette
 #     - « DragonNeon » : yeux, narines, lame de queue, lueur de gorge (à passer en Neon dans Studio)
-#   AnimDragon.lua : animations procédurales (course, vol, rugissement, repos) + yeux (clignement, regard,
-#     plisser, pulsation de la lueur), en pilotant Bone.Transform — mêmes formules que demo_animations_v6.py ;
-#     la course y est copiée sous forme de table (angles des pattes calculés par IK dans course_v6.py)
+#   AnimDragon.lua (commun aux lignées) : généré depuis AnimDragon_modele.lua ; animations (repos, marche, course,
+#     vol, rugissement, décollage, atterrissage, souffle de feu) + yeux + fonctions de jeu, en pilotant
+#     Bone.Transform ; marche, course et séquences y sont copiées en tables (allures_v6.py, sequences_v6.py)
 # Le glTF est écrit à la main (pas de dépendance) ; repères de repos des os alignés sur le modèle (-Z = avant).
-# Usage (depuis dragon-lineage-decor/) : python3 generateur/export_dragon_v6.py  ->  dragon-v6/
+# Usage (depuis dragon-lineage-decor/) : python3 generateur/export_dragon_v6.py [--lignee Glace Ombre]  ->  dragon-v6/
 import json
 import os
 import struct
@@ -23,6 +24,7 @@ import tete_v8 as T8
 import allures_v6 as AL
 import demo_animations_v6 as D
 import sequences_v6 as SQ
+import palette_corps as PC
 
 NAME = "Dragon_V6"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -190,6 +192,15 @@ def lua_pattes(sk):
     return "\n".join(out)
 
 
+def lua_cframe(pos, direction):
+    """CFrame dont -Z (LookVector) suit direction, écrit en matrice (pas de CFrame.lookAt : ambigu selon les moteurs)."""
+    back = -np.asarray(direction, float) / np.linalg.norm(direction)
+    right = np.cross((0, 1, 0), back); right /= np.linalg.norm(right)
+    up = np.cross(back, right)
+    R = np.stack([right, up, back], 1)                        # colonnes : X, Y, Z
+    return "CFrame.new(%s)" % ", ".join(f"{x:.4f}" for x in (*pos, *R.ravel()))
+
+
 def write_luau(rig, path):
     _, _, u, _ = T8.eye_frame(RG.A)
     axR = C6.HEAD_R @ u
@@ -207,7 +218,7 @@ def write_luau(rig, path):
                  "PUP_R": lua_vec(RG.pupil_axis("R")), "PUP_L": lua_vec(RG.pupil_axis("L")),
                  "LID": f"{T8.LID_CLOSE:.1f}", "BONES": ", ".join(f'"{b[0]}"' for b in rig.bones),
                  "SACCADES": sac, "SOL_ROOT": f"{AL.SOL - root[1]:.4f}",
-                 "BOUCHE": f"CFrame.lookAt({lua_vec(bouche)}, {lua_vec(bouche + dirb / np.linalg.norm(dirb))})",
+                 "BOUCHE": lua_cframe(bouche, dirb),
                  "PATTES": lua_pattes(sk), "TABLES": "\n".join(tables)}.items():
         assert "{{" + k + "}}" in src, k
         src = src.replace("{{" + k + "}}", v)
@@ -217,20 +228,32 @@ def write_luau(rig, path):
 
 
 def main():
+    import argparse
+    ap = argparse.ArgumentParser(description="Exporte le dragon v6 (GLB riggé par lignée + AnimDragon.lua)")
+    ap.add_argument("--lignee", nargs="*", default=PC.LIGNEES, choices=PC.LIGNEES,
+                    help="lignées à exporter (toutes par défaut)")
+    args = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
     rig = RG.Rig()
-    data, slots, grid, tex, report = build_glb(rig, C6.PAL)
-    with open(os.path.join(OUT, NAME + ".glb"), "wb") as fh:
-        fh.write(data)
-    tex.save(os.path.join(OUT, "Palette_Feu.png"))
+    lignees = {}
+    for lin in args.lignee:
+        nom = NAME if lin == "Feu" else f"{NAME}_{lin}"            # Feu garde son nom (déjà importé dans Studio)
+        data, slots, grid, tex, report = build_glb(rig, C6.palette(lin))
+        with open(os.path.join(OUT, nom + ".glb"), "wb") as fh:
+            fh.write(data)
+        tex.save(os.path.join(OUT, f"Palette_{lin}.png"))
+        lignees[lin] = {"glb": nom + ".glb", "palette": f"Palette_{lin}.png", "meshes": report}
+        print(lin, json.dumps(report), len(data) // 1024, "Ko")
     write_luau(rig, os.path.join(OUT, "AnimDragon.lua"))
     manifest = {"name": NAME, "forward": "-Z", "up": "+Y", "units": "studs",
                 "bones": [{"name": b[0], "parent": b[1], "head": [round(float(x), 3) for x in b[2]]} for b in rig.bones],
-                "meshes": report, "palette_slots": slots, "palette_grid": grid,
-                "neon_layers": sorted(NEON), "max_influences": 4}
+                "lignees": lignees, "palette_slots": slots, "palette_grid": grid,
+                "neon_layers": sorted(NEON), "max_influences": 4,
+                "animations": ["Repos", "Marche", "Course", "Vol", "Rugissement", "Decollage", "Atterrissage", "SouffleFeu"],
+                "vitesses": {n: round(A.vitesse, 3) for n, A in AL.ALLURES.items()}}
     with open(os.path.join(OUT, "manifest.json"), "w") as fh:
         json.dump(manifest, fh, indent=2, ensure_ascii=False)
-    print(json.dumps(report), len(rig.bones), "os", len(data) // 1024, "Ko")
+    print(len(rig.bones), "os")
 
 
 if __name__ == "__main__":

@@ -18,7 +18,10 @@ function model:GetDescendants() return list end
 function model:FindFirstChild() return nil end
 function model:GetPivot() return pivot end
 local env = setmetatable({ game = game, CFrame = roblox.CFrame, Vector3 = roblox.Vector3, Color3 = roblox.Color3,
-	Enum = roblox.Enum, typeof = roblox.typeof or typeof,
+	Enum = roblox.Enum, typeof = roblox.typeof or typeof, Instance = roblox.Instance, Vector2 = roblox.Vector2,
+	NumberRange = roblox.NumberRange, NumberSequence = roblox.NumberSequence,
+	NumberSequenceKeypoint = roblox.NumberSequenceKeypoint, ColorSequence = roblox.ColorSequence,
+	ColorSequenceKeypoint = roblox.ColorSequenceKeypoint,
 	math = setmetatable({ random = function() return 1 end }, { __index = math }) }, { __index = getfenv and getfenv() or _G })
 local Anim = luau.load(src, { environment = env })()
 local bones = {}
@@ -113,6 +116,14 @@ for _, on in { false, true } do
 	d.t = 0.25; d.rate = 0; cb(DT)                     -- même instant pour les deux cas
 	table.insert(out, { anim = "Repos", t = d.t, sol = on, T = snapshot(), attendu = SOL, bassin = d.groundShift })
 end
+-- 7. particules du souffle : vraies instances Roblox (Lune vérifie noms et types des propriétés)
+local head = roblox.Instance.new("Bone"); head.Name = "Head"
+local feu = setmetatable({ bones = { Head = head }, baseColor = roblox.Color3.fromRGB(127, 244, 255) }, Anim)
+feu:_creerFeu()
+local os_ = head:FindFirstChild("Souffle")
+check(os_ and os_.ClassName == "Bone" and os_:FindFirstChild("Feu") and os_:FindFirstChildOfClass("PointLight"),
+	"souffle : os, ParticleEmitter et PointLight créés")
+check(os_.CFrame.LookVector.Z < -0.9 and os_.CFrame.LookVector.Y < 0, "souffle : le feu part vers l'avant de la gueule")
 check(math.abs(out[2].bassin - 0.1) < 0.01, ("bassin abaissé de la moyenne : %.3f"):format(out[2].bassin))
 stdio.ewrite(("runtime : %d contrôles OK, %d échecs ; saut max fondu %.3f / course seule %.3f / coupé net %.3f\n")
 	:format(ok, fails, doux, normal, net))

@@ -45,6 +45,37 @@ PAL.update(head=PAL["skin"], headback=PAL["back"], headlimb=PAL["limb"],
 EMISSIF = ("eye", "glow", "throat")
 
 
+# autres lignées : on reporte sur leur palette de tête les écarts Feu tête -> Feu corps (saturation et luminosité,
+# teinte gardée) ; le corps reste donc un cran plus sombre que la tête, comme pour Feu (réglé à la main)
+SOURCE = {"skin": "skin", "back": "back", "limb": "limb", "crest": "crest", "membrane": "membrane",
+          "membrane2": "membrane2", "belly": "belly", "belly2": "belly2", "bone": "skin", "eye": "eye", "glow": "eye",
+          "cheek": "skin", "throat": "eye"}
+V_MIN = 0.17               # plancher de luminosité : l'Ombre ne doit pas tourner au noir
+
+
+def _transfert(c, ref, cible):
+    import colorsys
+    h, s_, v = colorsys.rgb_to_hsv(*rendu.hex_rgb(c))
+    _, s0, v0 = colorsys.rgb_to_hsv(*rendu.hex_rgb(ref))
+    _, s1, v1 = colorsys.rgb_to_hsv(*rendu.hex_rgb(cible))
+    s_ = min(1.0, s_ * s1 / max(s0, 1e-6))
+    v = min(1.0, max(V_MIN, v * v1 / max(v0, 1e-6)))
+    return "#%02X%02X%02X" % tuple(round(x * 255) for x in colorsys.hsv_to_rgb(h, s_, v))
+
+
+def palette(lin="Feu"):
+    """Palette complète du dragon v6 pour une lignée (Feu, Glace, Foret, Ombre)."""
+    if lin == "Feu":
+        return dict(PAL)
+    feu, src = PC.palette("Feu"), PC.palette(lin)
+    p = dict(src)
+    p.update(head=src["skin"], headback=src["back"], headlimb=src["limb"],
+             mouth=PAL["mouth"], tongue=PAL["tongue"])
+    for k, sk in SOURCE.items():
+        p[k] = _transfert(src[sk], feu[sk], PAL[k])
+    return p
+
+
 @contextmanager
 def squelette():
     """Les fonctions v4/v5 lisent le squelette dans corps_v4 : on y met celui de la v6 le temps de construire."""
