@@ -67,12 +67,12 @@ def main():
     board.paste(view(feu, (-21, 9.5, -19), size=(1150, 760), fov=30), (20, 110))
     label((40, 120), "3/4 avant", 18, (255, 210, 122), True)
     # profil, face, tête
-    board.paste(view(feu, (-36, 6.5, 2), (0, 6, 2), size=(700, 380), fov=34), (1180, 110))
+    board.paste(view(feu, (-36, 6.5, 2), (0, 6, 2), size=(700, 380), fov=27), (1180, 110))
     label((1196, 120), "Profil", 18, (255, 210, 122), True)
     board.paste(view(feu, (0, 6.8, -32), (0, 6.2, 0), size=(350, 380), fov=34), (1180, 500))
     label((1196, 510), "Face", 18, (255, 210, 122), True)
     hb = V.HB + V.HEAD_R @ np.array([0, 0.2, -1.6]) * V.HS
-    board.paste(view(feu, hb + np.array([-5.5, 1.6, -5.0]), hb, size=(350, 380), fov=34), (1530, 500))
+    board.paste(view(feu, hb + np.array([-9.0, 2.4, -8.0]), hb + np.array([0, 0, 1.0]), size=(350, 380), fov=34), (1530, 500))
     label((1546, 510), "Tête", 18, (255, 210, 122), True)
 
     notes = ["Ligne d'action : épaules plus hautes que les hanches, tête baissée vers l'avant, une patte avant en avant",

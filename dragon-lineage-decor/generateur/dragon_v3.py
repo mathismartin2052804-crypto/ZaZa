@@ -72,11 +72,11 @@ def plates(P, belly, origin, direction, period=0.9):
 
 def spike_row(P, pts, radii, n, h0, h1, rb0, rb1, lean=0.7, t0=0.1, t1=0.9, lin="Feu"):
     if lin == "Glace":   # cristaux : éclats fins, par deux, inclinés différemment
-        a = D.spikes(P, pts, radii, n, h0 * 1.5, h1 * 1.5, rb0 * 0.8, rb1 * 0.8, lean * 0.3, t0, t1)
-        b = D.spikes(P, [np.add(p, (0.3, -0.15, 0.25)) for p in pts], radii, n, h0 * 0.9, h1 * 0.9,
-                     rb0 * 0.55, rb1 * 0.55, lean * 1.2, t0, t1)
-        c = D.spikes(P, [np.add(p, (-0.3, -0.15, 0.25)) for p in pts], radii, n, h0 * 0.8, h1 * 0.8,
-                     rb0 * 0.5, rb1 * 0.5, lean * 1.2, t0, t1)
+        a = D.spikes(P, pts, radii, n, h0 * 2.3, h1 * 2.3, rb0 * 1.05, rb1 * 1.05, lean * 0.3, t0, t1)
+        b = D.spikes(P, [np.add(p, (0.3, -0.15, 0.25)) for p in pts], radii, n, h0 * 1.5, h1 * 1.5,
+                     rb0 * 0.75, rb1 * 0.75, lean * 1.2, t0, t1)
+        c = D.spikes(P, [np.add(p, (-0.3, -0.15, 0.25)) for p in pts], radii, n, h0 * 1.3, h1 * 1.3,
+                     rb0 * 0.7, rb1 * 0.7, lean * 1.2, t0, t1)
         return union(a, b, c)
     if lin == "Feu":     # crête en flammes : plus haute, couchée vers l'arrière
         return D.spikes(P, pts, radii, n, h0 * 1.35, h1 * 1.35, rb0, rb1, lean * 1.5, t0, t1)
@@ -230,9 +230,9 @@ def tail(i, lin):
             w = np.array([1.0, 0, 0])
             v = np.cross(w, u)
             ax = np.stack([u, v, w], 1)
-            c = e + u * 0.75
-            out["spike"] = union(out["spike"], octa(P, c, ax, (1.15, 0.7, 0.16)) * 0.3)
-            edge = octa(P, c + u * 0.08, ax, (1.2, 0.76, 0.07)) * 0.3
+            c = e + u * 1.15
+            out["spike"] = union(out["spike"], octa(P, c, ax, (1.75, 1.05, 0.2)) * 0.3)
+            edge = octa(P, c + u * 0.1, ax, (1.8, 1.12, 0.09)) * 0.3
             edge = smax(edge, -((P - c.astype(np.float32)) @ u.astype(np.float32)) + 0.15, 0.02)
             out["glow"] = edge
         return out
