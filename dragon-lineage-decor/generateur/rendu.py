@@ -41,7 +41,7 @@ def pose_transforms(model, pose):
     return T
 
 
-def gather(model, palette, pose=None):
+def gather(model, palette, pose=None, emissive=("eye", "glow")):
     """Liste (sommets, normales, faces, couleur, émissif) pour tout le modèle posé."""
     T = pose_transforms(model, pose or {})
     out = []
@@ -54,8 +54,8 @@ def gather(model, palette, pose=None):
             if slots is not None:  # une couleur par face (low-poly)
                 col = np.array([hex_rgb(palette[s]) for s in slots])
             else:
-                col = hex_rgb(palette["eye" if layer == "glow" else layer])
-            out.append((v, n, np.asarray(m.faces), col, layer in ("eye", "glow")))
+                col = hex_rgb(palette.get(layer) or palette["eye"])
+            out.append((v, n, np.asarray(m.faces), col, layer in emissive))
     return out
 
 
