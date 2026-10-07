@@ -1,0 +1,330 @@
+[
+  {
+    "name": "Pine_Small",
+    "tris": 100,
+    "size_studs": [
+      9.1,
+      16.0,
+      9.5
+    ],
+    "parts": {
+      "Trunk": {
+        "tris": 36,
+        "color": "#3A2A22",
+        "material": "Wood",
+        "volume": 6.465
+      },
+      "Foliage": {
+        "tris": 64,
+        "color": "#1E3529",
+        "material": "Grass",
+        "volume": 143.621
+      }
+    }
+  },
+  {
+    "name": "Pine_Medium",
+    "tris": 100,
+    "size_studs": [
+      14.8,
+      24.0,
+      14.1
+    ],
+    "parts": {
+      "Trunk": {
+        "tris": 36,
+        "color": "#3A2A22",
+        "material": "Wood",
+        "volume": 21.247
+      },
+      "Foliage": {
+        "tris": 64,
+        "color": "#1E3529",
+        "material": "Grass",
+        "volume": 492.402
+      }
+    }
+  },
+  {
+    "name": "Pine_Tall",
+    "tris": 116,
+    "size_studs": [
+      15.9,
+      33.2,
+      16.8
+    ],
+    "parts": {
+      "Trunk": {
+        "tris": 36,
+        "color": "#3A2A22",
+        "material": "Wood",
+        "volume": 60.583
+      },
+      "Foliage": {
+        "tris": 80,
+        "color": "#1E3529",
+        "material": "Grass",
+        "volume": 1328.597
+      }
+    }
+  },
+  {
+    "name": "Pine_Leaning",
+    "tris": 100,
+    "size_studs": [
+      13.9,
+      23.9,
+      14.8
+    ],
+    "parts": {
+      "Trunk": {
+        "tris": 36,
+        "color": "#3A2A22",
+        "material": "Wood",
+        "volume": 22.734
+      },
+      "Foliage": {
+        "tris": 64,
+        "color": "#1E3529",
+        "material": "Grass",
+        "volume": 480.735
+      }
+    }
+  },
+  {
+    "name": "Pine_Burnt",
+    "tris": 152,
+    "size_studs": [
+      6.4,
+      20.0,
+      8.9
+    ],
+    "parts": {
+      "Wood": {
+        "tris": 132,
+        "color": "#1C1917",
+        "material": "Slate",
+        "volume": 52.571
+      },
+      "Embers": {
+        "tris": 20,
+        "color": "#FF5A1F",
+        "material": "Neon",
+        "volume": 0.311
+      }
+    }
+  },
+  {
+    "name": "Tree_Leafy_A",
+    "tris": 216,
+    "size_studs": [
+      14.7,
+      17.9,
+      12.8
+    ],
+    "parts": {
+      "Trunk": {
+        "tris": 136,
+        "color": "#3A2A22",
+        "material": "Wood",
+        "volume": 27.292
+      },
+      "Foliage": {
+        "tris": 80,
+        "color": "#33482B",
+        "material": "Grass",
+        "volume": 549.254
+      }
+    }
+  },
+  {
+    "name": "Tree_Leafy_B",
+    "tris": 216,
+    "size_studs": [
+      12.5,
+      15.0,
+      10.6
+    ],
+    "parts": {
+      "Trunk": {
+        "tris": 136,
+        "color": "#3A2A22",
+        "material": "Wood",
+        "volume": 16.933
+      },
+      "Foliage": {
+        "tris": 80,
+        "color": "#33482B",
+        "material": "Grass",
+        "volume": 318.441
+      }
+    }
+  },
+  {
+    "name": "Tree_Landmark_Nest",
+    "tris": 454,
+    "size_studs": [
+      28.4,
+      35.2,
+      22.8
+    ],
+    "parts": {
+      "Wood": {
+        "tris": 338,
+        "color": "#4A3426",
+        "material": "Wood",
+        "volume": 863.703
+      },
+      "Nest": {
+        "tris": 116,
+        "color": "#5A4632",
+        "material": "Wood",
+        "volume": 249.998
+      }
+    }
+  },
+  {
+    "name": "Fern",
+    "tris": 288,
+    "size_studs": [
+      5.8,
+      4.0,
+      6.8
+    ],
+    "parts": {
+      "Leaves": {
+        "tris": 288,
+        "color": "#2C4A2C",
+        "material": "Grass",
+        "volume": 1.859
+      }
+    }
+  },
+  {
+    "name": "Bush_Spiky",
+    "tris": 132,
+    "size_studs": [
+      4.9,
+      3.8,
+      4.5
+    ],
+    "parts": {
+      "Leaves": {
+        "tris": 132,
+        "color": "#3D4F2A",
+        "material": "Grass",
+        "volume": 11.307
+      }
+    }
+  },
+  {
+    "name": "Rock_Mossy",
+    "tris": 98,
+    "size_studs": [
+      6.9,
+      3.1,
+      5.9
+    ],
+    "parts": {
+      "Rock": {
+        "tris": 80,
+        "color": "#4E4E55",
+        "material": "Slate",
+        "volume": 46.954
+      },
+      "Moss": {
+        "tris": 18,
+        "color": "#36502C",
+        "material": "Grass",
+        "volume": 8.834
+      }
+    }
+  },
+  {
+    "name": "Brazier_DragonClaw",
+    "tris": 370,
+    "size_studs": [
+      4.0,
+      5.4,
+      3.9
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 160,
+        "color": "#45454C",
+        "material": "Slate",
+        "volume": 9.212
+      },
+      "Claws": {
+        "tris": 120,
+        "color": "#2A2A2F",
+        "material": "Basalt",
+        "volume": 0.644
+      },
+      "Flame": {
+        "tris": 90,
+        "color": "#FF7A1A",
+        "material": "Neon",
+        "volume": 2.269
+      }
+    }
+  },
+  {
+    "name": "Lantern_Road",
+    "tris": 164,
+    "size_studs": [
+      2.9,
+      9.2,
+      1.1
+    ],
+    "parts": {
+      "Post": {
+        "tris": 48,
+        "color": "#4A3426",
+        "material": "Wood",
+        "volume": 3.762
+      },
+      "Iron": {
+        "tris": 92,
+        "color": "#26262A",
+        "material": "Metal",
+        "volume": 0.522
+      },
+      "Crystal": {
+        "tris": 24,
+        "color": "#6FE3FF",
+        "material": "Neon",
+        "volume": 0.17
+      }
+    }
+  },
+  {
+    "name": "Pillar_Runic",
+    "tris": 392,
+    "size_studs": [
+      4.1,
+      17.2,
+      4.1
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 128,
+        "color": "#45454C",
+        "material": "Slate",
+        "volume": 90.418
+      },
+      "Runes": {
+        "tris": 240,
+        "color": "#6FE3FF",
+        "material": "Neon",
+        "volume": 0.412
+      },
+      "Crystal": {
+        "tris": 24,
+        "color": "#6FE3FF",
+        "material": "Neon",
+        "volume": 2.853
+      }
+    }
+  }
+]

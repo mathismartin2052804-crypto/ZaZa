@@ -1,0 +1,295 @@
+[
+  {
+    "name": "Brazier_DragonClaw_v2",
+    "tris": 1380,
+    "size_studs": [
+      4.0,
+      6.0,
+      3.9
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 160,
+        "color": "#45454C",
+        "material": "Slate",
+        "volume": 9.212
+      },
+      "Claws": {
+        "tris": 120,
+        "color": "#2A2A2F",
+        "material": "Basalt",
+        "volume": 0.644
+      },
+      "Flame": {
+        "tris": 588,
+        "color": "#FF5418",
+        "material": "Neon",
+        "volume": 3.497
+      },
+      "FlameCore": {
+        "tris": 252,
+        "color": "#FFC23A",
+        "material": "Neon",
+        "volume": 0.499
+      },
+      "Coals": {
+        "tris": 80,
+        "color": "#2A1410",
+        "material": "Basalt",
+        "volume": 2.546
+      },
+      "Embers": {
+        "tris": 180,
+        "color": "#FF4A12",
+        "material": "Neon",
+        "volume": 0.054
+      }
+    }
+  },
+  {
+    "name": "Dragon_Skull_v2",
+    "tris": 1248,
+    "size_studs": [
+      5.5,
+      9.2,
+      15.5
+    ],
+    "parts": {
+      "Bones": {
+        "tris": 632,
+        "color": "#CFC8B4",
+        "material": "SmoothPlastic",
+        "volume": 49.743
+      },
+      "Horns": {
+        "tris": 376,
+        "color": "#5E5548",
+        "material": "SmoothPlastic",
+        "volume": 8.125
+      },
+      "Sockets": {
+        "tris": 240,
+        "color": "#0E0E10",
+        "material": "SmoothPlastic",
+        "volume": 0.919
+      }
+    }
+  },
+  {
+    "name": "Dragon_Skeleton_v2",
+    "tris": 3350,
+    "size_studs": [
+      27.4,
+      17.9,
+      67.0
+    ],
+    "parts": {
+      "Bones": {
+        "tris": 2734,
+        "color": "#CFC8B4",
+        "material": "SmoothPlastic",
+        "volume": 229.529
+      },
+      "Sockets": {
+        "tris": 240,
+        "color": "#0E0E10",
+        "material": "SmoothPlastic",
+        "volume": 1.8
+      },
+      "Horns": {
+        "tris": 376,
+        "color": "#5E5548",
+        "material": "SmoothPlastic",
+        "volume": 15.87
+      }
+    }
+  },
+  {
+    "name": "Gate_Lair_v2",
+    "tris": 3084,
+    "size_studs": [
+      20.8,
+      19.2,
+      14.7
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 192,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 189.89
+      },
+      "Bones": {
+        "tris": 728,
+        "color": "#CFC8B4",
+        "material": "SmoothPlastic",
+        "volume": 51.793
+      },
+      "Sign": {
+        "tris": 36,
+        "color": "#4A3426",
+        "material": "Wood",
+        "volume": 7.179
+      },
+      "Sockets": {
+        "tris": 240,
+        "color": "#0E0E10",
+        "material": "SmoothPlastic",
+        "volume": 0.667
+      },
+      "Horns": {
+        "tris": 376,
+        "color": "#5E5548",
+        "material": "SmoothPlastic",
+        "volume": 5.904
+      },
+      "Flame": {
+        "tris": 1008,
+        "color": "#FF5418",
+        "material": "Neon",
+        "volume": 3.311
+      },
+      "FlameCore": {
+        "tris": 504,
+        "color": "#FFC23A",
+        "material": "Neon",
+        "volume": 0.578
+      }
+    }
+  },
+  {
+    "name": "Gate_EggRoad_v2",
+    "tris": 1552,
+    "size_studs": [
+      27.2,
+      29.2,
+      12.8
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 168,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 385.969
+      },
+      "StoneDark": {
+        "tris": 60,
+        "color": "#3A3A40",
+        "material": "Slate",
+        "volume": 133.477
+      },
+      "Bones": {
+        "tris": 672,
+        "color": "#CFC8B4",
+        "material": "SmoothPlastic",
+        "volume": 28.082
+      },
+      "Sign": {
+        "tris": 12,
+        "color": "#4A3426",
+        "material": "Wood",
+        "volume": 17.55
+      },
+      "Iron": {
+        "tris": 24,
+        "color": "#26262A",
+        "material": "Metal",
+        "volume": 0.397
+      },
+      "Sockets": {
+        "tris": 240,
+        "color": "#0E0E10",
+        "material": "SmoothPlastic",
+        "volume": 0.388
+      },
+      "Horns": {
+        "tris": 376,
+        "color": "#5E5548",
+        "material": "SmoothPlastic",
+        "volume": 3.428
+      }
+    }
+  },
+  {
+    "name": "Altar_Pillar_A",
+    "tris": 904,
+    "size_studs": [
+      5.7,
+      21.4,
+      5.6
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 112,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 103.005
+      },
+      "StoneDark": {
+        "tris": 96,
+        "color": "#3A3A40",
+        "material": "Slate",
+        "volume": 31.76
+      },
+      "Claws": {
+        "tris": 240,
+        "color": "#2A2A2F",
+        "material": "Basalt",
+        "volume": 3.791
+      },
+      "Runes": {
+        "tris": 432,
+        "color": "#6FE3FF",
+        "material": "Neon",
+        "volume": 0.585
+      },
+      "Crystal": {
+        "tris": 24,
+        "color": "#6FE3FF",
+        "material": "Neon",
+        "volume": 8.82
+      }
+    }
+  },
+  {
+    "name": "Altar_Pillar_B",
+    "tris": 796,
+    "size_studs": [
+      5.7,
+      18.4,
+      5.7
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 112,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 82.059
+      },
+      "StoneDark": {
+        "tris": 96,
+        "color": "#3A3A40",
+        "material": "Slate",
+        "volume": 31.783
+      },
+      "Claws": {
+        "tris": 240,
+        "color": "#2A2A2F",
+        "material": "Basalt",
+        "volume": 3.754
+      },
+      "Runes": {
+        "tris": 324,
+        "color": "#6FE3FF",
+        "material": "Neon",
+        "volume": 0.439
+      },
+      "Crystal": {
+        "tris": 24,
+        "color": "#6FE3FF",
+        "material": "Neon",
+        "volume": 8.82
+      }
+    }
+  }
+]

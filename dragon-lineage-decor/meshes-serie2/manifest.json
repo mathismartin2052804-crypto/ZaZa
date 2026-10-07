@@ -1,0 +1,292 @@
+[
+  {
+    "name": "Dragon_Skeleton",
+    "tris": 2478,
+    "size_studs": [
+      27.4,
+      17.6,
+      66.8
+    ],
+    "parts": {
+      "Bones": {
+        "tris": 2398,
+        "color": "#BDB39C",
+        "material": "Limestone",
+        "volume": 193.563
+      },
+      "Sockets": {
+        "tris": 80,
+        "color": "#141416",
+        "material": "SmoothPlastic",
+        "volume": 0.489
+      }
+    }
+  },
+  {
+    "name": "Dragon_Skull",
+    "tris": 376,
+    "size_studs": [
+      4.3,
+      6.7,
+      14.8
+    ],
+    "parts": {
+      "Bones": {
+        "tris": 296,
+        "color": "#BDB39C",
+        "material": "Limestone",
+        "volume": 30.928
+      },
+      "Sockets": {
+        "tris": 80,
+        "color": "#141416",
+        "material": "SmoothPlastic",
+        "volume": 0.249
+      }
+    }
+  },
+  {
+    "name": "Gate_Lair",
+    "tris": 780,
+    "size_studs": [
+      20.8,
+      19.2,
+      9.5
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 192,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 189.89
+      },
+      "Bones": {
+        "tris": 392,
+        "color": "#BDB39C",
+        "material": "Limestone",
+        "volume": 23.343
+      },
+      "Sign": {
+        "tris": 36,
+        "color": "#4A3426",
+        "material": "Wood",
+        "volume": 7.179
+      },
+      "Flame": {
+        "tris": 80,
+        "color": "#FF7A1A",
+        "material": "Neon",
+        "volume": 3.009
+      },
+      "Sockets": {
+        "tris": 80,
+        "color": "#141416",
+        "material": "SmoothPlastic",
+        "volume": 0.057
+      }
+    }
+  },
+  {
+    "name": "Gate_EggRoad",
+    "tris": 680,
+    "size_studs": [
+      27.2,
+      29.2,
+      11.6
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 168,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 385.969
+      },
+      "StoneDark": {
+        "tris": 60,
+        "color": "#3A3A40",
+        "material": "Slate",
+        "volume": 133.477
+      },
+      "Bones": {
+        "tris": 336,
+        "color": "#BDB39C",
+        "material": "Limestone",
+        "volume": 20.33
+      },
+      "Sign": {
+        "tris": 12,
+        "color": "#4A3426",
+        "material": "Wood",
+        "volume": 17.55
+      },
+      "Iron": {
+        "tris": 24,
+        "color": "#26262A",
+        "material": "Metal",
+        "volume": 0.397
+      },
+      "Sockets": {
+        "tris": 80,
+        "color": "#141416",
+        "material": "SmoothPlastic",
+        "volume": 0.1
+      }
+    }
+  },
+  {
+    "name": "Wall_Straight_8",
+    "tris": 156,
+    "size_studs": [
+      7.9,
+      2.9,
+      1.7
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 96,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 20.137
+      },
+      "StoneDark": {
+        "tris": 60,
+        "color": "#3A3A40",
+        "material": "Slate",
+        "volume": 11.777
+      }
+    }
+  },
+  {
+    "name": "Wall_Straight_4",
+    "tris": 84,
+    "size_studs": [
+      3.9,
+      2.9,
+      1.6
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 36,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 5.611
+      },
+      "StoneDark": {
+        "tris": 48,
+        "color": "#3A3A40",
+        "material": "Slate",
+        "volume": 9.895
+      }
+    }
+  },
+  {
+    "name": "Wall_Broken_8",
+    "tris": 224,
+    "size_studs": [
+      7.9,
+      3.0,
+      3.7
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 72,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 13.58
+      },
+      "StoneDark": {
+        "tris": 152,
+        "color": "#3A3A40",
+        "material": "Slate",
+        "volume": 14.494
+      }
+    }
+  },
+  {
+    "name": "Wall_Post",
+    "tris": 40,
+    "size_studs": [
+      2.3,
+      4.4,
+      2.3
+    ],
+    "parts": {
+      "Stone": {
+        "tris": 40,
+        "color": "#4A4A51",
+        "material": "Slate",
+        "volume": 18.268
+      }
+    }
+  },
+  {
+    "name": "Island_Large",
+    "tris": 326,
+    "size_studs": [
+      28.0,
+      27.4,
+      29.4
+    ],
+    "parts": {
+      "Grass": {
+        "tris": 33,
+        "color": "#3C5A30",
+        "material": "Grass",
+        "volume": 740.948
+      },
+      "Rock": {
+        "tris": 77,
+        "color": "#4E4A48",
+        "material": "Slate",
+        "volume": 3987.42
+      },
+      "Roots": {
+        "tris": 96,
+        "color": "#3A2A22",
+        "material": "Wood",
+        "volume": 12.24
+      },
+      "Crystal": {
+        "tris": 120,
+        "color": "#6FE3FF",
+        "material": "Neon",
+        "volume": 50.119
+      }
+    }
+  },
+  {
+    "name": "Island_Small",
+    "tris": 278,
+    "size_studs": [
+      14.4,
+      13.4,
+      14.4
+    ],
+    "parts": {
+      "Grass": {
+        "tris": 33,
+        "color": "#3C5A30",
+        "material": "Grass",
+        "volume": 182.869
+      },
+      "Rock": {
+        "tris": 77,
+        "color": "#4E4A48",
+        "material": "Slate",
+        "volume": 456.146
+      },
+      "Roots": {
+        "tris": 96,
+        "color": "#3A2A22",
+        "material": "Wood",
+        "volume": 1.447
+      },
+      "Crystal": {
+        "tris": 72,
+        "color": "#6FE3FF",
+        "material": "Neon",
+        "volume": 2.903
+      }
+    }
+  }
+]

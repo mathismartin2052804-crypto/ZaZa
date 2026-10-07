@@ -1,0 +1,31 @@
+[
+  {
+    "name": "Dragon_Skull_v3",
+    "tris": 1276,
+    "size_studs": [
+      12.0,
+      10.1,
+      10.6
+    ],
+    "parts": {
+      "Bones": {
+        "tris": 620,
+        "color": "#CFC8B4",
+        "material": "SmoothPlastic",
+        "volume": 66.625
+      },
+      "Horns": {
+        "tris": 416,
+        "color": "#5E5548",
+        "material": "SmoothPlastic",
+        "volume": 17.135
+      },
+      "Sockets": {
+        "tris": 240,
+        "color": "#0E0E10",
+        "material": "SmoothPlastic",
+        "volume": 1.342
+      }
+    }
+  }
+]
