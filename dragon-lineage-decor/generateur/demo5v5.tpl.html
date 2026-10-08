@@ -1,0 +1,163 @@
+<title>Dragon de Cristal</title>
+<style>
+/* Layout : visionneuse plein cadre, barre d'outils flottante en bas. Univers unique sombre, comme l'image de référence. */
+:root{
+  --bg:#17181b; --panel:#202228; --line:#33363f; --fg:#e6ecf5; --muted:#8d97a8; --ice:#8fc1ff;
+  --display:"Cinzel", Georgia, serif; --body:"Manrope", system-ui, sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);overflow:hidden}
+#view{position:fixed;inset:0}
+canvas{display:block}
+header{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;padding:18px 20px;pointer-events:none;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-family:var(--display);font-weight:600;font-size:clamp(20px,3vw,28px);letter-spacing:.06em;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.stats{color:var(--muted);font-size:12px;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:8px;background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:12px;width:max-content;max-width:calc(100% - 32px)}
+.bar .grp{display:flex;gap:4px;align-items:center}
+.bar .sep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
+button{font:500 13px var(--body);color:var(--fg);background:transparent;border:1px solid transparent;border-radius:8px;padding:7px 11px;cursor:pointer}
+button:hover{background:var(--line)}
+button[aria-pressed="true"]{border-color:var(--ice);color:var(--ice)}
+button:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+.hint{position:fixed;left:20px;bottom:calc(84px + env(safe-area-inset-bottom,0px));color:var(--muted);font-size:12px}
+@media (max-width:600px){.hint{display:none}}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Manrope:wght@400;500&display=swap">
+<div id="view"></div>
+<header>
+  <div><h1>Dragon de Cristal</h1><div class="sub">Démo v5 · corps serpentin, pattes en serres, pose de vol · animation plus tard</div></div>
+  <div class="stats" id="stats">chargement…</div>
+</header>
+<div class="hint">Glisser pour tourner · molette ou pincer pour zoomer</div>
+<div class="bar" role="toolbar" aria-label="Réglages de la vue">
+  <div class="grp" aria-label="Rendu">
+    <button id="mCrystal" aria-pressed="true">Cristal</button>
+    <button id="mSolid" aria-pressed="false">Couleurs Roblox</button>
+    <button id="mParts" aria-pressed="false">Morceaux</button>
+  </div>
+  <div class="sep"></div>
+  <div class="grp" aria-label="Angle">
+    <button data-view="side">Profil</button>
+    <button data-view="three">3/4</button>
+    <button data-view="front">Face</button>
+    <button data-view="top">Dessus</button>
+    <button data-view="head">Tête</button>
+  </div>
+  <div class="sep"></div>
+  <div class="grp" aria-label="Couleur des yeux">
+    <button data-eyes="A" aria-pressed="false">Yeux A</button>
+    <button data-eyes="B" aria-pressed="true">Yeux B</button>
+    <button data-eyes="C" aria-pressed="false">Yeux C</button>
+  </div>
+  <div class="sep"></div>
+  <button id="spin" aria-pressed="false">Rotation auto</button>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const GLB = "__GLB__";
+const META = __META__;
+const el = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x17181b);
+el.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35,1,0.5,2000);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.autoRotate = false; controls.autoRotateSpeed = 0.6;
+scene.add(new THREE.HemisphereLight(0xcfe3ff,0x10141c,0.9));
+const sun = new THREE.DirectionalLight(0xffffff,0.8); sun.position.set(30,60,40); scene.add(sun);
+renderer.shadowMap.enabled = true; sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+let grid = null;
+
+const eyeMats = [], pupilMats = [];
+const meshes = []; let center = new THREE.Vector3(), size = 60;
+const bin = Uint8Array.from(atob(GLB), c => c.charCodeAt(0)).buffer;
+new THREE.GLTFLoader().parse(bin, "", gltf => {
+  const root = gltf.scene; scene.add(root);
+  let tris = 0;
+  root.traverse(o => { if (o.isMesh) {
+    const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+    const isEye = o.name.includes("Eyes"), isPupil = o.name.includes("Pupils"), isGem = o.name.includes("Gem");
+    const isBrow = o.name.includes("Brows");
+    const isBlade = o.name.includes("Blades") || o.name.includes("Jaw"), glow = isEye || isGem;
+    const orig = o.material.color.clone();
+    // iris, gemme et pupilles sont opaques et dessinés après le cristal transparent, pour rester nets
+    const crystal = isPupil ? new THREE.MeshBasicMaterial({color:orig})
+      : glow ? new THREE.MeshBasicMaterial({color:orig})
+      : isBrow ? new THREE.MeshPhongMaterial({color:orig, emissive:0x020610, flatShading:true, shininess:60, specular:0x4f7fd0})
+      : new THREE.MeshPhongMaterial({color: isBlade ? 0x2f6fc6 : 0x1d4f9a,
+      emissive: 0x061a3a, transparent:true, opacity: 0.55, flatShading:true,
+      shininess:80, specular:0x6fa8ff, depthWrite:false, side:THREE.DoubleSide});
+    if (isEye || isPupil || isGem || isBrow) o.renderOrder = 2;
+    const solid = new THREE.MeshLambertMaterial({color:orig, emissive: glow ? orig : 0x000000});
+    if (isEye) eyeMats.push(crystal, solid); if (isPupil) pupilMats.push(crystal, solid);
+    const hue = (meshes.length * 0.137) % 1;
+    const parts = new THREE.MeshLambertMaterial({color:new THREE.Color().setHSL(hue,0.55,0.55)});
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(g, 28),
+      new THREE.LineBasicMaterial({color:0xa9d0ff, transparent:true, opacity:0.75}));
+    o.add(edges);
+    meshes.push({o, crystal, solid, parts, edges});
+  }});
+  root.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  const box = new THREE.Box3().setFromObject(root);
+  const g0 = META.ground;
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShadowMaterial({opacity: 0.45}));
+  ground.rotation.x = -Math.PI / 2; ground.position.y = g0; ground.receiveShadow = true; scene.add(ground);
+  grid = new THREE.GridHelper(300, 75, 0x3a4252, 0x2a303b); grid.position.y = g0 + 0.01; scene.add(grid);
+  const c = box.getCenter(new THREE.Vector3()), cam = sun.shadow.camera;
+  sun.position.set(c.x + 30, 80, c.z + 20); sun.target.position.copy(c); scene.add(sun.target);
+  cam.left = -90; cam.right = 90; cam.top = 90; cam.bottom = -90; cam.near = 1; cam.far = 250; cam.updateProjectionMatrix();
+  box.getCenter(center); size = box.getSize(new THREE.Vector3()).length();
+  controls.target.copy(center);
+  setMode("crystal"); setView("three");
+  document.getElementById("stats").innerHTML =
+    `${meshes.length} morceaux · ${Math.round(tris).toLocaleString("fr-FR")} triangles<br>` +
+    `${box.getSize(new THREE.Vector3()).toArray().map(v=>v.toFixed(0)).join(" × ")} studs`;
+}, err => { document.getElementById("stats").textContent = "Le modèle n'a pas pu se charger."; });
+
+// Pas encore d'animation : on règle d'abord la forme du dragon (pose de vol au repos).
+
+function setMode(m){
+  for (const x of meshes){ x.o.material = x[m]; x.edges.visible = m === "crystal"; }
+  for (const [id,k] of [["mCrystal","crystal"],["mSolid","solid"],["mParts","parts"]])
+    document.getElementById(id).setAttribute("aria-pressed", String(k === m));
+}
+const EYES = {A:[0x3fe0ff, 0x050b18], B:[0xf2fcff, 0x1b3fd8], C:[0xffb22e, 0x120600]};
+function setEyes(k){
+  for (const m of eyeMats){ m.color.setHex(EYES[k][0]); if (m.emissive) m.emissive.setHex(EYES[k][0]); }
+  for (const m of pupilMats) m.color.setHex(EYES[k][1]);
+  document.querySelectorAll("[data-eyes]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.eyes === k)));
+}
+function headCenter(){
+  const h = scene.getObjectByName("Head_Gem") || scene.getObjectByName("Head");
+  return new THREE.Box3().setFromObject(h).getCenter(new THREE.Vector3());
+}
+function setView(v, dirOverride){
+  const dirs = {side:[1,0.08,0], three:[0.75,0.35,-0.7], front:[0.02,0.1,-1], top:[0.05,1,0.02], head:[0.7,0.2,-0.75]};
+  const dir = new THREE.Vector3(...(dirOverride || dirs[v])).normalize();
+  if (v === "head"){
+    const c = headCenter(); controls.target.copy(c);
+    camera.position.copy(c).addScaledVector(dir, el.clientWidth < 700 ? 34 : 24);
+  } else {
+    const d = size * (el.clientWidth < 700 ? 1.9 : 1.15);
+    controls.target.copy(center);
+    camera.position.copy(center).addScaledVector(dir, d);
+  }
+  controls.update();
+}
+document.querySelectorAll("[data-eyes]").forEach(b => b.onclick = () => setEyes(b.dataset.eyes));
+document.getElementById("mCrystal").onclick = () => setMode("crystal");
+document.getElementById("mSolid").onclick = () => setMode("solid");
+document.getElementById("mParts").onclick = () => setMode("parts");
+document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => setView(b.dataset.view));
+const spin = document.getElementById("spin");
+spin.onclick = () => { controls.autoRotate = !controls.autoRotate; spin.setAttribute("aria-pressed", String(controls.autoRotate)); };
+function resize(){ const w = el.clientWidth, h = el.clientHeight; renderer.setSize(w,h); camera.aspect = w/h; camera.updateProjectionMatrix(); }
+addEventListener("resize", resize); resize();
+(function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene,camera); })();
+</script>

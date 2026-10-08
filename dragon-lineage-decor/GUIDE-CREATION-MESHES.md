@@ -17,7 +17,10 @@ cd dragon-lineage-decor/generateur
 python3 build.py assets5 meshes-serie5 apercu-serie5.png    # module, dossier de sortie, aperçu
 python3 vue5.py ../vue-dragon-cristal.png                    # aperçu multi-angles d'un objet long
 python3 demo5.py demo5.tpl.html /chemin/scratchpad/demo.html # démo 3D animée (navigateur)
-# v3 du dragon de cristal (marche au sol) :
+# v5 du dragon de cristal (serpentin, pose de vol) — version actuelle :
+python3 demo5.py demo5v5.tpl.html /chemin/scratchpad/dragon-cristal-demo.html assets5v5
+python3 vue5.py /chemin/scratchpad/vue-v5.png assets5v5
+# v3 du dragon de cristal (ancienne marche au sol, abandonnée) :
 python3 build.py assets5v3 meshes-serie5-v3 /chemin/scratchpad/apercu-v3.png
 python3 vue5.py ../vue-dragon-cristal-v3.png assets5v3
 python3 demo5.py demo5v3.tpl.html /chemin/scratchpad/dragon-cristal-demo.html assets5v3
@@ -68,7 +71,7 @@ python3 demo5.py demo5v3.tpl.html /chemin/scratchpad/dragon-cristal-demo.html as
   ffmpeg -v error -ss 1.6 -i video.mp4 -frames:v 1 -vf scale=1280:-1 image.png   # une image précise
   ```
   Recadre (`crop=`) les vidéos de Roblox Studio : on y lit la **durée de l'animation** dans la timeline de l'Animation Editor (1,32 s pour le dragon de cristal).
-- **Regarde toute la vidéo avant de coder, y compris la fin.** Fais la planche sur toute la durée, puis zoome sur chaque passage (gros plan de la tête, profil, animation dans Blender, animation dans Studio). Erreur déjà faite : la v2 animait le dragon comme s'il **volait** (une vague qui court sur un corps en l'air), alors que la vidéo montre une **marche au sol**. Avant d'écrire une animation, décris-la à Will en une phrase (« il marche, le dos se bombe à chaque pas ») et attends son accord.
+- **Regarde toute la vidéo avant de coder, y compris la fin.** Fais la planche sur toute la durée, puis zoome sur chaque passage (gros plan de la tête, profil, animation dans Blender, animation dans Studio). Erreur déjà faite (deux fois) : la v3 a été animée en **marche au sol**, alors que la vidéo montre un dragon qui **VOLE**. Les indices : **l'ombre est détachée des griffes** (rien ne touche le sol), les pattes **pagaient dans le vide**, le corps ondule de haut en bas. Regarde toujours où est l'ombre. Avant d'écrire une animation, décris-la à Will en une phrase (« il vole, le corps ondule, les pattes pagaient ») et attends son accord.
 - **Compare les proportions, pas seulement les détails.** Mesure sur une image de profil : longueur de la tête / longueur totale, hauteur de la tête / hauteur du corps, position des pattes. Un modèle peut avoir toutes les bonnes pièces et rater quand même l'allure générale.
 - **Droits** : un modèle posté sur ArtStation **n'est pas libre de droits**. Le dragon de cristal est reproduit avec l'accord de son auteur (un ami de Will). Si l'auteur a déjà le modèle dans Roblox Studio (c'est le cas sur la vidéo), le plus fidèle est de lui demander le fichier `.rbxm` (clic droit → Save to File) et son animation, plutôt que de tout refaire.
 
@@ -78,7 +81,8 @@ python3 demo5.py demo5v3.tpl.html /chemin/scratchpad/dragon-cristal-demo.html as
 - Pas de pull request sauf si Will la demande. Commit et push sur la branche de la session.
 - Dès le début, demande la vidéo ou les images de référence si elles ne sont pas jointes. Ne propose pas d'améliorations « à l'aveugle » sans le dire.
 
-### 3.7 Animer une créature qui marche (pas qui flotte)
+### 3.7 Animer une créature (marche ou vol)
+> **Le dragon de cristal VOLE** (voir 3.5 et 4). Ce qui suit sur l'appui au sol servait à la marche v3, abandonnée ; la formule des matrices et l'IK à deux os restent valables pour le vol (pattes qui pagaient, morceaux qui ondulent).
 - **Une patte rigide ne peut pas garder le pied au sol** pendant que le corps bouge. Il faut au moins **trois morceaux par patte** (cuisse, tibia, pied) et un calcul « IK à deux os » : on donne la hanche et la cheville, la fonction trouve le genou (`ik_knee` dans `assets5v3.py`, `ikKnee` dans la démo).
 - **Construis la pose de repos avec la même IK** : on place la hanche et le point d'appui au sol, et le genou est calculé. Comme ça, les griffes touchent exactement Y = 0 au repos.
 - **Cycle d'un pied** : pendant l'appui (60 % du temps), le pied recule à la vitesse du sol (`STRIDE / (DUTY × durée)`). Pendant le vol, il se lève (sinus) et revient devant. Si la vitesse du sol et celle des pieds en appui ne sont pas les mêmes, les pieds glissent.
@@ -86,21 +90,34 @@ python3 demo5.py demo5v3.tpl.html /chemin/scratchpad/dragon-cristal-demo.html as
 - Dans la démo, ajoute un **sol qui défile et des ombres** : sans eux, impossible de voir si les pieds glissent ou flottent.
 - Pour capturer une pose précise, mets la démo en pause depuis Playwright : `p.evaluate(() => { playing = false; tAnim = 0.66; })`, puis prends la capture.
 
-### 3.8 Donner du caractère à une créature
+### 3.8 Donner du caractère à une créature (et ne pas faire « chien »)
+Remarque de Will sur la v4 : « il fait trop chien ou renard ». Ce qui donne l'allure d'un quadrupède, et la correction faite en v5 :
+- **proportions** : un corps 4 fois plus long que haut, posé haut sur ses pattes = un chien. Un dragon oriental est **environ 8 à 10 fois plus long que haut** ; les pattes sont courtes par rapport au corps ;
+- **dos droit et horizontal** = un chien. Le corps doit faire **une grande arche** (tête basse, dos au plus haut vers les 3/5, queue qui redescend) ;
+- **pattes en zigzag avec un talon relevé** = des pattes de chien. Il faut des **bras fins presque droits** qui pendent sous le ventre et de **grandes mains en serres** (doigts écartés, griffes recourbées) ;
+- **grosse touffe au bout d'une queue courte** = une queue de renard ;
+- calcule le « dos de la main » pareil des deux côtés (`np.cross(x, main)`), sinon une main se plie à l'envers.
+
 Ce qui manquait à la v2 du dragon (remarque de Will : « la tête n'est pas assez grosse, le dragon manque de caractère ») :
 - **La tête est le point d'attention.** Pour un dragon « boss », elle doit être au moins aussi large que le corps avec sa crinière, et faire environ 1/6 à 1/5 de la longueur totale. Une petite tête sur un gros corps donne un serpent, pas un dragon.
 - **L'expression vient de quelques formes fortes** : des arcades sourcilières épaisses qui descendent vers le museau (air méchant), une bouche ouverte avec de grands crocs visibles, des joues hérissées qui élargissent la silhouette de face, un ornement au milieu du front (crête, gemme).
 - **La silhouette avant les détails** : vérifie la vue de face et de profil en ombre chinoise. Si on ne reconnaît pas la créature en silhouette, ajouter des lames n'y changera rien.
 
 ## 4. Le dragon de cristal (série 5) : ce qu'il faut savoir pour continuer
-> **Version actuelle : v3** (`assets5v3.py`, `demo5v3.tpl.html`, `meshes-serie5-v3/`, `vue-dragon-cristal-v3.png`). La v2 (`assets5.py`, `demo5.tpl.html`, `meshes-serie5/`) est gardée telle quelle. La démo publiée (même lien) montre la v3.
+> **Version actuelle : v5** (`assets5v5.py`, `demo5v5.tpl.html`, planche `comparaison-silhouette-dragon-v5.png`). La démo publiée (même lien) montre la v5. Les anciennes versions sont gardées telles quelles.
+>
+> **v5 (silhouette « pas chien ») :** tête v4 reprise à l'identique (validée par Will) ; 34 morceaux de 2,6 studs (environ 109 studs de long) ; colonne en grande arche (`spine()`) ; bras en `Seg10`, pattes arrière en `Seg28` ; pattes de vol en 3 morceaux (bras, avant-bras, main en serres), `a.meta["legs"]` donne `hip`, `knee`, `ankle`, `hand` (direction des doigts), `l1`, `l2`, `bend` ; le dragon est à environ `FLY_H = 24` studs du sol ; environ 21 400 triangles (Will accepte un peu plus de 20 000, mais il faut que ça tourne sur mobile). **Pas encore d'animation** : Will veut d'abord un dragon satisfaisant.
+>
+> **v4 :** nouvelle tête (yeux B, regard froncé `Head_Brows`, gemme à anneaux `Head_Gem`, pupilles `Head_Pupils`, museau court et carré, crocs irréguliers), validée par Will.
+>
+> **v3** (`assets5v3.py`, `demo5v3.tpl.html`, `meshes-serie5-v3/`) :
 >
 > Ce que la v3 a changé et qui a marché :
 > - **tête** : `HEAD_SCALE = 1.4`, puis un étirement `HEAD_WIDEN = diag(1.4, 1.2, 1.0)` (plus large et plus haute, sans allonger encore). Le museau est relevé de 0,2 rad (`HEAD_PITCH`) pour regarder devant et pas le sol. Une **collerette** de 16 lames qui rayonnent autour de la nuque donne la silhouette « lion » de la vidéo vue de face. Pour l'expression : arcades en V, gueule ouverte (0,5 rad), deux grands crocs en haut et en bas, gemme Neon au front ;
 > - **corps** : cœur ovale (1,22 fois plus haut que large), une couche de 8 lames courtes plaquées et une couche de 10 longues lames en S (`flame()`), avec de temps en temps une très longue mèche ;
 > - **pattes** : 3 morceaux (`SegXX_LegYY`, `_Shin`, `_Foot`). `a.meta["legs"]` donne `hip`, `knee`, `ankle`, `contact` (point d'appui au sol), `l1`, `l2` (longueurs des os) et `bend` (de quel côté plie le genou) ;
 > - **budget** : 19 172 triangles au total (Will a validé environ 20 000). Le plus gros morceau, la tête avec ses lames, fait environ 2 700 triangles.
-> - **Animation v3 (démo)** : boucle de 1,32 s, `DUTY = 0,6`, `STRIDE = 5` studs, déphasage des pattes FL 0 / FR 0,1 / BL 0,5 / BR 0,6. Le dos se bombe (jusqu'à 2,2 studs entre les pattes) au moment où les pattes arrière se posent. Petit rebond de 0,2 stud deux fois par cycle ; la tête hoche ; la queue ondule avec du retard ; la mâchoire se ferme un peu puis se rouvre.
+> - **Animation v3 (démo, ABANDONNÉE : c'était une marche, la vidéo montre un vol)** : boucle de 1,32 s, `DUTY = 0,6`, `STRIDE = 5` studs, déphasage des pattes FL 0 / FR 0,1 / BL 0,5 / BR 0,6. Le dos se bombe (jusqu'à 2,2 studs entre les pattes) au moment où les pattes arrière se posent. Petit rebond de 0,2 stud deux fois par cycle ; la tête hoche ; la queue ondule avec du retard ; la mâchoire se ferme un peu puis se rouvre.
 >
 > Ce qui suit décrit la v2 ; les noms des morceaux restent valables pour la v3, à part les pattes.
 
@@ -112,8 +129,8 @@ Ce qui manquait à la v2 du dragon (remarque de Will : « la tête n'est pas ass
   - `Head_Eyes` : les yeux en Neon ;
   - `Seg10_LegFL/FR` et `Seg25_LegBL/BR` : les pattes (pivotent à la hanche).
 - `a.meta` donne les pivots de repos : `chain` (un point par morceau), `jaw_hinge`, `legs[nom].hip`.
-- **Animation voulue (d'après la vidéo, validée par Will) : une marche au sol, pas un vol.** Boucle de **1,32 s**. Les pieds se posent au sol et y restent pendant l'appui, puis se lèvent et repartent vers l'avant (grands pas, surtout les pattes avant). Le dos se **bombe** entre les pattes avant et arrière quand les pattes se rapprochent, et s'aplatit quand elles s'écartent (comme un furet). La tête reste basse et presque stable, la queue suit avec un peu de retard. Dans Blender, l'auteur utilise une chaîne d'os avec des contrôleurs en cercle le long du dos (on les voit en orange dans la vidéo).
-- L'animation de la démo v2 (vague qui va de la tête à la queue, pattes qui balancent dans le vide) est **refusée** : elle donne l'impression que le dragon vole.
+- **Animation voulue (d'après la vidéo) : un VOL, pas une marche.** Boucle de **1,32 s**. L'ombre est loin sous les griffes : rien ne touche le sol. Le corps **ondule de haut en bas** (une vague qui part de la tête et va vers la queue), les pattes **pagaient dans le vide** avec un décalage entre elles, la tête reste dans l'axe du cou. (Ancienne note fausse, corrigée : « une marche au sol ».) À faire seulement quand Will aura validé la forme. Dans Blender, l'auteur utilise une chaîne d'os avec des contrôleurs en cercle le long du dos (on les voit en orange dans la vidéo).
+- La démo v2 avait déjà une vague de la tête à la queue avec des pattes qui balancent : c'était **la bonne idée** (un vol). Elle avait été refusée à tort, en croyant que la vidéo montrait une marche.
 - Pour Roblox, l'animation devra être faite **côté client** (LocalScript), avec `workspace:BulkMoveTo`, des parties Anchored, et `ModelStreamingMode = Atomic` sur le modèle. Ne fais pas bouger 70 parties depuis le serveur à chaque image.
 - **À faire pour la v3 (validé par Will)** :
   - corps plus touffu et plus haut : deux couches de lames (courtes et plaquées dessous, longues dessus), lames qui s'écartent aussi sur les côtés, longueurs variées ;
