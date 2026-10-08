@@ -17,6 +17,10 @@ cd dragon-lineage-decor/generateur
 python3 build.py assets5 meshes-serie5 apercu-serie5.png    # module, dossier de sortie, aperçu
 python3 vue5.py ../vue-dragon-cristal.png                    # aperçu multi-angles d'un objet long
 python3 demo5.py demo5.tpl.html /chemin/scratchpad/demo.html # démo 3D animée (navigateur)
+# v3 du dragon de cristal (marche au sol) :
+python3 build.py assets5v3 meshes-serie5-v3 /chemin/scratchpad/apercu-v3.png
+python3 vue5.py ../vue-dragon-cristal-v3.png assets5v3
+python3 demo5.py demo5v3.tpl.html /chemin/scratchpad/dragon-cristal-demo.html assets5v3
 ```
 - `meshlib.py` : la boîte à outils (`loft`, `ring`, `tube`, `lathe`, `blob`, `box`, `transform`, `rot_matrix_*`, `export_glb`).
 - `assetsN.py` : une série d'objets. Chaque module expose `all_assets()` et renvoie une liste d'`Asset`.
@@ -37,6 +41,7 @@ python3 demo5.py demo5.tpl.html /chemin/scratchpad/demo.html # démo 3D animée 
 - À l'import, Roblox peut appliquer un facteur d'environ **3,5** si l'unité n'est pas « Stud ». Mets toujours le tableau des tailles attendues dans le prompt local.
 - Un nœud du GLB devient **une MeshPart**, avec **une seule couleur et un seul matériau**. Pour deux couleurs, il faut deux parties (ex. `Seg01` et `Seg01_Blades`).
 - Les sommets sont exportés en coordonnées monde. Dans Roblox, le **pivot de chaque MeshPart est donc au centre de sa boîte englobante**, pas à l'endroit logique (hanche, charnière). Un script d'animation doit calculer ses décalages à partir de la pose de repos.
+- **Mobile** : 20 000 triangles pour un gros dragon, ça passe. Ce qui coûte vraiment sur téléphone : beaucoup de morceaux **transparents** (Glass/Transparency) qui se superposent, le nombre de morceaux (environ 1 appel de dessin chacun) et une animation qui tourne même quand le joueur est loin. Garde `RenderFidelity = Automatic`, coupe l'animation au-delà d'une certaine distance et évite d'avoir beaucoup de gros dragons à l'écran en même temps.
 - Limite Roblox : environ **20 000 triangles par MeshPart**. Vise moins de 3 000 pour un décor, et environ 15 000 au total pour un gros dragon.
 
 ### 3.3 Géométrie
@@ -73,13 +78,32 @@ python3 demo5.py demo5.tpl.html /chemin/scratchpad/demo.html # démo 3D animée 
 - Pas de pull request sauf si Will la demande. Commit et push sur la branche de la session.
 - Dès le début, demande la vidéo ou les images de référence si elles ne sont pas jointes. Ne propose pas d'améliorations « à l'aveugle » sans le dire.
 
-### 3.7 Donner du caractère à une créature
+### 3.7 Animer une créature qui marche (pas qui flotte)
+- **Une patte rigide ne peut pas garder le pied au sol** pendant que le corps bouge. Il faut au moins **trois morceaux par patte** (cuisse, tibia, pied) et un calcul « IK à deux os » : on donne la hanche et la cheville, la fonction trouve le genou (`ik_knee` dans `assets5v3.py`, `ikKnee` dans la démo).
+- **Construis la pose de repos avec la même IK** : on place la hanche et le point d'appui au sol, et le genou est calculé. Comme ça, les griffes touchent exactement Y = 0 au repos.
+- **Cycle d'un pied** : pendant l'appui (60 % du temps), le pied recule à la vitesse du sol (`STRIDE / (DUTY × durée)`). Pendant le vol, il se lève (sinus) et revient devant. Si la vitesse du sol et celle des pieds en appui ne sont pas les mêmes, les pieds glissent.
+- **Une seule formule pour tous les morceaux** : `M = Translation(nouveau pivot) × Rotation × Translation(-pivot de repos)`. Elle marche telle quelle en three.js (matrices) et en Luau (`CFrame.new(p) * R * CFrame.new(-p0)`). Le script Roblox reprend le même calcul que la démo.
+- Dans la démo, ajoute un **sol qui défile et des ombres** : sans eux, impossible de voir si les pieds glissent ou flottent.
+- Pour capturer une pose précise, mets la démo en pause depuis Playwright : `p.evaluate(() => { playing = false; tAnim = 0.66; })`, puis prends la capture.
+
+### 3.8 Donner du caractère à une créature
 Ce qui manquait à la v2 du dragon (remarque de Will : « la tête n'est pas assez grosse, le dragon manque de caractère ») :
 - **La tête est le point d'attention.** Pour un dragon « boss », elle doit être au moins aussi large que le corps avec sa crinière, et faire environ 1/6 à 1/5 de la longueur totale. Une petite tête sur un gros corps donne un serpent, pas un dragon.
 - **L'expression vient de quelques formes fortes** : des arcades sourcilières épaisses qui descendent vers le museau (air méchant), une bouche ouverte avec de grands crocs visibles, des joues hérissées qui élargissent la silhouette de face, un ornement au milieu du front (crête, gemme).
 - **La silhouette avant les détails** : vérifie la vue de face et de profil en ombre chinoise. Si on ne reconnaît pas la créature en silhouette, ajouter des lames n'y changera rien.
 
 ## 4. Le dragon de cristal (série 5) : ce qu'il faut savoir pour continuer
+> **Version actuelle : v3** (`assets5v3.py`, `demo5v3.tpl.html`, `meshes-serie5-v3/`, `vue-dragon-cristal-v3.png`). La v2 (`assets5.py`, `demo5.tpl.html`, `meshes-serie5/`) est gardée telle quelle. La démo publiée (même lien) montre la v3.
+>
+> Ce que la v3 a changé et qui a marché :
+> - **tête** : `HEAD_SCALE = 1.4`, puis un étirement `HEAD_WIDEN = diag(1.4, 1.2, 1.0)` (plus large et plus haute, sans allonger encore). Le museau est relevé de 0,2 rad (`HEAD_PITCH`) pour regarder devant et pas le sol. Une **collerette** de 16 lames qui rayonnent autour de la nuque donne la silhouette « lion » de la vidéo vue de face. Pour l'expression : arcades en V, gueule ouverte (0,5 rad), deux grands crocs en haut et en bas, gemme Neon au front ;
+> - **corps** : cœur ovale (1,22 fois plus haut que large), une couche de 8 lames courtes plaquées et une couche de 10 longues lames en S (`flame()`), avec de temps en temps une très longue mèche ;
+> - **pattes** : 3 morceaux (`SegXX_LegYY`, `_Shin`, `_Foot`). `a.meta["legs"]` donne `hip`, `knee`, `ankle`, `contact` (point d'appui au sol), `l1`, `l2` (longueurs des os) et `bend` (de quel côté plie le genou) ;
+> - **budget** : 19 172 triangles au total (Will a validé environ 20 000). Le plus gros morceau, la tête avec ses lames, fait environ 2 700 triangles.
+> - **Animation v3 (démo)** : boucle de 1,32 s, `DUTY = 0,6`, `STRIDE = 5` studs, déphasage des pattes FL 0 / FR 0,1 / BL 0,5 / BR 0,6. Le dos se bombe (jusqu'à 2,2 studs entre les pattes) au moment où les pattes arrière se posent. Petit rebond de 0,2 stud deux fois par cycle ; la tête hoche ; la queue ondule avec du retard ; la mâchoire se ferme un peu puis se rouvre.
+>
+> Ce qui suit décrit la v2 ; les noms des morceaux restent valables pour la v3, à part les pattes.
+
 - Fichiers : `generateur/assets5.py` (modèle), `vue5.py` (aperçu), `demo5.py` + `demo5.tpl.html` (démo animée), `meshes-serie5/` (GLB + manifest), `PROMPT-SESSION-LOCALE-SERIE5.md` (import).
 - **Noms des parties** (le script d'animation s'en sert, ne les change pas) :
   - `Head`, `Seg01` … `Seg30` : la chaîne qui ondule ;

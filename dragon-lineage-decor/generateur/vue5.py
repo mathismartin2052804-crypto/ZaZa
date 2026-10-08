@@ -1,10 +1,11 @@
-# Aperçu du dragon de cristal sous plusieurs angles. Usage : python3 vue5.py sortie.png
+# Aperçu du dragon de cristal sous plusieurs angles.
+# Usage : python3 vue5.py sortie.png [module]   (module : assets5 par défaut, assets5v3 pour la v3)
 import sys, numpy as np, matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from meshlib import hex_to_rgb
-import assets5
+import importlib
 
 def polys_of(parts):
     light = np.array([0.4, 0.8, 0.45]); light /= np.linalg.norm(light)
@@ -28,7 +29,8 @@ def draw(ax, polys, colors, el, az, title, full=False):
     ax.set_title(title, color="#e8e8e8", fontsize=12)
 
 if __name__ == "__main__":
-    a = assets5.dragon_cristal()
+    mod = importlib.import_module(sys.argv[2] if len(sys.argv) > 2 else "assets5")
+    a = mod.all_assets()[0]
     polys, colors = polys_of(a.parts)
     fig = plt.figure(figsize=(18, 11), facecolor="#1a1a1a")
     ax = fig.add_subplot(2, 3, (1, 3), projection="3d", facecolor="#1a1a1a")

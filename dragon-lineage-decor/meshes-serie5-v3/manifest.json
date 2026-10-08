@@ -1,0 +1,469 @@
+[
+  {
+    "name": "Dragon_Cristal_v3",
+    "tris": 19172,
+    "size_studs": [
+      26.7,
+      27.3,
+      85.2
+    ],
+    "parts": {
+      "Head": {
+        "tris": 128,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 147.852
+      },
+      "Head_Blades": {
+        "tris": 2118,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 66.587
+      },
+      "Head_Jaw": {
+        "tris": 438,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 42.545
+      },
+      "Head_Eyes": {
+        "tris": 60,
+        "color": "#C8ECFF",
+        "material": "Neon",
+        "volume": 1.253
+      },
+      "Seg01": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 29.032
+      },
+      "Seg01_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 9.178
+      },
+      "Seg02": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 34.752
+      },
+      "Seg02_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 10.166
+      },
+      "Seg03": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 37.088
+      },
+      "Seg03_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 9.735
+      },
+      "Seg04": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 42.907
+      },
+      "Seg04_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 9.813
+      },
+      "Seg05": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 43.285
+      },
+      "Seg05_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 10.263
+      },
+      "Seg06": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 43.138
+      },
+      "Seg06_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 8.878
+      },
+      "Seg07": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 44.241
+      },
+      "Seg07_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 9.705
+      },
+      "Seg08": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 44.663
+      },
+      "Seg08_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 9.255
+      },
+      "Seg09": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 42.873
+      },
+      "Seg09_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 10.354
+      },
+      "Seg10": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 43.397
+      },
+      "Seg10_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 9.212
+      },
+      "Seg11": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 43.503
+      },
+      "Seg11_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 8.722
+      },
+      "Seg12": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 44.107
+      },
+      "Seg12_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 9.374
+      },
+      "Seg13": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 43.973
+      },
+      "Seg13_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 8.474
+      },
+      "Seg14": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 44.719
+      },
+      "Seg14_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 10.59
+      },
+      "Seg15": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 42.937
+      },
+      "Seg15_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 8.749
+      },
+      "Seg16": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 45.618
+      },
+      "Seg16_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 9.344
+      },
+      "Seg17": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 42.303
+      },
+      "Seg17_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 9.035
+      },
+      "Seg18": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 43.969
+      },
+      "Seg18_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 8.271
+      },
+      "Seg19": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 42.558
+      },
+      "Seg19_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 10.73
+      },
+      "Seg20": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 42.692
+      },
+      "Seg20_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 8.871
+      },
+      "Seg21": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 43.119
+      },
+      "Seg21_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 10.287
+      },
+      "Seg22": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 40.963
+      },
+      "Seg22_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 11.329
+      },
+      "Seg23": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 36.265
+      },
+      "Seg23_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 8.604
+      },
+      "Seg24": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 32.704
+      },
+      "Seg24_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 8.392
+      },
+      "Seg25": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 27.581
+      },
+      "Seg25_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 8.922
+      },
+      "Seg26": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 23.097
+      },
+      "Seg26_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 7.256
+      },
+      "Seg27": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 19.771
+      },
+      "Seg27_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 6.638
+      },
+      "Seg28": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 16.614
+      },
+      "Seg28_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 5.888
+      },
+      "Seg29": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 13.318
+      },
+      "Seg29_Blades": {
+        "tris": 450,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 4.979
+      },
+      "Seg30": {
+        "tris": 48,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 10.707
+      },
+      "Seg30_Blades": {
+        "tris": 810,
+        "color": "#4E8FE6",
+        "material": "Glass",
+        "volume": 7.161
+      },
+      "Seg10_LegFL": {
+        "tris": 72,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 25.388
+      },
+      "Seg10_LegFL_Shin": {
+        "tris": 54,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 8.587
+      },
+      "Seg10_LegFL_Foot": {
+        "tris": 156,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 1.377
+      },
+      "Seg10_LegFR": {
+        "tris": 72,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 25.683
+      },
+      "Seg10_LegFR_Shin": {
+        "tris": 54,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 8.769
+      },
+      "Seg10_LegFR_Foot": {
+        "tris": 156,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 1.366
+      },
+      "Seg25_LegBL": {
+        "tris": 72,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 25.368
+      },
+      "Seg25_LegBL_Shin": {
+        "tris": 54,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 8.985
+      },
+      "Seg25_LegBL_Foot": {
+        "tris": 156,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 1.374
+      },
+      "Seg25_LegBR": {
+        "tris": 72,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 25.687
+      },
+      "Seg25_LegBR_Shin": {
+        "tris": 54,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 8.908
+      },
+      "Seg25_LegBR_Foot": {
+        "tris": 156,
+        "color": "#24569F",
+        "material": "Glass",
+        "volume": 1.38
+      }
+    }
+  }
+]
