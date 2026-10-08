@@ -15,10 +15,17 @@
 #   - longues mèches du dos plus longues et qui se relèvent en flammes au bout ;
 #   - de face, corps plus large que haut, mèches des flancs écartées et collerette derrière la tête (allure « lion ») ;
 #   - cou en S (petit creux derrière la nuque, tête qui se relève) ; queue plus longue et plus fine (38 morceaux) ;
-#   - hanche arrière sortie du corps pour qu'on voie la cuisse.
+#   - hanche arrière sortie du corps pour qu'on voie la cuisse ;
+#   - (retouches après la v5, demandées par Will) : gueule sombre (palais, joues, plancher, langue) et dents
+#     blanc glacé à part, au lieu d'une bouche du même bleu que le reste ; mèches du dessus HÉRISSÉES
+#     (bristle() : base couchée puis la mèche se relève de 20 à 50°, surtout sur l'arrière du dos) au lieu
+#     de plaquées ; yeux C (iris or, fente noire).
 #
 # Morceaux (mêmes noms qu'en v4, le script d'animation s'en sert) :
 #   Head, Head_Blades, Head_Jaw, Head_Eyes, Head_Pupils, Head_Brows, Head_Gem ;
+#   Head_Teeth (crocs du haut) et Head_Mouth (palais et joues sombres) : suivent Head ;
+#   Head_Jaw_Teeth (crocs du bas), Head_Jaw_Mouth (plancher sombre) et Head_Jaw_Tongue (langue) :
+#   suivent la mâchoire. RÈGLE pour le script : tout ce qui commence par « Head_Jaw » pivote avec Head_Jaw ;
 #   Seg01..Seg38 et SegXX_Blades ;
 #   SegXX_LegFL/FR/BL/BR (bras ou cuisse, pivote à l'épaule/hanche), _Shin (avant-bras ou tibia, pivote au coude
 #   ou au genou), _Foot (main ou pied, pivote au poignet ou à la cheville) ;
@@ -27,10 +34,11 @@
 # Repère : Y vers le haut, tête vers -Z, 1 unité = 1 stud, sol à Y = 0 (le dragon vole au-dessus).
 import math
 import numpy as np
-from meshlib import Asset, ring, tube, blob, loft, rot_matrix_x
-from assets5 import _oriented, frame, place
+from meshlib import Asset, ring, tube, blob, loft, rot_matrix_x, transform
+from assets5 import _oriented, frame, place, _section
 import assets5v4 as v4
-from assets5v4 import flame, _dirs, _smooth, STYLE, HEAD_PITCH, HEAD_WIDEN, HEAD_SCALE, JAW_HINGE
+from assets5v4 import flame, blade3, _dirs, _smooth, _snout, STYLE as STYLE4, HEAD_PITCH, HEAD_WIDEN, HEAD_SCALE, \
+    JAW_HINGE, JAW_OPEN
 
 N_SEG = 38                 # 34 au début de la v5 : la queue est plus longue (10 morceaux après les pattes arrière)
 SPACING = 2.6
@@ -38,9 +46,94 @@ FRONT_LEG_SEG = 10         # sur la vidéo, les bras sont au tiers avant du corp
 BACK_LEG_SEG = 28          # et les pattes arrière vers les 4/5 ; la queue (touffue) part juste derrière
 FLY_H = 24.0               # hauteur du dos au-dessus du sol (le dragon vole)
 
+STYLE = dict(STYLE4)
+STYLE.update({
+    "eyes": ("#FFB22E", "Neon"),        # yeux C, choisis par Will pour la v5 : iris or…
+    "pupils": ("#120600", "Neon"),      # …et fente noire
+    "teeth": ("#E6F4FF", "Ice"),        # dents blanc glacé : elles ressortent sur la gueule sombre
+    "mouth": ("#070B1C", "SmoothPlastic"),   # intérieur de la gueule, presque noir
+    "tongue": ("#18224C", "SmoothPlastic"),  # langue bleu nuit, à peine plus claire que la gueule
+})
+
 
 # antennes : elles partent sur les côtés puis filent vers l'arrière (v4 : elles montaient presque droit)
 v4.ANTENNA = [(0.6, 2.1, -0.6), (2.0, 3.0, 0.0), (3.6, 3.9, 0.9), (5.0, 4.8, 2.1), (6.0, 5.7, 3.6), (6.5, 6.5, 5.4)]
+
+
+# ---------------- mèches hérissées ----------------
+
+def bristle(rng, root, radial, tang, back, ln, w, rise, hook=0.4, wave=1.0, twist=0.5, pts=5):
+    """Mèche hérissée (comme sur la vidéo) : la base reste couchée sur le corps, puis la mèche se relève
+    jusqu'à l'angle « rise » (radians, mesuré depuis le corps) et la pointe se redresse encore de « hook ».
+    flame() restait presque à plat (moins de 15°) : les mèches avaient l'air plaquées."""
+    phase = rng.uniform(0, 2 * math.pi)
+    amp = 0.08 * wave * ln * rng.uniform(0.7, 1.3)
+    tw = twist * rng.uniform(-1, 1)
+    p = np.array(root, float)
+    path, sides = [p.copy()], [tang]
+    for k in range(1, pts):
+        u = k / (pts - 1)
+        ang = rise * (0.3 + 0.7 * u) + hook * u * u
+        p = p + (back * math.cos(ang) + radial * math.sin(ang)) * (ln / (pts - 1))
+        path.append(p + tang * amp * math.sin(2 * math.pi * u * 0.9 + phase) * u)
+        a = tw * u
+        sides.append(tang * math.cos(a) + radial * math.sin(a))
+    prof = [0.8, 1.0, 0.85, 0.55, 0.25, 0.0] if pts == 6 else [0.85, 1.0, 0.7, 0.35, 0.0] if pts == 5 \
+        else [0.9, 1.0, 0.5, 0.0]
+    return blade3(path, [w * f for f in prof], 0.1, sides)
+
+
+# ---------------- tête : celle de la v4, avec une vraie gueule ----------------
+
+def _jaw_place(v):
+    """Repère « mâchoire » de la v4 : museau raccourci, puis ouverture de JAW_OPEN autour de la charnière."""
+    return transform(_snout(v) - JAW_HINGE, rot_matrix_x(-JAW_OPEN), JAW_HINGE)
+
+
+def head5(rng):
+    """Tête v4 à l'identique (validée), mais les dents sont sorties dans leurs propres parties (blanc glacé)
+    et la gueule a un intérieur sombre : palais, joues, plancher et langue. Avant, tout était du même bleu."""
+    skull, bl, jaw, eyes, pupils, gem, brows = v4.head(rng)
+    # v4.head : Head_Blades commence par les 2 x 9 crocs du haut ; Head_Jaw = [os], puis par côté 8 crocs
+    # et 4 pointes de joue, puis 7 mèches de barbe
+    assert len(jaw) == 1 + 2 * 12 + 7
+    teeth, bl = bl[:18], bl[18:]
+    jaw_teeth = jaw[1:9] + jaw[13:21]
+    jaw = jaw[:1] + jaw[9:13] + jaw[21:]
+
+    # palais : une plaque sombre sous le crâne, du fond de la gorge au bout du museau
+    pal = [(1.7, 1.25, -0.62), (0.3, 1.3, -0.52), (-2.0, 0.98, -0.32), (-3.6, 0.82, -0.27),
+           (-5.2, 0.74, -0.22), (-6.6, 0.64, -0.17), (-7.3, 0.4, -0.13)]
+    mouth = [_oriented(*loft([_section(z, w, b + 0.28, b - 0.07, 8) for z, w, b in pal]))]
+    mouth = [(_snout(v), f) for v, f in mouth]
+    # plancher de la gueule (dans la mâchoire) et langue posée dessus, la pointe un peu relevée
+    flo = [(1.7, 1.2, -0.42), (0.3, 1.25, -0.36), (-1.8, 1.0, -0.31), (-3.8, 0.78, -0.29),
+           (-5.6, 0.6, -0.23), (-6.7, 0.42, -0.19)]
+    jaw_mouth = [_oriented(*loft([_section(z, w, t + 0.07, t - 0.3, 8) for z, w, t in flo]))]
+    ton = [(1.2, 0.5, -0.33, 0.22), (-0.8, 0.48, -0.3, 0.28), (-2.8, 0.4, -0.28, 0.26),
+           (-4.3, 0.3, -0.2, 0.22), (-5.2, 0.17, -0.05, 0.15)]
+    tongue = [_oriented(*loft([_section(z, w, t + h, t - 0.05, 8) for z, w, t, h in ton] + [np.array([0, 0.1, -5.7])]))]
+    # joues : une membrane sombre de chaque côté, au fond de la gueule, entre le palais et la mâchoire ouverte
+    # (de face, on voit un trou noir au lieu du bleu du crâne à travers la bouche)
+    for side in (-1, 1):
+        rings = []
+        for z, wu, yu, wl, yl in ((1.6, 1.15, -0.55, 1.1, -0.42), (0.3, 1.2, -0.48, 1.15, -0.36),
+                                  (-1.2, 1.05, -0.36, 1.02, -0.32), (-2.6, 0.92, -0.3, 0.9, -0.3)):
+            up = _snout(np.array([[side * wu, yu, z], [side * (wu - 0.12), yu, z]]))
+            lo = _jaw_place(np.array([[side * wl, yl, z], [side * (wl - 0.12), yl, z]]))
+            rings.append(np.array([up[0], lo[0], lo[1], up[1]]))
+        mouth.append(_oriented(*loft(rings)))
+    jaw_mouth = [(_jaw_place(v), f) for v, f in jaw_mouth]
+    tongue = [(_jaw_place(v), f) for v, f in tongue]
+    return dict(Head=skull, Head_Blades=bl, Head_Jaw=jaw, Head_Eyes=eyes, Head_Pupils=pupils, Head_Gem=gem,
+                Head_Brows=brows, Head_Teeth=teeth, Head_Mouth=mouth, Head_Jaw_Teeth=jaw_teeth,
+                Head_Jaw_Mouth=jaw_mouth, Head_Jaw_Tongue=tongue)
+
+
+HEAD_STYLE = {"Head": "body", "Head_Blades": "blades", "Head_Jaw": "blades", "Head_Eyes": "eyes",
+              "Head_Pupils": "pupils", "Head_Gem": "gem", "Head_Brows": "brows", "Head_Teeth": "teeth",
+              "Head_Mouth": "mouth", "Head_Jaw_Teeth": "teeth", "Head_Jaw_Mouth": "mouth",
+              "Head_Jaw_Tongue": "tongue"}
 
 
 # ---------------- la colonne au repos ----------------
@@ -105,19 +198,22 @@ def body_segment(rng, i, pts):
         ln = (3.0 + 1.0 * top) * rs * rng.uniform(0.85, 1.2)
         root = radial * np.array([rc * 1.2, rc * 1.05, 0]) * 0.92 + [0, 0, rng.uniform(-0.8, 0.2) * L]
         blades.append(flame(rng, root, radial, tang, back, ln, r * 0.7, 0.22, 0.15, 0.4, 0.3, pts=4))
-    # couche du dessus : longues mèches couchées le long du corps (flare faible = plaquées, pas dressées)
+    # couche du dessus : longues mèches HÉRISSÉES (bristle) : base couchée, puis elles se relèvent,
+    # davantage sur le dos que sur les flancs, et davantage sur l'arrière du corps (comme sur la vidéo)
     st = 15 if i % 2 else 0
+    rear = _smooth(0.35, 0.75, t)
     for a0 in range(-35, 216, 30 if r > 2.2 else 40):    # moins de mèches sur le bout de la queue
         a = math.radians(a0 + st + rng.uniform(-8, 8))
         radial, tang = _dirs(a)
         top = max(0.0, math.sin(a))
         ln = (6.6 + 5.4 * top + 3.0 * mane + 3.0 * tuft) * rs * rng.uniform(0.75, 1.3)
-        if rng.uniform() < 0.12:
-            ln *= 1.3
+        if rng.uniform() < 0.15:               # quelques très longues mèches qui sortent de la masse
+            ln *= 1.4
         root = radial * np.array([rc * 1.2, rc * 1.05, 0]) * 0.95 + [0, 0, rng.uniform(-0.9, 0.0) * L]
-        w = r * (0.46 + 0.18 * top) * rng.uniform(0.85, 1.15)
-        blades.append(flame(rng, root, radial, tang, back, ln, w, 0.4 + 0.45 * (1 - top) + 0.3 * tuft,   # les mèches des flancs s'écartent
-                            hook=0.25 + 0.65 * top, wave=1.1, twist=0.6, pts=5))   # les mèches du dos se relèvent en flammes
+        w = r * (0.42 + 0.16 * top) * rng.uniform(0.85, 1.15)
+        rise = (0.32 + 0.3 * top + 0.2 * rear * top + 0.15 * mane) * rng.uniform(0.75, 1.25)
+        blades.append(bristle(rng, root, radial, tang, back, ln, w, rise, hook=0.25 + 0.35 * top,
+                              wave=1.1, twist=0.6))
     for a0 in (250, 290):
         a = math.radians(a0 + rng.uniform(-8, 8))
         radial, tang = _dirs(a)
@@ -259,13 +355,10 @@ def dragon_cristal_v5(name="Dragon_Cristal_v5", seed=57):
     col_l, mat_l = STYLE["blades"]
     meta = {"chain": [p.tolist() for p in pts], "legs": {}, "ground": 0.0}
 
-    # tête v4 à l'identique, dans l'axe du cou
+    # tête v4 (avec la gueule sombre et les dents à part), dans l'axe du cou
     Mh, oh = frame(pts, 0) @ rot_matrix_x(HEAD_PITCH) @ HEAD_WIDEN * HEAD_SCALE, pts[0] + np.array([0, 0.4, -3.6])
-    skull, blades, jaw, eyes, pupils, gem, brows = v4.head(rng)
-    for nm, lst, key in (("Head", skull, "body"), ("Head_Blades", blades, "blades"), ("Head_Jaw", jaw, "blades"),
-                         ("Head_Eyes", eyes, "eyes"), ("Head_Pupils", pupils, "pupils"), ("Head_Gem", gem, "gem"),
-                         ("Head_Brows", brows, "brows")):
-        c, m = STYLE[key]
+    for nm, lst in head5(rng).items():
+        c, m = STYLE[HEAD_STYLE[nm]]
         for vf in lst:
             a.add(nm, *place(vf, Mh, oh), c, m)
     meta["jaw_hinge"] = (Mh @ JAW_HINGE + oh).tolist()

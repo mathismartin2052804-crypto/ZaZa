@@ -27,7 +27,7 @@ button:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Manrope:wght@400;500&display=swap">
 <div id="view"></div>
 <header>
-  <div><h1>Dragon de Cristal</h1><div class="sub">Démo v5 · corps serpentin, pattes en serres, pose de vol · animation plus tard</div></div>
+  <div><h1>Dragon de Cristal</h1><div class="sub">Démo v5 · gueule sombre et dents de glace, mèches hérissées, yeux or · pose de vol, animation plus tard</div></div>
   <div class="stats" id="stats">chargement…</div>
 </header>
 <div class="hint">Glisser pour tourner · molette ou pincer pour zoomer</div>
@@ -48,8 +48,8 @@ button:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
   <div class="sep"></div>
   <div class="grp" aria-label="Couleur des yeux">
     <button data-eyes="A" aria-pressed="false">Yeux A</button>
-    <button data-eyes="B" aria-pressed="true">Yeux B</button>
-    <button data-eyes="C" aria-pressed="false">Yeux C</button>
+    <button data-eyes="B" aria-pressed="false">Yeux B</button>
+    <button data-eyes="C" aria-pressed="true">Yeux C</button>
   </div>
   <div class="sep"></div>
   <button id="spin" aria-pressed="false">Rotation auto</button>
@@ -84,16 +84,20 @@ new THREE.GLTFLoader().parse(bin, "", gltf => {
     const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
     const isEye = o.name.includes("Eyes"), isPupil = o.name.includes("Pupils"), isGem = o.name.includes("Gem");
     const isBrow = o.name.includes("Brows");
-    const isBlade = o.name.includes("Blades") || o.name.includes("Jaw"), glow = isEye || isGem;
+    // gueule : dents blanc glacé, intérieur sombre (à tester AVANT « Jaw », sinon elles passent en cristal bleu)
+    const isTeeth = o.name.includes("Teeth"), isMouth = o.name.includes("Mouth") || o.name.includes("Tongue");
+    const isBlade = !isTeeth && !isMouth && (o.name.includes("Blades") || o.name.includes("Jaw")), glow = isEye || isGem;
     const orig = o.material.color.clone();
     // iris, gemme et pupilles sont opaques et dessinés après le cristal transparent, pour rester nets
     const crystal = isPupil ? new THREE.MeshBasicMaterial({color:orig})
       : glow ? new THREE.MeshBasicMaterial({color:orig})
+      : isTeeth ? new THREE.MeshPhongMaterial({color:orig, emissive:0x1c2a40, flatShading:true, shininess:90, specular:0xffffff})
+      : isMouth ? new THREE.MeshPhongMaterial({color:orig, flatShading:true, shininess:20, specular:0x101830})
       : isBrow ? new THREE.MeshPhongMaterial({color:orig, emissive:0x020610, flatShading:true, shininess:60, specular:0x4f7fd0})
       : new THREE.MeshPhongMaterial({color: isBlade ? 0x2f6fc6 : 0x1d4f9a,
       emissive: 0x061a3a, transparent:true, opacity: 0.55, flatShading:true,
       shininess:80, specular:0x6fa8ff, depthWrite:false, side:THREE.DoubleSide});
-    if (isEye || isPupil || isGem || isBrow) o.renderOrder = 2;
+    if (isEye || isPupil || isGem || isBrow || isTeeth || isMouth) o.renderOrder = 2;
     const solid = new THREE.MeshLambertMaterial({color:orig, emissive: glow ? orig : 0x000000});
     if (isEye) eyeMats.push(crystal, solid); if (isPupil) pupilMats.push(crystal, solid);
     const hue = (meshes.length * 0.137) % 1;
@@ -114,7 +118,7 @@ new THREE.GLTFLoader().parse(bin, "", gltf => {
   cam.left = -90; cam.right = 90; cam.top = 90; cam.bottom = -90; cam.near = 1; cam.far = 250; cam.updateProjectionMatrix();
   box.getCenter(center); size = box.getSize(new THREE.Vector3()).length();
   controls.target.copy(center);
-  setMode("crystal"); setView("three");
+  setMode("crystal"); setView("three"); setEyes("C");
   document.getElementById("stats").innerHTML =
     `${meshes.length} morceaux · ${Math.round(tris).toLocaleString("fr-FR")} triangles<br>` +
     `${box.getSize(new THREE.Vector3()).toArray().map(v=>v.toFixed(0)).join(" × ")} studs`;
