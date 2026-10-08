@@ -257,6 +257,9 @@ def body_segment(rng, i, pts):
 
 # ---------------- tête ----------------
 
+# trajet d'une antenne (côté droit, repère local de la tête) ; la v5 le remplace par des antennes plus écartées
+ANTENNA = [(0.6, 2.1, -0.6), (1.8, 3.8, 0.0), (3.0, 5.6, 0.8), (3.8, 7.6, 1.7), (4.1, 9.6, 2.8), (4.0, 11.3, 4.2)]
+
 JAW_HINGE = np.array([0, -0.45, 1.9])   # repère local de la tête
 JAW_OPEN = 0.5                          # la gueule est modélisée ouverte (air menaçant)
 
@@ -329,8 +332,7 @@ def head(rng):
         bl.append(blade3([[side * 0.7, 2.2, -0.6], [side * 1.0, 3.5, 0.0], [side * 1.25, 4.6, 0.9],
                           [side * 1.3, 5.3, 2.0]], [0.45, 0.4, 0.25, 0], 0.12, [[0, 0, 1]] * 4))
         # antennes : longues, elles montent en s'écartant et en se courbant vers l'arrière
-        ant = [[side * 0.6, 2.1, -0.6], [side * 1.8, 3.8, 0.0], [side * 3.0, 5.6, 0.8], [side * 3.8, 7.6, 1.7],
-               [side * 4.1, 9.6, 2.8], [side * 4.0, 11.3, 4.2]]
+        ant = [[side * x, y, z] for x, y, z in ANTENNA]
         bl.append(_oriented(*tube(ant, [0.2, 0.17, 0.14, 0.12, 0.09, 0], 4, tip=True)))
         # moustaches qui partent du museau et flottent vers l'arrière
         wh = [[side * 0.6, 0.3, -6.6], [side * 1.8, 0.0, -5.4], [side * 2.8, -0.5, -3.4], [side * 3.4, -0.9, -0.8],

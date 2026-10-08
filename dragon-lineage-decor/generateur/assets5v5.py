@@ -7,10 +7,12 @@
 #     au lieu d'un dos droit et horizontal ;
 #   - queue longue qui s'affine, avec une petite touffe au bout, au lieu d'une grosse queue de renard ;
 #   - lames du dos plus couchées le long du corps (moins « fourrure ») ;
-#   - pattes fines, plus courtes par rapport au corps, qui pendent sous le ventre (pose de vol) :
-#     bras presque droit, pointe au coude, grande main à quatre doigts griffus écartés (comme des serres).
-#     Les pattes arrière sont tendues vers l'arrière, pieds tournés vers la queue.
-#     Plus de talon relevé « de chien ».
+#   - pattes plus courtes par rapport au corps, qui pendent sous le ventre (pose de vol) :
+#     bras presque droit, pointe au coude, grande main à quatre doigts griffus écartés (comme des serres),
+#     membres épais couverts de plaques de cristal qui se chevauchent (comme sur la vidéo) ;
+#     pattes arrière : genou en avant, talon en arrière avec un ergot, orteils vers l'avant ;
+#   - antennes plus écartées sur les côtés (de face, elles ne montent plus droit comme des oreilles) ;
+#   - longues mèches du dos plus longues et qui se relèvent en flammes au bout.
 #
 # Morceaux (mêmes noms qu'en v4, le script d'animation s'en sert) :
 #   Head, Head_Blades, Head_Jaw, Head_Eyes, Head_Pupils, Head_Brows, Head_Gem ;
@@ -30,6 +32,10 @@ SPACING = 2.6
 FRONT_LEG_SEG = 10         # sur la vidéo, les bras sont au tiers avant du corps
 BACK_LEG_SEG = 28          # et les pattes arrière vers les 4/5 ; la queue (touffue) part juste derrière
 FLY_H = 24.0               # hauteur du dos au-dessus du sol (le dragon vole)
+
+
+# antennes : elles partent sur les côtés puis filent vers l'arrière (v4 : elles montaient presque droit)
+v4.ANTENNA = [(0.6, 2.1, -0.6), (2.0, 3.0, 0.0), (3.6, 3.9, 0.9), (5.0, 4.8, 2.1), (6.0, 5.7, 3.6), (6.5, 6.5, 5.4)]
 
 
 # ---------------- la colonne au repos ----------------
@@ -97,13 +103,13 @@ def body_segment(rng, i, pts):
         a = math.radians(a0 + st + rng.uniform(-8, 8))
         radial, tang = _dirs(a)
         top = max(0.0, math.sin(a))
-        ln = (6.4 + 3.4 * top + 3.0 * mane + 3.0 * tuft) * rs * rng.uniform(0.75, 1.3)
+        ln = (6.6 + 5.4 * top + 3.0 * mane + 3.0 * tuft) * rs * rng.uniform(0.75, 1.3)
         if rng.uniform() < 0.12:
             ln *= 1.3
         root = radial * np.array([rc, rc * 1.15, 0]) * 0.95 + [0, 0, rng.uniform(-0.9, 0.0) * L]
         w = r * (0.46 + 0.18 * top) * rng.uniform(0.85, 1.15)
         blades.append(flame(rng, root, radial, tang, back, ln, w, 0.35 + 0.2 * (1 - top) + 0.4 * tuft,
-                            hook=0.25 + 0.3 * top, wave=1.0, twist=0.6))
+                            hook=0.25 + 0.65 * top, wave=1.1, twist=0.6))   # les mèches du dos se relèvent en flammes
     for a0 in (250, 290):
         a = math.radians(a0 + rng.uniform(-8, 8))
         radial, tang = _dirs(a)
@@ -126,9 +132,11 @@ def _rot_y(a):
 
 
 def leg_pose(pts, seg, side, front):
-    """Pose de vol d'une patte (repère monde) : épaule/hanche, coude/genou, poignet/cheville, bout de la main.
-    Avant : bras vers le bas et un peu en arrière, avant-bras presque vertical, main qui pend.
-    Arrière : cuisse vers l'avant et le bas, tibia tendu vers l'arrière, pied tourné vers la queue."""
+    """Pose de vol d'une patte (repère monde) : épaule/hanche, coude/genou, poignet/cheville, direction des doigts.
+    Avant : bras vers le bas et un peu en arrière (coude en arrière), avant-bras presque vertical, main qui pend.
+    Arrière : cuisse vers l'avant (genou en avant), tibia vers le bas et l'arrière (talon en arrière),
+    pied et orteils tournés vers l'AVANT, comme une vraie patte arrière de reptile (en v5 du début, le pied
+    partait vers la queue : patte « à l'envers »)."""
     M, o = frame(pts, seg), pts[seg]
     r = radius(seg)
     hip = M @ np.array([side * r * 0.6, -r * 0.55, 0.0]) + o
@@ -138,9 +146,9 @@ def leg_pose(pts, seg, side, front):
         d1 = np.array([0.25 * side, -0.85, 0.45]); d2 = np.array([0.1 * side, -0.97, -0.2])
         hand = np.array([0.05 * side, -0.75, -0.65])      # doigts vers le bas et l'avant
     else:
-        l1, l2 = 4.4, 5.6
-        d1 = np.array([0.25 * side, -0.7, -0.65]); d2 = np.array([0.08 * side, -0.55, 0.83])
-        hand = np.array([0.0, -0.35, 0.94])               # pied tendu vers la queue
+        l1, l2 = 4.6, 5.0
+        d1 = np.array([0.25 * side, -0.6, -0.75]); d2 = np.array([0.08 * side, -0.8, 0.6])
+        hand = np.array([0.05 * side, -0.6, -0.8])        # orteils vers l'avant et le bas
     d1, d2, hand = (d / np.linalg.norm(d) for d in (d1, d2, hand))
     knee = hip + d1 * l1
     ankle = knee + d2 * l2
@@ -148,48 +156,76 @@ def leg_pose(pts, seg, side, front):
     return dict(hip=hip, knee=knee, ankle=ankle, hand=hand, out=out, l1=l1, l2=l2, bend=bend)
 
 
-def _claw_hand(rng, ankle, hand, out, front, big):
-    """Main en serres : paume, trois longs doigts écartés en éventail, griffes recourbées, un pouce opposé.
+def _perp(d):
+    """Deux directions perpendiculaires à d : e1 vers l'extérieur (X), e2 qui complète."""
+    e1 = np.array([1.0, 0, 0]) - d[0] * d
+    e1 /= np.linalg.norm(e1)
+    return e1, np.cross(d, e1)
+
+
+def _plates(rng, a, b, rad, rows, per_row, ln, w):
+    """Plaques de cristal qui se chevauchent le long d'un os (de a vers b), comme des écailles :
+    chaque lame part de la surface et file vers le bout du membre en s'écartant un peu."""
+    d = b - a
+    L = np.linalg.norm(d); d = d / L
+    e1, e2 = _perp(d)
+    out = []
+    for i in range(rows):
+        t = (i + 0.2) / rows
+        for j in range(per_row):
+            ang = 2 * math.pi * (j + 0.5 * (i % 2)) / per_row + rng.uniform(-0.25, 0.25)
+            radial = e1 * math.cos(ang) + e2 * math.sin(ang)
+            tang = np.cross(d, radial)
+            root = a + d * (t * L) + radial * rad(t) * 0.8
+            out.append(flame(rng, root, radial, tang, d, ln * rng.uniform(0.85, 1.2), w, 0.9, 1.0, 0.4, 0.3, pts=4))
+    return out
+
+
+def _claw_hand(rng, ankle, hand, out, big):
+    """Main en serres : paume épaisse, trois longs doigts écartés, griffes recourbées, un pouce opposé.
     Le dos de la main est calculé pareil des deux côtés (sinon une main se plie à l'envers)."""
-    x = np.array([1.0, 0, 0])
-    up = np.cross(x, hand) if front else np.cross(hand, x)   # dos de la main : vers l'avant (bras), vers le haut (pied)
+    up = np.cross(np.array([1.0, 0, 0]), hand)         # dos de la main : vers l'avant et le haut
     up /= np.linalg.norm(up)
-    parts = [_oriented(*blob(ankle + hand * 0.3, 0.5 * big, scale=(1.0, 0.8, 1.1), jitter=0.05, rng=rng, subdiv=0))]
-    for k, spread in enumerate((-0.65, 0.0, 0.65)):
+    parts = [_oriented(*blob(ankle + hand * 0.35, 0.5 * big, scale=(1.1, 0.7, 1.2), jitter=0.06, rng=rng, subdiv=1))]
+    for k, spread in enumerate((-0.6, 0.0, 0.6)):
         d = hand * math.cos(spread) + out * math.sin(spread)
         d /= np.linalg.norm(d)
-        ln = (2.0 if k == 1 else 1.7) * big
-        p0 = ankle + hand * 0.35
-        p1 = p0 + d * ln * 0.55 + up * 0.2                  # première phalange, un peu relevée
-        p2 = p1 + (d * 0.95 - up * 0.3) * ln * 0.45          # deuxième, presque dans l'axe : la main reste ouverte
-        tip = p2 + (d * 0.6 - up * 0.8) * 0.85 * big         # seule la griffe se recourbe
-        parts.append(_oriented(*tube([p0, p1, p2], [0.26 * big, 0.21 * big, 0.17 * big], 4)))
-        parts.append(_oriented(*tube([p2, (p2 + tip) / 2 + d * 0.15 * big, tip], [0.16 * big, 0.1 * big, 0], 4, tip=True)))
-    # pouce (ergot) : vers l'arrière de la main, griffe qui se referme
+        ln = (2.1 if k == 1 else 1.8) * big
+        p0 = ankle + hand * 0.4
+        p1 = p0 + d * ln * 0.55 + up * 0.2
+        p2 = p1 + (d * 0.95 - up * 0.3) * ln * 0.45
+        tip = p2 + (d * 0.6 - up * 0.8) * 0.95 * big
+        parts.append(_oriented(*tube([p0, p1, p2], [0.36 * big, 0.3 * big, 0.24 * big], 5)))
+        parts.append(_oriented(*tube([p2, (p2 + tip) / 2 + d * 0.15 * big, tip], [0.22 * big, 0.14 * big, 0], 4, tip=True)))
+        # petite plaque sur le dos de chaque doigt
+        parts.append(flame(rng, p0 + up * 0.25 * big, up, np.cross(d, up), d, ln * 0.6, 0.22 * big, 0.3, 0.3, 0.2, 0.2, pts=4))
     p0 = ankle + hand * 0.2
-    p1 = p0 - up * 0.9 * big - hand * 0.15
-    tip = p1 + hand * 0.6 * big - up * 0.2
-    parts.append(_oriented(*tube([p0, p1, tip], [0.2 * big, 0.14 * big, 0], 4, tip=True)))
+    p1 = p0 - up * 0.95 * big - hand * 0.15
+    tip = p1 + hand * 0.7 * big - up * 0.2
+    parts.append(_oriented(*tube([p0, p1, tip], [0.28 * big, 0.18 * big, 0], 4, tip=True)))
     return parts
 
 
 def leg_parts(rng, P, side, front):
-    """Renvoie (bras, avant-bras, main), chacun une liste de (v, f) en repère monde."""
+    """Renvoie (bras/cuisse, avant-bras/tibia, main/pied), chacun une liste de (v, f) en repère monde.
+    Membres plus épais qu'au début de la v5 et couverts de plaques de cristal, comme sur la vidéo."""
     hip, knee, ankle = P["hip"], P["knee"], P["ankle"]
-    k = 1.15 if front else 1.25                  # fines, comme sur la vidéo
-    upper = [_oriented(*tube([hip, (hip + knee) / 2, knee], [1.05 * k, 0.75 * k, 0.5 * k], 6, jitter=0.08, rng=rng))]
-    shin = [_oriented(*tube([knee, (knee + ankle) / 2, ankle], [0.48 * k, 0.4 * k, 0.33 * k], 5, jitter=0.08, rng=rng))]
-    # facettes de cristal : une longue pointe au coude/genou vers l'arrière, deux lames sur le bras
-    a = math.radians(90 - side * 60)
-    radial = np.array([math.cos(a), math.sin(a), 0.0]); tang = np.array([-math.sin(a), math.cos(a), 0.0])
-    upper.append(flame(rng, hip + [0, -0.3, 0], radial, tang, np.array([0, 0.25, 1.0]) / 1.03, 2.8, 0.4, 0.4, 0.6, pts=4))
-    spike_dir = np.array([0, -0.2, 1.0]) if front else np.array([0, -0.2, -1.0])
-    spike_dir /= np.linalg.norm(spike_dir)
-    shin.append(_oriented(*tube([knee, knee + spike_dir * 1.0 + [0, 0.1, 0], knee + spike_dir * 2.0],
-                                [0.3, 0.18, 0], 4, tip=True)))
-    shin.append(flame(rng, (knee + ankle) / 2, radial, tang, -spike_dir if not front else spike_dir,
-                      1.6, 0.3, 0.4, 0.5, pts=4))
-    foot = _claw_hand(rng, ankle, P["hand"], P["out"], front, 1.45 if front else 1.35)
+    k = 1.0 if front else 1.15
+    r1 = lambda t: (1.5 - 0.6 * t) * k
+    r2 = lambda t: (0.85 - 0.25 * t) * k
+    upper = [_oriented(*tube([hip, (hip + knee) / 2, knee], [r1(0), r1(0.5), r1(1)], 7, jitter=0.08, rng=rng))]
+    upper.append(_oriented(*blob(knee, r1(1) * 1.05, jitter=0.05, rng=rng, subdiv=0)))   # coude / genou
+    shin = [_oriented(*tube([knee, (knee + ankle) / 2, ankle], [r2(0), r2(0.5) * 1.1, r2(1)], 6, jitter=0.08, rng=rng))]
+    upper += _plates(rng, hip, knee, r1, 2, 3, 2.8, 0.6 * k)
+    shin += _plates(rng, knee, ankle, r2, 3, 3, 2.4, 0.5 * k)
+    # pointe de cristal au coude (vers l'arrière) ou au talon (vers l'arrière aussi)
+    spike_dir = np.array([0, 0.1, 1.0]); spike_dir /= np.linalg.norm(spike_dir)
+    shin.append(_oriented(*tube([knee, knee + spike_dir * 1.3 + [0, 0.15, 0], knee + spike_dir * 2.6],
+                                [0.4, 0.25, 0], 4, tip=True)))
+    if not front:                                # ergot au talon
+        shin.append(_oriented(*tube([ankle, ankle + spike_dir * 0.9, ankle + spike_dir * 1.8 + [0, 0.3, 0]],
+                                    [0.3, 0.18, 0], 4, tip=True)))
+    foot = _claw_hand(rng, ankle, P["hand"], P["out"], 1.45 if front else 1.4)
     return upper, shin, foot
 
 
