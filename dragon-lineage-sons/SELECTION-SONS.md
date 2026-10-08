@@ -43,3 +43,9 @@ Roblox limite le nombre de sons importés par mois. N'importe donc que ceux que 
 - Pour un son qui revient souvent (pas, clics, pièces), change un peu le `PlaybackSpeed` à chaque fois (entre 0.9 et 1.1). La répétition s'entend beaucoup moins.
 - Les boucles (brasero, repaire, gouttes, vent) vont dans un `Sound` avec `Looped = true`, placé dans l'objet concerné, avec un volume bas (0.2 à 0.4).
 - Un son pas tout à fait comme tu veux (plus grave, plus long, plus mignon) ? Dis-le à Claude : il change les réglages du générateur et refait le son.
+
+## Méthode : catégorie par catégorie
+On valide une catégorie à la fois, en faisant des allers-retours avec Will, avant de passer à la suivante.
+
+**Tour 1 : interface** (`generateur/sons_interface.py` → `sons-interface/`)
+32 sons pour 12 actions : clic, survol, défilement, ouvrir et fermer un menu, onglet, activer, désactiver, valider, erreur, notification, pièces. Les aperçus en série (survol, défilement) sont dans `sons-interface/apercu/` et ne servent qu'à l'écoute : on importe le son seul.

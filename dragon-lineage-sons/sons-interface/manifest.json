@@ -1,0 +1,264 @@
+[
+ {
+  "categorie": "Interface",
+  "besoin": "Clic",
+  "fichier": "clic_bulle.ogg",
+  "description": "« Bloup » rond",
+  "duree": 0.261,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Clic",
+  "fichier": "clic_thock.ogg",
+  "description": "« Thock » de clavier doux",
+  "duree": 0.237,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Clic",
+  "fichier": "clic_pluck.ogg",
+  "description": "Petite note pincée",
+  "duree": 0.274,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Clic",
+  "fichier": "clic_verre.ogg",
+  "description": "« Tink » de verre",
+  "duree": 0.316,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Survol",
+  "fichier": "survol_tick.ogg",
+  "description": "Tick très léger",
+  "duree": 0.218,
+  "boucle": false,
+  "apercu": "apercu/survol_tick_serie.ogg"
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Survol",
+  "fichier": "survol_bulle.ogg",
+  "description": "Micro-bulle",
+  "duree": 0.243,
+  "boucle": false,
+  "apercu": "apercu/survol_bulle_serie.ogg"
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Survol",
+  "fichier": "survol_souffle.ogg",
+  "description": "Petit souffle « fft »",
+  "duree": 0.263,
+  "boucle": false,
+  "apercu": "apercu/survol_souffle_serie.ogg"
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Defilement",
+  "fichier": "defil_bois.ogg",
+  "description": "Tick de bois",
+  "duree": 0.158,
+  "boucle": false,
+  "apercu": "apercu/defil_bois_serie.ogg"
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Defilement",
+  "fichier": "defil_plastique.ogg",
+  "description": "Clic plastique",
+  "duree": 0.131,
+  "boucle": false,
+  "apercu": "apercu/defil_plastique_serie.ogg"
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Defilement",
+  "fichier": "defil_cran.ogg",
+  "description": "Cran de molette (double clic)",
+  "duree": 0.123,
+  "boucle": false,
+  "apercu": "apercu/defil_cran_serie.ogg"
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "OuvrirMenu",
+  "fichier": "ouvrir_bulles.ogg",
+  "description": "Deux bulles qui montent",
+  "duree": 0.34,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "OuvrirMenu",
+  "fichier": "ouvrir_fwip.ogg",
+  "description": "« Fwip » + note",
+  "duree": 0.314,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "OuvrirMenu",
+  "fichier": "ouvrir_pop.ogg",
+  "description": "Souffle + « pop »",
+  "duree": 0.293,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "FermerMenu",
+  "fichier": "fermer_bulles.ogg",
+  "description": "Deux bulles qui descendent",
+  "duree": 0.31,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "FermerMenu",
+  "fichier": "fermer_fwip.ogg",
+  "description": "« Fwip » à l'envers",
+  "duree": 0.305,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "FermerMenu",
+  "fichier": "fermer_pop.ogg",
+  "description": "Aspiration + clic",
+  "duree": 0.264,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Onglet",
+  "fichier": "onglet_page.ogg",
+  "description": "« Tchk » de carte",
+  "duree": 0.22,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Onglet",
+  "fichier": "onglet_double.ogg",
+  "description": "Deux petites notes",
+  "duree": 0.305,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Activer",
+  "fichier": "activer_monte.ogg",
+  "description": "Clic + deux notes qui montent",
+  "duree": 0.332,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Activer",
+  "fichier": "activer_bulle.ogg",
+  "description": "Deux bulles qui montent",
+  "duree": 0.315,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Desactiver",
+  "fichier": "desactiver_descend.ogg",
+  "description": "Clic + deux notes qui descendent",
+  "duree": 0.341,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Desactiver",
+  "fichier": "desactiver_bulle.ogg",
+  "description": "Deux bulles qui descendent",
+  "duree": 0.3,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Valider",
+  "fichier": "valider_pluck.ogg",
+  "description": "Deux notes pincées « ti-ding »",
+  "duree": 0.5,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Valider",
+  "fichier": "valider_marimba.ogg",
+  "description": "Accord de marimba qui monte",
+  "duree": 0.656,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Valider",
+  "fichier": "valider_ding.ogg",
+  "description": "Clic + « ding » de clochette",
+  "duree": 0.875,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Erreur",
+  "fichier": "erreur_bonk.ogg",
+  "description": "« Bonk-bonk » doux",
+  "duree": 0.475,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Erreur",
+  "fichier": "erreur_descend.ogg",
+  "description": "Deux notes qui descendent",
+  "duree": 0.393,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Erreur",
+  "fichier": "erreur_nonnon.ogg",
+  "description": "« Nuh-uh » rétro",
+  "duree": 0.391,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Notification",
+  "fichier": "notif_cloche.ogg",
+  "description": "Deux clochettes",
+  "duree": 1.045,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Notification",
+  "fichier": "notif_bulles.ogg",
+  "description": "Trois bulles + note",
+  "duree": 0.646,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Pieces",
+  "fichier": "piece_bling.ogg",
+  "description": "« Bling » deux notes",
+  "duree": 0.791,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Pieces",
+  "fichier": "piece_tintement.ogg",
+  "description": "Pièces qui tintent",
+  "duree": 0.574,
+  "boucle": false
+ }
+]
