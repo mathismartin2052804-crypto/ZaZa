@@ -1,7 +1,10 @@
 # Série 5, v4 : dragon de cristal d'après la vidéo de l'ami de Will (avec son accord).
 # Part de la v3 (assets5v3.py, gardée telle quelle). Ce que la v4 change :
 #   - yeux avec du caractère : orbite sombre, œil en amande incliné (coin intérieur plus bas),
-#     pupille en fente (Head_Pupils), arcade en visière qui couvre le haut de l'œil, paupière du bas en lame ;
+#     pupille en fente (Head_Pupils), paupière du haut droite et en biais (l'œil est « plissé ») ;
+#   - regard froncé (Head_Brows, sombre et opaque) : orbite, trois sourcils en mèches qui plongent vers le nez
+#     et remontent en pointes, paupière du bas, plis de froncement sur l'arête du nez ;
+#   - tête un peu baissée : il regarde par en dessous ;
 #   - gemme du front plus grosse, entourée de deux anneaux (Head_Gem), comme sur la vidéo.
 # Ce que la v3 avait changé par rapport à la v2 (assets5.py) :
 #   - corps plus haut et plus touffu : deux couches de lames (courtes plaquées dessous, longues dessus) ;
@@ -16,7 +19,8 @@
 #   <Chaîne>_Blades                    : les lames du morceau ;
 #   Head_Jaw                           : mâchoire, crocs du bas et barbe (pivote à la charnière) ;
 #   Head_Eyes                          : les iris (Neon) ;
-#   Head_Pupils                        : les pupilles en fente (sombres) ;
+#   Head_Pupils                        : les pupilles en fente ;
+#   Head_Brows                         : sourcils, orbites, paupières et plis du nez (sombre, opaque) ;
 #   Head_Gem                           : la gemme du front et ses anneaux (Neon) ;
 #   SegXX_LegFL/FR/BL/BR               : la cuisse (pivote à la hanche) ;
 #   SegXX_LegYY_Shin / SegXX_LegYY_Foot : le tibia (pivote au genou) et le pied (pivote à la cheville).
@@ -32,14 +36,15 @@ SPACING = 2.0
 FRONT_LEG_SEG = 10
 BACK_LEG_SEG = 25
 HEAD_SCALE = 1.4
-HEAD_PITCH = 0.2                        # museau relevé : la tête regarde devant, pas le sol
+HEAD_PITCH = 0.06                       # tête un peu baissée : il regarde par en dessous (v3 : 0,2)
 HEAD_WIDEN = np.diag([1.4, 1.2, 1.0])   # tête plus large et plus haute que longue : une vraie tête de dragon, pas de crocodile
 
 STYLE = {
     "body": ("#24569F", "Glass"),
     "blades": ("#4E8FE6", "Glass"),
-    "eyes": ("#3FE0FF", "Neon"),
-    "pupils": ("#050B18", "SmoothPlastic"),
+    "eyes": ("#F2FCFF", "Neon"),               # yeux B, choisis par Will
+    "pupils": ("#1B3FD8", "Neon"),
+    "brows": ("#102A5C", "SmoothPlastic"),
     "gem": ("#7FD8FF", "Neon"),
 }
 # Trois propositions de couleur pour les yeux : (iris, pupille). Will choisira.
@@ -122,6 +127,22 @@ def lens(c, along, normal, L, H, dome, back=0.25, k=12, pinch=0.35):
         j2 = (j + 1) % k
         f += [(j, j2, k + j2), (j, k + j2, k + j), (k + j, k + j2, top), (j2, j, bot)]
     return _oriented([list(x) for x in v], f)
+
+
+def lid_cut(vf, c, along, normal, b0, slope):
+    """Coupe le haut d'une lentille par une ligne droite en biais (paupière du haut) :
+    dans le plan de l'œil, la hauteur b est limitée à b0 + slope * a (a > 0 vers le museau)."""
+    v, f = vf
+    n = _unit(normal)
+    a = _unit(np.asarray(along, float) - (np.asarray(along, float) @ n) * n)
+    b = np.cross(n, a)
+    out = []
+    for p in v:
+        d = np.asarray(p) - c
+        ca, cb, cn = d @ a, d @ b, d @ n
+        cb = min(cb, b0 + slope * ca)
+        out.append(list(c + a * ca + b * cb + n * cn))
+    return _oriented(out, f)
 
 
 def torus(c, normal, R, r, k=18, m=4):
@@ -285,14 +306,6 @@ def head(rng):
             bk = np.array([side * 0.55, 0, 0.84])
             root = np.array([side * 1.35, 0.1 + 0.25 * k, -0.6 + 0.35 * k])
             bl.append(flame(rng, root, radial, tang, bk, 3.6 + 0.5 * k + rng.uniform(0, 1), 0.45, 0.7, 0.8, wave=0.8))
-        # arcade en visière : épaisse, elle descend vers le museau et couvre le haut de l'œil (regard froncé)
-        bl.append(blade3([[side * 1.95, 2.0, 0.9], [side * 1.7, 1.8, -0.4], [side * 1.3, 1.55, -1.7],
-                          [side * 0.75, 1.15, -2.9]], [0.7, 0.75, 0.55, 0.0], 0.4,
-                         [[side, -0.35, 0]] * 4))
-        # paupière du bas : une lame fine qui part du coin avant de l'œil et file vers l'arrière (trait d'eye-liner)
-        bl.append(blade3([[side * 1.2, 0.82, -2.0], [side * 1.5, 0.88, -0.9], [side * 1.85, 1.1, 0.3],
-                          [side * 2.15, 1.45, 1.5]], [0.12, 0.28, 0.24, 0.0], 0.12,
-                         [[0, 1.0, 0]] * 4))
         # cornes d'arcade : partent au-dessus de l'œil et filent vers l'arrière
         bl.append(_oriented(*tube([[side * 1.3, 2.1, 0.0], [side * 1.9, 3.0, 1.3], [side * 2.3, 3.5, 3.0],
                                    [side * 2.4, 3.6, 4.6]], [0.38, 0.28, 0.16, 0], 5, tip=True)))
@@ -332,23 +345,43 @@ def head(rng):
                          0.36, 0.55, 0.8, wave=1.0))
     jaw = [(transform(np.array(v) - JAW_HINGE, rot_matrix_x(-JAW_OPEN), JAW_HINGE), f) for v, f in jaw]
 
-    # yeux : orbite sombre (avec le crâne), iris en amande incliné, pupille en fente verticale
-    eyes, pupils = [], []
+    # yeux : orbite sombre, iris en amande incliné et plissé (haut coupé en biais), pupille en fente verticale
+    eyes, pupils, brows = [], [], []
     for side in (-1, 1):
         c = np.array([side * 1.28, 1.18, -1.3])
         nrm = np.array([side * 0.85, 0.08, -0.52])         # il regarde dehors ET devant (prédateur)
         along = np.array([side * -0.15, -0.32, -1.0])       # coin avant plus bas, vers le museau
-        skull.append(lens(c - _unit(nrm) * 0.05, along, nrm, 1.0, 0.5, 0.1, back=0.5))
-        eyes.append(lens(c + _unit(nrm) * 0.02, along, nrm, 0.78, 0.3, 0.16, back=0.3))
+        lid = (0.1, -0.32)                                  # paupière du haut : descend vers le museau
+        brows.append(lens(c - _unit(nrm) * 0.06, along, nrm, 1.1, 0.6, 0.1, back=0.5))
+        eyes.append(lid_cut(lens(c + _unit(nrm) * 0.02, along, nrm, 0.8, 0.34, 0.16, back=0.3),
+                            c, along, nrm, *lid))
         up = np.array([0, 1.0, 0.0])                        # la fente reste verticale
-        pupils.append(lens(c + _unit(nrm) * 0.09, up, nrm, 0.29, 0.1, 0.12, back=0.05, k=8, pinch=0.2))
+        pupils.append(lid_cut(lens(c + _unit(nrm) * 0.09, up, nrm, 0.3, 0.1, 0.12, back=0.05, k=8, pinch=0.2),
+                              c, along, nrm, lid[0] + 0.02, lid[1]))
+        s_ = side
+        # sourcils : trois mèches épaisses empilées ; elles partent de l'arête du nez, plongent sur l'œil
+        # (en visière) puis remontent vers l'arrière et dépassent du crâne en pointes
+        for path, w in (([[s_ * 0.55, 1.18, -2.6], [s_ * 1.42, 1.6, -1.55], [s_ * 1.92, 1.98, -0.45],
+                          [s_ * 2.35, 2.5, 0.6], [s_ * 2.85, 3.15, 1.8]], [0.12, 0.3, 0.34, 0.24, 0.0]),
+                        ([[s_ * 0.95, 1.95, -1.9], [s_ * 1.55, 2.25, -1.0], [s_ * 2.0, 2.72, 0.05],
+                          [s_ * 2.45, 3.45, 1.2], [s_ * 2.85, 4.25, 2.3]], [0.08, 0.22, 0.25, 0.16, 0.0]),
+                        ([[s_ * 1.15, 2.45, -1.2], [s_ * 1.65, 2.82, -0.35], [s_ * 2.05, 3.4, 0.6],
+                          [s_ * 2.35, 4.15, 1.55], [s_ * 2.55, 5.05, 2.5]], [0.06, 0.16, 0.18, 0.12, 0.0])):
+            brows.append(blade3(path, w, 0.28, [[s_ * -0.3, 1.0, 0]] * 5))
+        # paupière du bas : lame fine sous l'œil qui file vers l'arrière (trait d'eye-liner)
+        brows.append(blade3([[s_ * 1.2, 0.8, -2.05], [s_ * 1.52, 0.86, -0.9], [s_ * 1.88, 1.08, 0.3],
+                             [s_ * 2.2, 1.45, 1.5]], [0.12, 0.26, 0.22, 0.0], 0.12, [[0, 1.0, 0]] * 4))
+        # plis de froncement sur l'arête du nez (chevrons pointés vers le museau)
+        for z, y in ((-2.35, 1.17), (-2.85, 1.1), (-3.35, 1.03)):
+            brows.append(blade3([[0, y + 0.14, z - 0.15], [s_ * 0.32, y + 0.1, z + 0.08], [s_ * 0.62, y - 0.02, z + 0.32]],
+                                [0.12, 0.1, 0.0], 0.1, [[0, 0.3, 1.0]] * 3))
     # gemme du front : grosse, facettée, entourée de deux anneaux (comme sur la vidéo)
     gn = np.array([0, 0.7, -0.71])
     gc = np.array([0, 1.95, -0.35])                         # au milieu du front, au-dessus et en arrière des yeux
     v, f = blob(gc, 0.4, scale=(0.75, 1.0, 1.0), jitter=0.0, subdiv=1)
     v = [list(gc + (np.asarray(p) - gc) - _unit(gn) * ((np.asarray(p) - gc) @ _unit(gn)) * 0.45) for p in v]
     gem = [_oriented(v, f), torus(gc - _unit(gn) * 0.05, gn, 0.58, 0.07), torus(gc - _unit(gn) * 0.1, gn, 0.8, 0.055)]
-    return skull, bl, jaw, eyes, pupils, gem
+    return skull, bl, jaw, eyes, pupils, gem, brows
 
 
 # ---------------- pattes (cuisse, tibia, pied) ----------------
@@ -420,14 +453,16 @@ def dragon_cristal_v4(name="Dragon_Cristal_v4", seed=57):
     col_e, mat_e = STYLE["eyes"]
     col_p, mat_p = STYLE["pupils"]
     col_g, mat_g = STYLE["gem"]
+    col_w, mat_w = STYLE["brows"]
     meta = {"chain": [p.tolist() for p in pts], "legs": {}, "ground": 0.0}
 
     # la tête : en avant du point 0 ; l'arrière du crâne chevauche le premier morceau
     Mh, oh = frame(pts, 0) @ rot_matrix_x(HEAD_PITCH) @ HEAD_WIDEN * HEAD_SCALE, pts[0] + np.array([0, 0.6, -3.6])
-    skull, blades, jaw, eyes, pupils, gem = head(rng)
+    skull, blades, jaw, eyes, pupils, gem, brows = head(rng)
     for nm, lst, c, m in (("Head", skull, col_b, mat_b), ("Head_Blades", blades, col_l, mat_l),
                           ("Head_Jaw", jaw, col_l, mat_l), ("Head_Eyes", eyes, col_e, mat_e),
-                          ("Head_Pupils", pupils, col_p, mat_p), ("Head_Gem", gem, col_g, mat_g)):
+                          ("Head_Pupils", pupils, col_p, mat_p), ("Head_Gem", gem, col_g, mat_g),
+                          ("Head_Brows", brows, col_w, mat_w)):
         for vf in lst:
             a.add(nm, *place(vf, Mh, oh), c, m)
     meta["jaw_hinge"] = (Mh @ JAW_HINGE + oh).tolist()

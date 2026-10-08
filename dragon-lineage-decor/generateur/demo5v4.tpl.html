@@ -47,8 +47,8 @@ button:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
   </div>
   <div class="sep"></div>
   <div class="grp" aria-label="Couleur des yeux">
-    <button data-eyes="A" aria-pressed="true">Yeux A</button>
-    <button data-eyes="B" aria-pressed="false">Yeux B</button>
+    <button data-eyes="A" aria-pressed="false">Yeux A</button>
+    <button data-eyes="B" aria-pressed="true">Yeux B</button>
     <button data-eyes="C" aria-pressed="false">Yeux C</button>
   </div>
   <div class="sep"></div>
@@ -85,15 +85,17 @@ new THREE.GLTFLoader().parse(bin, "", gltf => {
   root.traverse(o => { if (o.isMesh) {
     const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
     const isEye = o.name.includes("Eyes"), isPupil = o.name.includes("Pupils"), isGem = o.name.includes("Gem");
+    const isBrow = o.name.includes("Brows");
     const isBlade = o.name.includes("Blades") || o.name.includes("Jaw"), glow = isEye || isGem;
     const orig = o.material.color.clone();
     // iris, gemme et pupilles sont opaques et dessinés après le cristal transparent, pour rester nets
     const crystal = isPupil ? new THREE.MeshBasicMaterial({color:orig})
       : glow ? new THREE.MeshBasicMaterial({color:orig})
+      : isBrow ? new THREE.MeshPhongMaterial({color:orig, emissive:0x020610, flatShading:true, shininess:60, specular:0x4f7fd0})
       : new THREE.MeshPhongMaterial({color: isBlade ? 0x2f6fc6 : 0x1d4f9a,
       emissive: 0x061a3a, transparent:true, opacity: 0.55, flatShading:true,
       shininess:80, specular:0x6fa8ff, depthWrite:false, side:THREE.DoubleSide});
-    if (isEye || isPupil || isGem) o.renderOrder = 2;
+    if (isEye || isPupil || isGem || isBrow) o.renderOrder = 2;
     const solid = new THREE.MeshLambertMaterial({color:orig, emissive: glow ? orig : 0x000000});
     if (isEye) eyeMats.push(crystal, solid); if (isPupil) pupilMats.push(crystal, solid);
     const hue = (meshes.length * 0.137) % 1;
