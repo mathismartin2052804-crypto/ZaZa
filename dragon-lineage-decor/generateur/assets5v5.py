@@ -62,13 +62,32 @@ v4.ANTENNA = [(0.6, 2.1, -0.6), (2.0, 3.0, 0.0), (3.6, 3.9, 0.9), (5.0, 4.8, 2.1
 
 # ---------------- mèches hérissées ----------------
 
-def bristle(rng, root, radial, tang, back, ln, w, rise, hook=0.4, wave=1.0, twist=0.5, lean=0.0, pts=7):
-    """Mèche en flamme (comme sur la vidéo) : base large couchée sur le corps, puis une COURBE qui se relève
+# Styles de plumage proposés à Will (la démo permet de les comparer) :
+#   "0" : flammes courbes (version validée avant, encore un peu « piquante ») ;
+#   "A" : flammes douces : plus couchées, longue courbe en S, pointe arrondie ;
+#   "B" : plumes : plus courtes et plus larges, en feuille, couchées et qui se chevauchent comme des écailles ;
+#   "C" : mèches fluides : longues, ondulées deux fois (de côté et de haut en bas), comme des cheveux au vent.
+PLUMAGE = "0"
+_STYLES = {
+    #     pts  long  larg  relevé pointe  S    vague  profil de largeur (de la racine à la pointe)
+    "0": (7, 1.0, 1.5, 1.0, 1.0, 0.13, 0.0, [0.85, 1.0, 0.95, 0.8, 0.55, 0.28, 0.0]),
+    "A": (7, 1.0, 1.5, 0.55, 0.5, 0.18, 0.0, [0.8, 1.0, 1.0, 0.9, 0.7, 0.42, 0.0]),
+    "B": (6, 0.72, 2.1, 0.35, 0.3, 0.05, 0.0, [0.45, 0.85, 1.0, 0.9, 0.55, 0.0]),
+    "C": (8, 1.15, 1.1, 0.5, 0.45, 0.2, 0.1, [0.8, 1.0, 0.95, 0.85, 0.7, 0.5, 0.28, 0.0]),
+}
+
+
+def bristle(rng, root, radial, tang, back, ln, w, rise, hook=0.4, wave=1.0, twist=0.5, lean=0.0):
+    """Mèche du dessus, selon le style PLUMAGE : base couchée sur le corps, puis une COURBE qui se relève
     jusqu'à l'angle « rise » (radians, mesuré depuis le corps), pointe qui se recourbe encore de « hook »,
-    avec une ondulation en S sur le côté. « lean » penche la mèche sur le côté (radians).
-    Première version : 5 points et un angle qui montait régulièrement = des pics droits (« électrocuté »)."""
+    avec une ondulation en S sur le côté (et, en style C, une ondulation de haut en bas).
+    « lean » penche la mèche sur le côté. La toute première version (5 points, angle qui montait
+    régulièrement) donnait des pics droits (« électrocuté »). Les tirages aléatoires sont les mêmes pour tous
+    les styles : le reste du dragon ne change pas d'un style à l'autre."""
+    pts, kl, kw, kr, kh, sa, va, prof = _STYLES[PLUMAGE]
+    ln, w, rise, hook = ln * kl, w * kw / 1.5, rise * kr, hook * kh
     phase = rng.choice([-1.0, 1.0])
-    amp = 0.13 * wave * ln * rng.uniform(0.7, 1.3)
+    amp = sa * wave * ln * rng.uniform(0.7, 1.3)
     tw = twist * rng.uniform(-1, 1)
     bk = back * math.cos(lean) + tang * math.sin(lean)
     tg = np.cross(radial, bk); tg /= np.linalg.norm(tg)
@@ -77,11 +96,11 @@ def bristle(rng, root, radial, tang, back, ln, w, rise, hook=0.4, wave=1.0, twis
     for k in range(1, pts):
         u = k / (pts - 1)
         ang = 0.06 + rise * u ** 1.6 + hook * u ** 3        # couchée au départ, de plus en plus relevée : une courbe
+        ang += va * math.sin(2 * math.pi * u) * phase       # style C : ondule aussi de haut en bas
         p = p + (bk * math.cos(ang) + radial * math.sin(ang)) * (ln / (pts - 1))
         path.append(p + tg * amp * phase * math.sin(2 * math.pi * u) * (0.4 + 0.6 * u))   # S sur le côté
         a = tw * u
         sides.append(tg * math.cos(a) + radial * math.sin(a))
-    prof = [0.85, 1.0, 0.95, 0.8, 0.55, 0.28, 0.0] if pts == 7 else [0.85, 1.0, 0.7, 0.35, 0.0]
     return blade3(path, [w * f for f in prof], 0.1, sides)
 
 

@@ -46,6 +46,8 @@ button:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
     <button data-view="head">Tête</button>
   </div>
   <div class="sep"></div>
+  <div class="grp" aria-label="Plumage" id="plumes"></div>
+  <div class="sep"></div>
   <div class="grp" aria-label="Animation">
     <button id="anim" aria-pressed="true">Animation</button>
     <button id="slow" aria-pressed="false">Ralenti</button>
@@ -57,8 +59,9 @@ button:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
-const GLB = "__GLB__";
-const META = __META__;
+// plusieurs styles de plumage dans la même page : {clé: {glb, meta, label}} ; on recharge le modèle au clic
+const VARIANTS = __VARIANTS__;
+let META = null;
 const el = document.getElementById("view");
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -75,9 +78,22 @@ let grid = null;
 
 const eyeMats = [], pupilMats = [];
 const meshes = []; let center = new THREE.Vector3(), size = 60;
-const bin = Uint8Array.from(atob(GLB), c => c.charCodeAt(0)).buffer;
-new THREE.GLTFLoader().parse(bin, "", gltf => {
-  const root = gltf.scene; scene.add(root);
+let curRoot = null, curMode = "crystal", curKey = null, ground = null;
+function loadVariant(key){
+  const V = VARIANTS[key]; META = V.meta; curKey = key;
+  document.querySelectorAll("[data-plume]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.plume === key)));
+  if (curRoot){                                  // on enlève l'ancien modèle et on remet l'animation à zéro
+    scene.remove(curRoot);
+    curRoot.traverse(o => { if (o.isMesh){ o.geometry.dispose(); } });
+    meshes.length = 0; eyeMats.length = 0; pupilMats.length = 0; drive.length = 0; legs = [];
+    whisk = {}; eyesM = {}; P = [];
+  }
+  const bin = Uint8Array.from(atob(V.glb), c => c.charCodeAt(0)).buffer;
+  new THREE.GLTFLoader().parse(bin, "", gltf => onModel(gltf, !curRoot),
+    err => { document.getElementById("stats").textContent = "Le modèle n'a pas pu se charger."; });
+}
+function onModel(gltf, first){
+  const root = gltf.scene; scene.add(root); curRoot = root;
   let tris = 0;
   root.traverse(o => { if (o.isMesh) {
     const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
@@ -108,21 +124,23 @@ new THREE.GLTFLoader().parse(bin, "", gltf => {
   }});
   root.traverse(o => { if (o.isMesh) o.castShadow = true; });
   const box = new THREE.Box3().setFromObject(root);
-  const g0 = META.ground;
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShadowMaterial({opacity: 0.45}));
-  ground.rotation.x = -Math.PI / 2; ground.position.y = g0; ground.receiveShadow = true; scene.add(ground);
-  grid = new THREE.GridHelper(300, 75, 0x3a4252, 0x2a303b); grid.position.y = g0 + 0.01; scene.add(grid);
-  const c = box.getCenter(new THREE.Vector3()), cam = sun.shadow.camera;
-  sun.position.set(c.x + 30, 80, c.z + 20); sun.target.position.copy(c); scene.add(sun.target);
-  cam.left = -90; cam.right = 90; cam.top = 90; cam.bottom = -90; cam.near = 1; cam.far = 250; cam.updateProjectionMatrix();
-  box.getCenter(center); size = box.getSize(new THREE.Vector3()).length();
-  controls.target.copy(center);
-  setMode("crystal"); setView("three"); setEyes("C");
+  if (first){
+    const g0 = META.ground;
+    ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShadowMaterial({opacity: 0.45}));
+    ground.rotation.x = -Math.PI / 2; ground.position.y = g0; ground.receiveShadow = true; scene.add(ground);
+    grid = new THREE.GridHelper(300, 75, 0x3a4252, 0x2a303b); grid.position.y = g0 + 0.01; scene.add(grid);
+    const c = box.getCenter(new THREE.Vector3()), cam = sun.shadow.camera;
+    sun.position.set(c.x + 30, 80, c.z + 20); sun.target.position.copy(c); scene.add(sun.target);
+    cam.left = -90; cam.right = 90; cam.top = 90; cam.bottom = -90; cam.near = 1; cam.far = 250; cam.updateProjectionMatrix();
+    box.getCenter(center); size = box.getSize(new THREE.Vector3()).length();
+    controls.target.copy(center);
+  }
+  setMode(curMode); if (first) setView("three"); setEyes("C");
   rig(root);
   document.getElementById("stats").innerHTML =
     `${meshes.length} morceaux · ${Math.round(tris).toLocaleString("fr-FR")} triangles<br>` +
     `${box.getSize(new THREE.Vector3()).toArray().map(v=>v.toFixed(0)).join(" × ")} studs`;
-}, err => { document.getElementById("stats").textContent = "Le modèle n'a pas pu se charger."; });
+}
 
 // ---------------- animation de VOL (même calcul que le futur LocalScript Roblox) ----------------
 // Chaque morceau : M = Translation(nouveau pivot) × Rotation × Translation(-pivot de repos).
@@ -196,9 +214,10 @@ function pose(t){
   const jawM = headM.clone().multiply(about(jawHinge, rotX(0.13 * (0.5 + 0.5 * Math.sin(w + 2.0)))));
   // 3. pattes : elles pagaient (épaule/hanche, puis coude/genou et main/pied avec du retard)
   for (const L of legs){
-    const ph = w + LEG_PH[L.tag], k = L.front ? 1 : 0.85;
-    L.thighM = segM[L.seg].clone().multiply(about(L.hip, rotX(0.5 * k * Math.sin(ph))));
-    L.shinM = L.thighM.clone().multiply(about(L.knee, rotX(0.45 * k * Math.sin(ph - 0.9) * (L.front ? 1 : -1))));
+    // pattes arrière : même mouvement que les pattes avant (Will), en opposition de phase
+    const ph = w + LEG_PH[L.tag];
+    L.thighM = segM[L.seg].clone().multiply(about(L.hip, rotX(0.5 * Math.sin(ph))));
+    L.shinM = L.thighM.clone().multiply(about(L.knee, rotX(0.45 * Math.sin(ph - 0.9))));
     L.footM = L.shinM.clone().multiply(about(L.ankle, rotX(0.5 * Math.sin(ph - 1.7))));
   }
   // 4. moustaches : trois morceaux qui ondulent avec du retard (vague qui part du museau)
@@ -235,6 +254,7 @@ function animate(dt){
 }
 
 function setMode(m){
+  curMode = m;
   for (const x of meshes){ x.o.material = x[m]; x.edges.visible = m === "crystal"; }
   for (const [id,k] of [["mCrystal","crystal"],["mSolid","solid"],["mParts","parts"]])
     document.getElementById(id).setAttribute("aria-pressed", String(k === m));
@@ -273,5 +293,11 @@ const spin = document.getElementById("spin");
 spin.onclick = () => { controls.autoRotate = !controls.autoRotate; spin.setAttribute("aria-pressed", String(controls.autoRotate)); };
 function resize(){ const w = el.clientWidth, h = el.clientHeight; renderer.setSize(w,h); camera.aspect = w/h; camera.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
+const plumes = document.getElementById("plumes");
+for (const [k, V] of Object.entries(VARIANTS)){
+  const b = document.createElement("button"); b.dataset.plume = k; b.textContent = V.label; b.title = V.title;
+  b.onclick = () => { if (k !== curKey) loadVariant(k); }; plumes.appendChild(b);
+}
+loadVariant(Object.keys(VARIANTS)[0]);
 (function loop(){ requestAnimationFrame(loop); animate(Math.min(clock.getDelta(), 0.1)); controls.update(); renderer.render(scene,camera); })();
 </script>
