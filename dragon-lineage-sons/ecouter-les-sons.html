@@ -1,0 +1,201 @@
+<title>Sons de Dragon Lineage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@600;700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : une colonne de lecture ; chaque besoin est une ligne de « candidats » à cocher, barre de choix collée en bas. */
+:root {
+  --bg: #f6f2ee;
+  --surface: #fffdfb;
+  --fg: #2a211d;
+  --muted: #74655d;
+  --line: #e4d9d1;
+  --ember: #c2410c;
+  --ember-soft: #fbe5d6;
+  --picked: #1f7a4d;
+  --picked-soft: #dcf1e5;
+  --display: "Cormorant SC", "Palatino Linotype", Palatino, Georgia, serif;
+  --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17120f; --surface: #211a16; --fg: #f1e7df; --muted: #a8978c; --line: #3a2e27;
+    --ember: #fb8a4c; --ember-soft: #3d2316; --picked: #5fd39a; --picked-soft: #173627;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17120f; --surface: #211a16; --fg: #f1e7df; --muted: #a8978c; --line: #3a2e27;
+  --ember: #fb8a4c; --ember-soft: #3d2316; --picked: #5fd39a; --picked-soft: #173627;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); }
+.wrap { max-width: 860px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 120px; display: grid; gap: 28px; }
+header { display: grid; gap: 10px; }
+.eyebrow { font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ember); }
+h1 { font: 700 clamp(30px, 6vw, 44px)/1.05 var(--display); margin: 0; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 62ch; }
+.howto { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 4px 0 0; padding: 0; list-style: none; font-size: 14px; }
+.howto li { display: flex; gap: 8px; align-items: baseline; }
+.howto b { font: 600 12px var(--mono); color: var(--ember); }
+nav { display: flex; flex-wrap: wrap; gap: 8px; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding-block: 10px; z-index: 2; border-bottom: 1px solid var(--line); }
+nav a { color: var(--fg); text-decoration: none; font-size: 13px; font-weight: 500; padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); display: flex; gap: 6px; align-items: center; }
+nav a:hover, nav a:focus-visible { border-color: var(--ember); outline: none; }
+nav .n { font: 12px var(--mono); color: var(--muted); }
+nav .n.done { color: var(--picked); }
+section { display: grid; gap: 14px; scroll-margin-top: 70px; }
+h2 { font: 700 26px/1.1 var(--display); margin: 0; display: flex; align-items: baseline; gap: 12px; }
+h2 small { font: 12px var(--mono); color: var(--muted); letter-spacing: .04em; }
+.need { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; }
+.need.has-pick { border-color: var(--picked); }
+.need-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+.status { font: 12px var(--mono); color: var(--muted); }
+.need.has-pick .status { color: var(--picked); }
+.cands { display: grid; gap: 6px; }
+.cand { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 8px; border: 1px solid transparent; }
+.cand:hover { background: var(--bg); }
+.cand.picked { background: var(--picked-soft); border-color: var(--picked); }
+.cand input { width: 18px; height: 18px; accent-color: var(--picked); margin: 0; cursor: pointer; }
+.cand label { min-width: 0; cursor: pointer; display: grid; gap: 2px; }
+.name { font-weight: 500; overflow-wrap: anywhere; }
+.meta { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.loop { color: var(--ember); }
+.listen { font-size: 13px; font-weight: 600; color: var(--ember); background: var(--ember-soft); text-decoration: none; padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+.listen:hover, .listen:focus-visible { outline: 2px solid var(--ember); outline-offset: 1px; }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 3; }
+.bar-in { max-width: 860px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.count { font-size: 14px; }
+.count b { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+button { font: 600 14px var(--body); border-radius: 999px; padding: 8px 16px; cursor: pointer; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+button.primary { background: var(--picked); border-color: var(--picked); color: var(--surface); }
+button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+#out { width: 100%; min-height: 120px; font: 12px var(--mono); background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.toast { font-size: 13px; color: var(--picked); }
+@media (prefers-reduced-motion: no-preference) { .cand, .need { transition: background .15s, border-color .15s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Dragon Lineage · présélection audio</div>
+    <h1>Sons de Dragon Lineage</h1>
+    <p class="lead">49 sons de la bibliothèque ProSoundEffects de Roblox : gratuits, sans import et sans risque de droits. Écoute les candidats de chaque besoin et coche celui que tu gardes.</p>
+    <ul class="howto">
+      <li><b>1</b> « Écouter » ouvre la page du son, avec le bouton ▶︎</li>
+      <li><b>2</b> Coche ton préféré pour chaque besoin</li>
+      <li><b>3</b> « Copier mes choix » et colle le texte à Claude</li>
+    </ul>
+  </header>
+  <nav id="nav" aria-label="Catégories"></nav>
+  <main id="list" style="display:grid;gap:36px"></main>
+</div>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="count"><b id="nPicked">0</b> besoin(s) choisi(s) sur <b id="nNeeds">0</b> <span class="toast" id="toast" hidden></span></div>
+    <div class="actions">
+      <button type="button" id="reset">Tout décocher</button>
+      <button type="button" class="primary" id="copy">Copier mes choix</button>
+    </div>
+    <textarea id="out" readonly hidden aria-label="Tes choix"></textarea>
+  </div>
+</div>
+
+<script>
+const DATA = [{"key": "Dragons", "label": "Dragons", "needs": [{"key": "RugissementPuissant", "label": "Rugissement puissant", "note": "", "sons": [{"id": "9113987603", "nom": "Giant Crab Monster Roars 1", "duree": 6, "boucle": false}, {"id": "9120025244", "nom": "Thunder With Lion Roar Searing Blast 16", "duree": 3, "boucle": false}, {"id": "9113985451", "nom": "Roar Constant Deep Throaty Growls 1", "duree": 16, "boucle": false}]}, {"key": "GrognementCalme", "label": "Grognement calme", "note": "", "sons": [{"id": "9125467848", "nom": "Lion Deep Guttural Rumbling", "duree": 2, "boucle": false}, {"id": "9113985445", "nom": "Roar Constant Deep Throaty Growls 2", "duree": 3, "boucle": false}]}, {"key": "CriAttaque", "label": "Cri d'attaque", "note": "Cris de ptérodactyle, aigus et rapides.", "sons": [{"id": "9125474505", "nom": "Pterodactyl Screech Vocals Screams", "duree": 1, "boucle": false}, {"id": "9113981940", "nom": "Pterodactyl Dressed Screams 18", "duree": 2, "boucle": false}]}, {"key": "Sifflement", "label": "Sifflement", "note": "", "sons": [{"id": "9113991406", "nom": "Spider Long Hiss Spray 2", "duree": 5, "boucle": false}, {"id": "9113990020", "nom": "Spider Hiss Exhale 3", "duree": 3, "boucle": false}]}, {"key": "BattementAiles", "label": "Battement d'ailes", "note": "Le n° 3 est une boucle pour le vol.", "sons": [{"id": "9120781361", "nom": "Wings Pterodactyl 2", "duree": 5, "boucle": false}, {"id": "9125472053", "nom": "Pterodactyl Attack Wing Flaps 1", "duree": 2, "boucle": false}, {"id": "9120782165", "nom": "Wings Pterodactyl 1", "duree": 33, "boucle": true}]}, {"key": "PasLourds", "label": "Pas lourds", "note": "", "sons": [{"id": "9114080709", "nom": "Dinosaur Footsteps Boomy Thumps 16", "duree": 2, "boucle": false}, {"id": "9125404769", "nom": "Boomy Footsteps Giant Thumpy Dinosaur", "duree": 3, "boucle": false}]}]}, {"key": "Feu", "label": "Feu", "needs": [{"key": "SouffleDeFeu", "label": "Souffle de feu", "note": "", "sons": [{"id": "9114439216", "nom": "Fire Whoosh 4", "duree": 6, "boucle": false}, {"id": "9114446277", "nom": "Fire Whoosh 6", "duree": 2, "boucle": false}, {"id": "9114443037", "nom": "Fire Whoosh 7", "duree": 2, "boucle": false}]}, {"key": "BouleDeFeu", "label": "Boule de feu", "note": "", "sons": [{"id": "9114446852", "nom": "Fire Whoosh 15", "duree": 1, "boucle": false}, {"id": "9114444008", "nom": "Fire Whoosh 3", "duree": 1, "boucle": false}]}, {"key": "Brasero", "label": "Brasero", "note": "", "sons": [{"id": "9112780462", "nom": "Fireplace Constant Burning Flame 4", "duree": 43, "boucle": true}, {"id": "9112780193", "nom": "Fireplace Constant Burning Flame 1", "duree": 36, "boucle": true}]}]}, {"key": "Os", "label": "Os et pierre", "needs": [{"key": "Craquement", "label": "Craquement d'os", "note": "", "sons": [{"id": "9113542363", "nom": "Bone Cracks 10", "duree": 1, "boucle": false}, {"id": "9113540599", "nom": "Bone Cracks 33", "duree": 3, "boucle": false}, {"id": "9113546617", "nom": "Bone Cracks 30", "duree": 2, "boucle": false}]}, {"key": "Cliquetis", "label": "Cliquetis", "note": "Pas de vrai bruit de squelette : un treillis en bois qui s'en approche.", "sons": [{"id": "9120927210", "nom": "Wood Lattice Light Rattle 7", "duree": 4, "boucle": false}]}, {"key": "ImpactPierre", "label": "Impact de pierre", "note": "", "sons": [{"id": "9125391808", "nom": "Big Rocks Drop Interior Muffled", "duree": 11, "boucle": false}, {"id": "9118587701", "nom": "Rock Drop On Concrete Drops Breaks 4", "duree": 2, "boucle": false}]}]}, {"key": "Oeufs", "label": "Œufs", "needs": [{"key": "Fissure", "label": "Fissure", "note": "Le n° 3 craque petit à petit.", "sons": [{"id": "9113958649", "nom": "Crack Egg Crunchy 2", "duree": 2, "boucle": false}, {"id": "9113959106", "nom": "Crack Egg Crunchy 7", "duree": 4, "boucle": false}, {"id": "9113958660", "nom": "Crack Egg Crunchy 1", "duree": 6, "boucle": false}]}, {"key": "CoqueQuiCasse", "label": "Coque qui casse", "note": "", "sons": [{"id": "9120490359", "nom": "Walnuts Crunch Shell Crack Break 2", "duree": 5, "boucle": false}]}, {"key": "CriBebeDragon", "label": "Cri de bébé dragon", "note": "À essayer plus aigu (PlaybackSpeed 1.2 à 1.5).", "sons": [{"id": "9125596197", "nom": "Growls Tiny Creature Cartoon", "duree": 1, "boucle": false}, {"id": "9125596336", "nom": "Growls Tiny Creature Cartoon", "duree": 4, "boucle": false}, {"id": "9125473997", "nom": "Pterodactyl Squawks Wing Flaps", "duree": 4, "boucle": false}]}]}, {"key": "Ambiance", "label": "Ambiance", "needs": [{"key": "Repaire", "label": "Repaire", "note": "", "sons": [{"id": "9113731969", "nom": "Cave Presence Constant Eerie Musical Hum 4", "duree": 57, "boucle": true}, {"id": "9113732233", "nom": "Cavernous Winds Empty Eerie Gusts Tonal 3", "duree": 43, "boucle": true}]}, {"key": "GouttesCaverne", "label": "Gouttes dans la caverne", "note": "", "sons": [{"id": "9120505513", "nom": "Water Cave Trickle Very Thin 3", "duree": 27, "boucle": true}, {"id": "9126190654", "nom": "Water Drips Into Filled Bowl Cave Water Drop", "duree": 8, "boucle": false}]}, {"key": "VentMontagne", "label": "Vent de montagne", "note": "", "sons": [{"id": "9114625414", "nom": "Gods Wind Spooky Eerie 1", "duree": 36, "boucle": true}, {"id": "9114057104", "nom": "Desert Wind Whistley Light Gusts 1", "duree": 37, "boucle": true}]}, {"key": "DragonQuiPasse", "label": "Dragon qui passe", "note": "", "sons": [{"id": "9120697823", "nom": "Whoosh By Howling Wind Light Rumbling 1", "duree": 7, "boucle": false}]}]}, {"key": "Interface", "label": "Interface", "needs": [{"key": "Clic", "label": "Clic", "note": "", "sons": [{"id": "9119717529", "nom": "Switch Click On Or Off Toggle Button 1", "duree": 0, "boucle": false}, {"id": "9113649171", "nom": "Button Click And Ring 1", "duree": 1, "boucle": false}]}, {"key": "Recompense", "label": "Récompense", "note": "", "sons": [{"id": "9116394545", "nom": "Magic Glows Soft Clusters Of Chiming Hits 1", "duree": 1, "boucle": false}, {"id": "9116395085", "nom": "Magic Glows Soft Clusters Of Chiming Hits 5", "duree": 4, "boucle": false}, {"id": "9119447936", "nom": "Sparkle Bell Tree Wind Chimes 1", "duree": 5, "boucle": false}]}, {"key": "NiveauSuperieur", "label": "Niveau supérieur", "note": "", "sons": [{"id": "9125644775", "nom": "Magic Twirling Small High Pitch Spinning", "duree": 3, "boucle": false}]}, {"key": "Pieces", "label": "Pièces", "note": "", "sons": [{"id": "9113849492", "nom": "Coins Or Keys Jingle 6", "duree": 1, "boucle": false}, {"id": "9113848469", "nom": "Coin Bounce 3", "duree": 1, "boucle": false}]}]}];
+const KEY = "dl-sons-choix";
+let picks = {};
+try { picks = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { picks = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(picks)); } catch (e) {} };
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const nav = document.getElementById("nav");
+const list = document.getElementById("list");
+let totalNeeds = 0;
+
+for (const cat of DATA) {
+  const n = cat.needs.reduce((a, x) => a + x.sons.length, 0);
+  nav.insertAdjacentHTML("beforeend", `<a href="#${cat.key}">${esc(cat.label)} <span class="n" data-cat="${cat.key}"></span></a>`);
+  let html = `<section id="${cat.key}"><h2>${esc(cat.label)} <small>${n} sons</small></h2>`;
+  for (const need of cat.needs) {
+    totalNeeds++;
+    const nk = `${cat.key}.${need.key}`;
+    html += `<div class="need" data-need="${nk}"><div class="need-head"><h3>${esc(need.label)}</h3><span class="status"></span></div>`;
+    if (need.note) html += `<p class="note">${esc(need.note)}</p>`;
+    html += `<div class="cands">`;
+    need.sons.forEach((s, i) => {
+      const id = `c-${nk.replace(".", "-")}-${i + 1}`;
+      html += `<div class="cand" data-id="${s.id}">
+        <input type="radio" name="${nk}" id="${id}" value="${s.id}">
+        <label for="${id}"><span class="name">n° ${i + 1} · ${esc(s.nom)}</span>
+          <span class="meta"><span>${s.id}</span><span>${s.duree < 1 ? "< 1" : s.duree} s</span>${s.boucle ? '<span class="loop">boucle</span>' : ""}</span></label>
+        <a class="listen" href="https://create.roblox.com/store/asset/${s.id}" target="_blank" rel="noopener">Écouter ↗</a>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+  list.insertAdjacentHTML("beforeend", html + `</section>`);
+}
+document.getElementById("nNeeds").textContent = totalNeeds;
+
+function render() {
+  let total = 0;
+  for (const cat of DATA) {
+    let done = 0;
+    for (const need of cat.needs) {
+      const nk = `${cat.key}.${need.key}`;
+      const box = document.querySelector(`[data-need="${nk}"]`);
+      const pick = picks[nk];
+      box.classList.toggle("has-pick", !!pick);
+      box.querySelectorAll(".cand").forEach(c => {
+        const on = c.dataset.id === pick;
+        c.classList.toggle("picked", on);
+        c.querySelector("input").checked = on;
+      });
+      const idx = need.sons.findIndex(s => s.id === pick);
+      box.querySelector(".status").textContent = pick ? `gardé : n° ${idx + 1}` : `${need.sons.length} candidat(s)`;
+      if (pick) { done++; total++; }
+    }
+    const tag = nav.querySelector(`[data-cat="${cat.key}"]`);
+    tag.textContent = `${done}/${cat.needs.length}`;
+    tag.classList.toggle("done", done === cat.needs.length);
+  }
+  document.getElementById("nPicked").textContent = total;
+}
+
+list.addEventListener("change", e => {
+  if (e.target.type !== "radio") return;
+  picks[e.target.name] = e.target.value;
+  save(); render();
+});
+
+document.getElementById("reset").addEventListener("click", () => { picks = {}; save(); render(); });
+
+function choiceText() {
+  const lines = ["Mes choix de sons pour Dragon Lineage :"];
+  for (const cat of DATA) for (const need of cat.needs) {
+    const pick = picks[`${cat.key}.${need.key}`];
+    const idx = need.sons.findIndex(s => s.id === pick);
+    lines.push(pick ? `- ${cat.label} > ${need.label} : n° ${idx + 1} (${pick})` : `- ${cat.label} > ${need.label} : aucun`);
+  }
+  return lines.join("\n");
+}
+
+const toast = msg => { const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false; setTimeout(() => (t.hidden = true), 2500); };
+
+document.getElementById("copy").addEventListener("click", () => {
+  const text = choiceText();
+  const out = document.getElementById("out");
+  out.value = text;
+  const fallback = () => { out.hidden = false; out.focus(); out.select(); toast("Sélectionne le texte et copie-le"); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => toast("Copié !"), fallback);
+  } else fallback();
+});
+
+render();
+</script>
