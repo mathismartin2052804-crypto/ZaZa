@@ -2,12 +2,14 @@
 
 Les sons réalistes de la v1 sont abandonnés. On garde seulement les sons Roblox de **récompense** et de **niveau supérieur**.
 
-Tous les autres sons sont des **sons cartoon fabriqués pour le jeu** par synthèse (`generateur/synth_cartoon.py`) : pop, boing, « RAWR », « fwoosh », squelette au xylophone… Comme ils ne viennent d'aucun autre jeu ni d'aucun site, il n'y a aucun problème de droits.
+Tous les autres sons sont des **sons cartoon fabriqués pour le jeu** par synthèse (`generateur/synth_cartoon.py`). Comme ils ne viennent d'aucun autre jeu ni d'aucun site, il n'y a aucun problème de droits.
+
+**v3** (après « j'aime pas » sur la v2) : sons plus ronds et plus musicaux (marimba, bulles, clochettes, vraie voix à voyelles pour les rugissements), notes accordées entre elles, stéréo, volume égal d'un son à l'autre, et moins de grave pour qu'on les entende bien sur téléphone.
 
 ## Écouter et choisir
-Ouvre `ecouter-les-sons.html` ou la page publiée. Le bouton ▶︎ joue chaque son directement dans la page. Coche ton préféré pour chaque besoin, puis clique sur « Copier mes choix » et colle le texte à Claude.
+Ouvre `ecouter-les-sons.html` ou la page publiée. Le bouton ▶︎ joue chaque son directement dans la page. Coche ton préféré pour chaque besoin et écris ce qui ne va pas dans la case « Remarque ». Clique ensuite sur « Copier mes choix » et colle le texte à Claude : les remarques sont incluses.
 
-## La liste (36 sons, 21 besoins)
+## La liste (38 sons, 21 besoins)
 | Catégorie | Besoins |
 |---|---|
 | Dragons | Rugissement « RAWR », grognement, cri d'attaque, sifflement, battement d'ailes, pas lourds |
@@ -29,7 +31,7 @@ Roblox limite le nombre de sons importés par mois. N'importe donc que ceux que 
 ## Les fichiers
 | Fichier | Rôle |
 |---|---|
-| `sons-cartoon/*.ogg` | Les 36 sons cartoon, prêts à importer |
+| `sons-cartoon/*.ogg` | Les 38 sons cartoon (stéréo), prêts à importer |
 | `sons-cartoon/manifest.json` | Liste des sons (catégorie, besoin, durée, boucle) |
 | `SonsDragonLineage.lua` | ModuleScript à mettre dans `ReplicatedStorage` |
 | `EcouteSons.client.lua` | Outil d'écoute dans Studio (seulement les sons qui ont un ID ; à retirer avant de publier) |
