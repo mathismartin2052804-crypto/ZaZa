@@ -63,12 +63,21 @@ python3 demo5.py demo5.tpl.html /chemin/scratchpad/demo.html # démo 3D animée 
   ffmpeg -v error -ss 1.6 -i video.mp4 -frames:v 1 -vf scale=1280:-1 image.png   # une image précise
   ```
   Recadre (`crop=`) les vidéos de Roblox Studio : on y lit la **durée de l'animation** dans la timeline de l'Animation Editor (1,32 s pour le dragon de cristal).
+- **Regarde toute la vidéo avant de coder, y compris la fin.** Fais la planche sur toute la durée, puis zoome sur chaque passage (gros plan de la tête, profil, animation dans Blender, animation dans Studio). Erreur déjà faite : la v2 animait le dragon comme s'il **volait** (une vague qui court sur un corps en l'air), alors que la vidéo montre une **marche au sol**. Avant d'écrire une animation, décris-la à Will en une phrase (« il marche, le dos se bombe à chaque pas ») et attends son accord.
+- **Compare les proportions, pas seulement les détails.** Mesure sur une image de profil : longueur de la tête / longueur totale, hauteur de la tête / hauteur du corps, position des pattes. Un modèle peut avoir toutes les bonnes pièces et rater quand même l'allure générale.
 - **Droits** : un modèle posté sur ArtStation **n'est pas libre de droits**. Le dragon de cristal est reproduit avec l'accord de son auteur (un ami de Will). Si l'auteur a déjà le modèle dans Roblox Studio (c'est le cas sur la vidéo), le plus fidèle est de lui demander le fichier `.rbxm` (clic droit → Save to File) et son animation, plutôt que de tout refaire.
 
 ### 3.6 Communication avec Will
 - Will peut changer d'avis en cours de route (« l'anime pas maintenant »). Adapte-toi tout de suite, mais **garde ce qui servira plus tard** (le découpage en morceaux est resté, pour l'animation).
 - Montre toujours un aperçu (image ou démo) **avant** de préparer l'import dans Studio, puis propose une courte liste de choses à améliorer.
 - Pas de pull request sauf si Will la demande. Commit et push sur la branche de la session.
+- Dès le début, demande la vidéo ou les images de référence si elles ne sont pas jointes. Ne propose pas d'améliorations « à l'aveugle » sans le dire.
+
+### 3.7 Donner du caractère à une créature
+Ce qui manquait à la v2 du dragon (remarque de Will : « la tête n'est pas assez grosse, le dragon manque de caractère ») :
+- **La tête est le point d'attention.** Pour un dragon « boss », elle doit être au moins aussi large que le corps avec sa crinière, et faire environ 1/6 à 1/5 de la longueur totale. Une petite tête sur un gros corps donne un serpent, pas un dragon.
+- **L'expression vient de quelques formes fortes** : des arcades sourcilières épaisses qui descendent vers le museau (air méchant), une bouche ouverte avec de grands crocs visibles, des joues hérissées qui élargissent la silhouette de face, un ornement au milieu du front (crête, gemme).
+- **La silhouette avant les détails** : vérifie la vue de face et de profil en ombre chinoise. Si on ne reconnaît pas la créature en silhouette, ajouter des lames n'y changera rien.
 
 ## 4. Le dragon de cristal (série 5) : ce qu'il faut savoir pour continuer
 - Fichiers : `generateur/assets5.py` (modèle), `vue5.py` (aperçu), `demo5.py` + `demo5.tpl.html` (démo animée), `meshes-serie5/` (GLB + manifest), `PROMPT-SESSION-LOCALE-SERIE5.md` (import).
@@ -79,6 +88,12 @@ python3 demo5.py demo5.tpl.html /chemin/scratchpad/demo.html # démo 3D animée 
   - `Head_Eyes` : les yeux en Neon ;
   - `Seg10_LegFL/FR` et `Seg25_LegBL/BR` : les pattes (pivotent à la hanche).
 - `a.meta` donne les pivots de repos : `chain` (un point par morceau), `jaw_hinge`, `legs[nom].hip`.
-- Animation de la démo (à reproduire en Luau) : boucle de **1,32 s** ; une vague verticale va de la tête à la queue (amplitude 0,9 stud, déphasage de 0,32 par morceau) ; un léger balancement de côté ; les pattes alternent (gauche et droite en opposition, l'arrière décalé d'un quart de tour) ; la mâchoire s'ouvre et se ferme doucement.
+- **Animation voulue (d'après la vidéo, validée par Will) : une marche au sol, pas un vol.** Boucle de **1,32 s**. Les pieds se posent au sol et y restent pendant l'appui, puis se lèvent et repartent vers l'avant (grands pas, surtout les pattes avant). Le dos se **bombe** entre les pattes avant et arrière quand les pattes se rapprochent, et s'aplatit quand elles s'écartent (comme un furet). La tête reste basse et presque stable, la queue suit avec un peu de retard. Dans Blender, l'auteur utilise une chaîne d'os avec des contrôleurs en cercle le long du dos (on les voit en orange dans la vidéo).
+- L'animation de la démo v2 (vague qui va de la tête à la queue, pattes qui balancent dans le vide) est **refusée** : elle donne l'impression que le dragon vole.
 - Pour Roblox, l'animation devra être faite **côté client** (LocalScript), avec `workspace:BulkMoveTo`, des parties Anchored, et `ModelStreamingMode = Atomic` sur le modèle. Ne fais pas bouger 70 parties depuis le serveur à chaque image.
-- Différences encore visibles avec la référence (à vérifier avec Will) : le corps de la référence a l'air plus touffu et plus haut ; les lames du modèle original sont plus nombreuses et plus ondulées ; la tête de la référence a un museau plus long avec des crocs plus marqués.
+- **À faire pour la v3 (validé par Will)** :
+  - corps plus touffu et plus haut : deux couches de lames (courtes et plaquées dessous, longues dessus), lames qui s'écartent aussi sur les côtés, longueurs variées ;
+  - lames plus ondulées : 7 points, courbe en S, légère torsion, pointes en flamme. Sur la vidéo, elles sont **couchées le long du corps** comme des mèches, pas dressées comme des piquants ;
+  - **tête beaucoup plus grosse** (environ 1,5 fois) et plus expressive : museau plus long, grands crocs en haut et en bas, bouche ouverte, arcades épaisses, joues hérissées, ornement au front, crinière rabattue vers l'arrière et les côtés, antennes courbées ;
+  - pattes plus longues et fines avec de grandes griffes, touffe de queue plus fournie ;
+  - pour rester dans le budget : lames à 3 faces au lieu de 4.
