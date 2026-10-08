@@ -1,28 +1,28 @@
-# Série 5 : dragon de cristal (dragon oriental long, corps couvert de lames de glace).
-# Inspiré de l'image envoyée par Will (dragon bleu translucide aux lames effilées) ; modèle original.
+# Série 5 : dragon de cristal v2 (dragon oriental long, corps épais couvert de lames de glace courbes).
+# Reproduit le dragon de l'ami de Will (avec son accord) d'après son image et sa vidéo.
 #
 # Le dragon est découpé en morceaux pour être animé par script (pas de squelette) :
 #   Head, Seg01..Seg30   : la chaîne qui ondule (la tête puis le corps jusqu'à la queue) ;
 #   <Chaîne>_Blades      : les lames de cristal du morceau (couleur plus claire) ;
-#   Head_Jaw             : la mâchoire (s'ouvre par script) ;
+#   Head_Jaw             : la mâchoire et la barbe (s'ouvre par script) ;
 #   Head_Eyes            : les yeux (Neon) ;
-#   SegXX_LegFL/FR/BL/BR : les pattes (battent par script autour de la hanche).
-# Le script DragonCristal.client.lua retrouve tout ça grâce aux noms.
+#   SegXX_LegFL/FR/BL/BR : les pattes (bougent par script autour de la hanche).
 # Repère : Y vers le haut, tête vers -Z (l'avant de Roblox), 1 unité = 1 stud.
+# a.meta garde les pivots (colonne, hanches, charnière de la mâchoire) pour l'animation.
 import math
 import numpy as np
 import trimesh
 from meshlib import Asset, loft, ring, tube, blob, transform, rot_matrix_x
 
 N_SEG = 30          # morceaux de corps
-SPACING = 1.9       # distance entre deux morceaux (studs)
-FRONT_LEG_SEG = 6
-BACK_LEG_SEG = 21
-HEAD_SCALE = 1.35
+SPACING = 2.0       # distance entre deux morceaux (studs)
+FRONT_LEG_SEG = 10
+BACK_LEG_SEG = 25
+HEAD_SCALE = 1.3
 
 STYLE = {
-    "body": ("#2C63B8", "Glass"),
-    "blades": ("#6FA8F0", "Glass"),
+    "body": ("#24569F", "Glass"),
+    "blades": ("#4E8FE6", "Glass"),
     "eyes": ("#C8ECFF", "Neon"),
 }
 
@@ -55,18 +55,25 @@ def blade(path, widths, thick, side_hint):
     return _oriented(*loft(rings, cap_start=True, cap_end=False))
 
 
+def sabre(rng, root, radial, tang, back, ln, w, flare, hook=1.0):
+    """Lame courbe couchée vers l'arrière dont la pointe se relève (comme une flamme)."""
+    pts = []
+    for u, out in [(0.0, 0.0), (0.28, 0.08), (0.55, 0.17), (0.8, 0.3), (1.0, 0.3 + 0.35 * hook)]:
+        sway = tang * rng.uniform(-0.18, 0.18) * ln * u * u
+        pts.append(root + back * (u * ln) + radial * (out * ln * flare) + sway)
+    return blade(pts, [w * 0.8, w, w * 0.85, w * 0.45, 0], 0.09, tang)
+
+
 # ---------------- la colonne au repos ----------------
 
 def spine():
-    """Points de repos : 0 = tête, 1..N = morceaux du corps. Légère courbe en S, comme sur l'image."""
+    """Points de repos : 0 = tête, 1..N = morceaux du corps. Ondulation douce, comme sur la vidéo."""
     pts = []
     for i in range(N_SEG + 1):
         t = i / N_SEG
         z = i * SPACING
-        # tête basse, cou qui remonte, bosse aux épaules, dos qui redescend, queue un peu relevée
-        y = 6.0 + 5.0 * math.exp(-((t - 0.24) / 0.2) ** 2) + 1.2 * math.exp(-((t - 1.0) / 0.15) ** 2)
+        y = 10.0 - 2.2 * math.exp(-(t / 0.14) ** 2) + 1.3 * math.sin(2 * math.pi * (t * 1.05 - 0.05))
         pts.append(np.array([0.0, y, z]))
-    # recale à SPACING exact le long de la courbe
     out = [pts[0]]
     for p in pts[1:]:
         d = p - out[-1]
@@ -75,25 +82,21 @@ def spine():
 
 
 def frame(pts, i):
-    """Repère de repos (droite, haut, avant) du morceau i : l'avant regarde le morceau précédent."""
-    if i == 0:
-        fwd = pts[0] - pts[1]
-    else:
-        fwd = pts[i - 1] - pts[i]
+    """Repère de repos (droite, haut, arrière) du morceau i : l'avant regarde le morceau précédent."""
+    fwd = (pts[0] - pts[1]) if i == 0 else (pts[i - 1] - pts[i])
     fwd = fwd / np.linalg.norm(fwd)
     right = np.cross(fwd, [0, 1, 0]); right /= np.linalg.norm(right)
     up = np.cross(right, fwd)
-    # matrice qui envoie le repère local (x droite, y haut, z arrière) vers le monde
     return np.stack([right, up, -fwd], 1)
 
 
 def radius(i):
     t = i / N_SEG
-    if t < 0.2:
-        return 1.05 + 0.65 * (t / 0.2)
-    if t < 0.5:
-        return 1.7
-    return 1.7 - 1.4 * ((t - 0.5) / 0.5) ** 1.15
+    if t < 0.15:
+        return 1.55 + 0.6 * (t / 0.15)
+    if t < 0.75:
+        return 2.15
+    return 2.15 - 0.85 * ((t - 0.75) / 0.25)
 
 
 def place(vf, M, o):
@@ -105,38 +108,43 @@ def place(vf, M, o):
 
 def body_segment(rng, i, pts):
     r = radius(i)
-    L = SPACING * 0.7
+    rc = r * 0.82                      # le cœur, presque caché par les lames
+    L = SPACING * 0.75
     rings = []
-    for k, (z, s) in enumerate([(-L, 0.93), (0.0, 1.05), (L, 0.9)]):
-        rr = ring((0, 0, z), r * s, 7, angle0=0.45 * k + i * 0.3, axis_u=(1, 0, 0), axis_v=(0, 1, 0),
+    for k, (z, s) in enumerate([(-L, 0.95), (0.0, 1.05), (L, 0.92)]):
+        rr = ring((0, 0, z), rc * s, 7, angle0=0.45 * k + i * 0.3, axis_u=(1, 0, 0), axis_v=(0, 1, 0),
                   jitter=0.08, rng=rng)
-        rr[:, 1] *= 1.12          # un peu plus haut que large
+        rr[:, 1] *= 1.1
         rings.append(rr)
     core = _oriented(*loft(rings))
 
     t = i / N_SEG
+    mane = math.exp(-((t - 0.08) / 0.1) ** 2)
+    tuft = max(0.0, (t - 0.85) / 0.15)
     blades = []
-    # longueur des lames : très longues aux épaules (crinière), plus courtes au milieu, touffe au bout
-    mane = math.exp(-((t - 0.12) / 0.14) ** 2)
-    tuft = max(0.0, (t - 0.8) / 0.2)
-    base_len = SPACING * (1.9 + 2.6 * mane + 0.8 * tuft) * (0.55 + 0.45 * r / 1.7)
-    angles = [90, 90 - 38, 90 + 38, 90 - 78, 90 + 78, -10, 190]
-    if tuft > 0.3:
-        angles += [90 - 18, 90 + 18, 30, 150, -40, 220]
-    for a in angles:
-        a = math.radians(a + rng.uniform(-9, 9))
+    back = np.array([0, 0, 1.0])
+    stagger = 9 if i % 2 else 0
+    for a0 in range(-30, 211, 27):                       # 9 lames tout autour (sauf sous le ventre)
+        a = math.radians(a0 + stagger + rng.uniform(-7, 7))
         radial = np.array([math.cos(a), math.sin(a), 0.0])
         tang = np.array([-math.sin(a), math.cos(a), 0.0])
-        top = max(0.0, math.sin(a))                     # les lames du dos sont plus grandes
-        ln = base_len * (0.45 + 0.65 * top) * rng.uniform(0.85, 1.15)
-        flare = 0.16 + 0.4 * tuft + 0.12 * mane
-        z0 = rng.uniform(-0.5, 0.1) * L
-        p0 = radial * r * 0.85 + [0, 0, z0]
-        p1 = radial * (r * 0.98 + ln * flare * 0.4) + [0, ln * 0.05 * top, z0 + ln * 0.4]
-        p2 = radial * (r * 1.0 + ln * flare * 0.9) + [0, ln * 0.13 * top, z0 + ln * 0.72]
-        p3 = radial * (r * 1.0 + ln * flare * 1.6) + [0, ln * 0.3 * top, z0 + ln]
-        w = r * 0.42 * (0.7 + 0.3 * top)
-        blades.append(blade([p0, p1, p2, p3], [w, w * 0.85, w * 0.5, 0], 0.12, tang))
+        top = max(0.0, math.sin(a))
+        ln = (5.4 + 3.2 * top + 3.0 * mane + 3.0 * tuft) * (0.6 + 0.4 * r / 2.15) * rng.uniform(0.85, 1.15)
+        z0 = rng.uniform(-0.9, 0.0) * L
+        root = radial * rc * 0.9 + [0, 0, z0]
+        w = r * (0.62 + 0.2 * top) * rng.uniform(0.85, 1.15)
+        blades.append(sabre(rng, root, radial, tang, back, ln, w, 0.5 + 0.5 * tuft, hook=0.35 + 0.5 * top))
+    # deux petites lames sous le ventre
+    for a0 in (250, 290):
+        a = math.radians(a0 + rng.uniform(-8, 8))
+        radial = np.array([math.cos(a), math.sin(a), 0.0]); tang = np.array([-math.sin(a), math.cos(a), 0.0])
+        blades.append(sabre(rng, radial * rc * 0.9, radial, tang, back, 2.2 * r / 2.15, r * 0.25, 0.4, 0.4))
+    if i == N_SEG:                                       # touffe au bout de la queue
+        for k in range(12):
+            a = 2 * math.pi * k / 12 + rng.uniform(-0.2, 0.2)
+            radial = np.array([math.cos(a), math.sin(a), 0.0]); tang = np.array([-math.sin(a), math.cos(a), 0.0])
+            blades.append(sabre(rng, radial * rc * 0.5 + [0, 0, 0.5], radial, tang, back,
+                                rng.uniform(4.0, 5.5), 0.4, 0.9, 1.2))
     M, o = frame(pts, i), pts[i]
     return place(core, M, o), [place(b, M, o) for b in blades]
 
@@ -157,103 +165,113 @@ def _section(z, w, top, bot, sides=8, bumps=()):
     return np.array(pts)
 
 
-def head(rng, pts):
-    """Renvoie (crâne, lames, mâchoire, yeux), chacun liste de (v, f) déjà placés au repos."""
+JAW_HINGE = np.array([0, -0.4, 1.7])    # repère local de la tête
+JAW_OPEN = 0.38
+
+
+def head(rng):
+    """Tête en repère local (avant = -Z). Renvoie (crâne, lames, mâchoire, yeux)."""
     up = math.pi / 2
     brow = [(up - 0.8, 0.35, 0.3), (up + 0.8, 0.35, 0.3)]
-    # la tête regarde vers -Z en local (z négatif = avant)
-    prof = [(1.6, 1.25, 1.45, -0.45, ()), (0.6, 1.4, 1.65, -0.4, brow), (-0.5, 1.05, 1.25, -0.25, brow),
-            (-1.7, 0.8, 0.85, -0.15, ()), (-2.8, 0.68, 0.7, -0.12, ((up, 0.2, 0.4),)),
-            (-3.7, 0.55, 0.75, -0.1, ((up, 0.35, 0.5),)), (-4.2, 0.35, 0.45, -0.05, ())]
+    prof = [(2.0, 1.5, 1.8, -0.6, ()), (0.8, 1.65, 2.05, -0.5, brow), (-0.6, 1.25, 1.55, -0.3, brow),
+            (-2.0, 0.95, 1.05, -0.2, ()), (-3.4, 0.8, 0.85, -0.15, ((up, 0.2, 0.4),)),
+            (-4.6, 0.62, 0.95, -0.1, ((up, 0.4, 0.5),)), (-5.3, 0.4, 0.55, -0.05, ())]
     skull = [_oriented(*loft([_section(z, w, t, b, 8, bm) for z, w, t, b, bm in prof]))]
 
-    blades = []
-    # dents du haut
+    bl = []
+    back = np.array([0, 0, 1.0])
+    # dents du haut (crocs plus grands devant)
     for side in (-1, 1):
-        for k in range(6):
-            z = -3.9 + k * 0.62
-            x = side * (0.42 + 0.11 * k)
-            tooth = [[x, -0.05, z], [x * 1.02, -0.55 + 0.04 * k, z + 0.08]]
-            blades.append(_oriented(*tube(tooth, [0.12, 0], 3, tip=True)))
-    # crinière : longues lames qui partent de l'arrière du crâne vers l'arrière et le haut
-    for k in range(16):
-        a = math.radians(-35 + 250 * k / 15 + rng.uniform(-6, 6))
-        radial = np.array([math.cos(a), math.sin(a) * 1.1, 0.0])
+        for k in range(7):
+            z = -5.0 + k * 0.62
+            x = side * (0.42 + 0.13 * k)
+            ln = 0.95 if k == 1 else 0.55
+            bl.append(_oriented(*tube([[x, -0.05, z], [x * 1.02, -0.05 - ln, z + 0.1]],
+                                      [0.15 if k == 1 else 0.11, 0], 3, tip=True)))
+    # crinière : beaucoup de lames courbes qui partent de l'arrière du crâne
+    for k in range(24):
+        a = math.radians(-50 + 280 * k / 23 + rng.uniform(-5, 5))
+        radial = np.array([math.cos(a), math.sin(a), 0.0])
         tang = np.array([-math.sin(a), math.cos(a), 0.0])
-        top = 0.5 + 0.5 * max(0.0, math.sin(a))
-        ln = rng.uniform(4.5, 6.5) * top + 1.2
-        z0 = rng.uniform(-0.6, 1.2)
-        p0 = radial * 1.0 + [0, 0.5, z0]
-        p1 = radial * (1.4 + ln * 0.2) + [0, 0.6 + ln * 0.12, z0 + ln * 0.38]
-        p2 = radial * (1.6 + ln * 0.33) + [0, 0.6 + ln * 0.22, z0 + ln * 0.72]
-        p3 = radial * (1.7 + ln * 0.5) + [0, 0.6 + ln * 0.42, z0 + ln]
-        w = rng.uniform(0.3, 0.45)
-        blades.append(blade([p0, p1, p2, p3], [w, w * 0.85, w * 0.5, 0], 0.1, tang))
-    # cornes / bois : deux longues pointes vers l'arrière, légèrement écartées
+        top = max(0.0, math.sin(a))
+        ln = rng.uniform(5.0, 7.5) * (0.65 + 0.35 * top)
+        root = radial * np.array([1.3, 1.5, 0]) + [0, 0.7, rng.uniform(-1.2, 1.4)]
+        bl.append(sabre(rng, root, radial, tang, back, ln, rng.uniform(0.5, 0.75), 0.65, 0.8 + 0.5 * top))
     for side in (-1, 1):
-        path = [[side * 0.6, 1.4, 0.4], [side * 1.0, 2.3, 1.6], [side * 1.5, 3.0, 3.2], [side * 1.7, 3.4, 5.0]]
-        blades.append(_oriented(*tube(path, [0.32, 0.25, 0.15, 0], 5, tip=True)))
-        # petite branche
-        br = [[side * 1.05, 2.4, 1.8], [side * 1.6, 3.4, 2.0], [side * 1.9, 4.1, 2.6]]
-        blades.append(_oriented(*tube(br, [0.16, 0.1, 0], 4, tip=True)))
-        # moustaches de cristal sur les joues
-        wh = [[side * 0.7, 0.2, -2.6], [side * 1.6, -0.2, -1.6], [side * 2.4, -0.4, -0.2], [side * 3.0, -0.2, 1.4]]
-        blades.append(blade(wh, [0.22, 0.2, 0.12, 0], 0.08, [0, 1, 0]))
-        # lames de pommette
-        ck = [[side * 1.1, 0.3, 0.3], [side * 1.9, 0.5, 1.2], [side * 2.6, 0.9, 2.2], [side * 3.1, 1.4, 3.3]]
-        blades.append(blade(ck, [0.35, 0.3, 0.16, 0], 0.1, [0, 1, 0]))
+        # lames de joue, couchées vers l'arrière
+        for k in range(3):
+            a = math.radians(90 - side * (70 + 25 * k))
+            radial = np.array([math.cos(a), math.sin(a), 0.0]); tang = np.array([-math.sin(a), math.cos(a), 0.0])
+            bl.append(sabre(rng, radial * 1.1 + [0, 0.3, -1.4 + 0.5 * k], radial, tang, back, 4.0 + k, 0.35, 0.6, 1.0))
+        # arcades : petite corne recourbée au-dessus de l'œil
+        bl.append(_oriented(*tube([[side * 0.9, 1.8, -0.4], [side * 1.4, 2.6, 0.6], [side * 1.7, 3.0, 1.9]],
+                                  [0.28, 0.18, 0], 5, tip=True)))
+        # antennes : très longues, montent en s'écartant puis repartent vers le haut (vue de face)
+        ant = [[side * 0.7, 2.0, -1.0], [side * 2.2, 4.2, -0.2], [side * 4.0, 6.4, 0.6], [side * 5.6, 8.0, 1.2],
+               [side * 5.9, 10.5, 1.8], [side * 5.7, 13.5, 2.4]]
+        bl.append(_oriented(*tube(ant, [0.2, 0.17, 0.14, 0.12, 0.09, 0], 4, tip=True)))
+        # moustaches qui partent du museau vers l'arrière
+        wh = [[side * 0.6, 0.3, -4.6], [side * 1.7, 0.1, -3.6], [side * 2.6, -0.3, -2.0], [side * 3.2, -0.5, 0.0],
+              [side * 3.4, -0.4, 2.0]]
+        bl.append(_oriented(*tube(wh, [0.14, 0.12, 0.1, 0.07, 0], 4, tip=True)))
+    # crête centrale : une grande lame dressée au milieu du front
+    bl.append(blade([[0, 1.9, -1.2], [0, 3.4, -0.4], [0, 4.8, 0.6], [0, 5.8, 1.9]], [0.6, 0.5, 0.3, 0], 0.15, [0, 0, 1]))
 
-    # mâchoire, entrouverte (charnière à l'arrière)
-    jprof = [(1.3, 1.0, -0.3, -0.9), (0.2, 1.05, -0.25, -1.0), (-1.2, 0.75, -0.2, -0.8),
-             (-2.6, 0.58, -0.15, -0.62), (-3.7, 0.4, -0.12, -0.5)]
+    # mâchoire entrouverte + barbe (lames qui pendent vers l'arrière)
+    jprof = [(1.7, 1.2, -0.4, -1.1), (0.2, 1.2, -0.35, -1.2), (-1.6, 0.9, -0.3, -1.0),
+             (-3.4, 0.68, -0.25, -0.8), (-4.8, 0.45, -0.2, -0.6)]
     jaw = [_oriented(*loft([_section(z, w, t, b, 8) for z, w, t, b in jprof]))]
     for side in (-1, 1):
-        for k in range(5):
-            z = -3.5 + k * 0.65
-            x = side * (0.33 + 0.1 * k)
-            jaw.append(_oriented(*tube([[x, -0.2, z], [x, 0.3, z - 0.05]], [0.11, 0], 3, tip=True)))
-        # barbe : lames sous le menton
-        bd = [[side * 0.4, -0.85, -0.8], [side * 0.7, -1.6, 0.2], [side * 1.0, -2.0, 1.5], [side * 1.2, -2.1, 2.8]]
-        jaw.append(blade(bd, [0.3, 0.26, 0.14, 0], 0.08, [1, 0, 0]))
-    bd = [[0, -0.95, -0.2], [0, -1.9, 0.6], [0, -2.5, 1.7], [0, -2.8, 3.0]]
-    jaw.append(blade(bd, [0.32, 0.28, 0.15, 0], 0.08, [1, 0, 0]))
-    piv = np.array([0, -0.3, 1.3])
-    jaw = [(transform(np.array(v) - piv, rot_matrix_x(-0.28), piv), f) for v, f in jaw]
+        for k in range(6):
+            z = -4.6 + k * 0.65
+            x = side * (0.33 + 0.12 * k)
+            ln = 0.8 if k == 0 else 0.45
+            jaw.append(_oriented(*tube([[x, -0.25, z], [x, -0.25 + ln, z - 0.05]], [0.13 if k == 0 else 0.1, 0], 3,
+                                       tip=True)))
+    for k in range(7):
+        a = math.radians(200 + 140 * k / 6)              # dessous de la mâchoire
+        radial = np.array([math.cos(a), math.sin(a), 0.0]); tang = np.array([-math.sin(a), math.cos(a), 0.0])
+        root = radial * 0.8 + [0, -0.8, -2.8 + 0.5 * abs(k - 3)]
+        jaw.append(sabre(rng, root, radial, tang, np.array([0, -0.35, 1.0]) / 1.06, rng.uniform(3.5, 5.0),
+                         0.32, 0.6, 0.9))
+    jaw = [(transform(np.array(v) - JAW_HINGE, rot_matrix_x(-JAW_OPEN), JAW_HINGE), f) for v, f in jaw]
 
     eyes = []
     for side in (-1, 1):
-        v, f = blob([side * 0.98, 1.05, -0.55], 0.26, scale=(0.8, 0.6, 1.3), jitter=0.0, subdiv=0)
+        v, f = blob([side * 1.12, 1.1, -0.9], 0.3, scale=(0.7, 0.55, 1.3), jitter=0.0, subdiv=0)
         eyes.append(_oriented(v, f))
-
-    # la tête est un peu plus en avant que le point 0 de la colonne
-    M, o = frame(pts, 0) * HEAD_SCALE, pts[0] + np.array([0, -0.8, -2.0])
-    pl = lambda lst: [place(x, M, o) for x in lst]
-    return pl(skull), pl(blades), pl(jaw), pl(eyes)
+    return skull, bl, jaw, eyes
 
 
 # ---------------- pattes ----------------
 
-def leg(rng, pts, i, side, back):
-    """Patte au repos, pendante. Renvoie une liste de (v, f) placés."""
-    r = radius(i)
-    M, o = frame(pts, i), pts[i]
-    s = 1.4 if back else 1.3
-    hip = np.array([side * r * 0.75, -r * 0.35, 0.0])
-    knee = hip + np.array([side * 0.5, -2.4, -0.9 if not back else 0.6]) * s
-    ankle = knee + np.array([side * 0.1, -2.2, 0.8 if not back else -0.7]) * s
-    foot = ankle + np.array([0, -0.9, -0.4]) * s
-    out = [_oriented(*tube([hip, (hip + knee) / 2, knee], [0.62 * s, 0.5 * s, 0.38 * s], 5, jitter=0.1, rng=rng)),
-           _oriented(*tube([knee, (knee + ankle) / 2, ankle], [0.4 * s, 0.32 * s, 0.26 * s], 5, jitter=0.1, rng=rng)),
-           _oriented(*tube([ankle, foot], [0.3 * s, 0.34 * s], 5)),
-           # épines au coude / genou
-           blade([knee, knee + [side * 0.3, 0.3, 1.0], knee + [side * 0.5, 0.8, 1.9]], [0.22, 0.14, 0], 0.08, [1, 0, 0])]
+def leg(rng, side, back):
+    """Patte en repère local de son morceau, hanche à l'origine. Renvoie une liste de (v, f)."""
+    if not back:   # patte avant : pend sous l'épaule, longues griffes
+        j = [np.array([0, 0, 0]), np.array([side * 0.6, -3.0, 0.6]), np.array([side * 0.4, -6.0, -0.3]),
+             np.array([side * 0.4, -7.2, -1.0])]
+        rad = [1.1, 0.75, 0.55, 0.55]
+    else:          # patte arrière : accroupie comme un lézard, pied à plat
+        j = [np.array([0, 0, 0]), np.array([side * 0.7, -2.4, -2.0]), np.array([side * 0.5, -5.0, 0.4]),
+             np.array([side * 0.5, -6.4, -0.8])]
+        rad = [1.2, 0.8, 0.55, 0.55]
+    out = []
+    for a, b, ra, rb in zip(j[:-1], j[1:], rad[:-1], rad[1:]):
+        out.append(_oriented(*tube([a, (a + b) / 2, b], [ra, (ra + rb) / 2 * 1.05, rb], 6, jitter=0.12, rng=rng)))
+    # lames au coude/genou et sur l'épaule
+    for jj, ln in ((j[1], 2.2), (j[0] + [0, -0.6, 0], 2.6)):
+        a = math.radians(90 - side * 60)
+        radial = np.array([math.cos(a), math.sin(a), 0.0]); tang = np.array([-math.sin(a), math.cos(a), 0.0])
+        out.append(sabre(rng, jj, radial, tang, np.array([0, 0.2, 1.0]) / 1.02, ln, 0.3, 0.6, 1.0))
+    foot = j[3]
     for k in range(4):
-        a = math.radians(-50 + 33 * k) if k < 3 else math.radians(180)
-        d = np.array([math.sin(a) * 0.55, 0, -math.cos(a)])
-        c0 = foot + d * 0.25
-        out.append(_oriented(*tube([c0, c0 + d * 0.6 + [0, -0.25, 0], c0 + d * 0.95 + [0, -0.7, 0]],
-                                   [0.14 * s, 0.1 * s, 0], 4, tip=True)))
-    return [place(x, M, o) for x in out]
+        a = math.radians(-35 + 35 * k) if k < 3 else math.radians(180)
+        d = np.array([math.sin(a) * 0.6, 0, -math.cos(a)])
+        ln = 1.5 if k < 3 else 0.8
+        c0 = foot + d * 0.3
+        out.append(_oriented(*tube([c0, c0 + d * ln * 0.55 + [0, -0.15, 0], c0 + d * ln + [0, -0.75, 0]],
+                                   [0.26, 0.18, 0], 4, tip=True)))
+    return out
 
 
 # ---------------- assemblage ----------------
@@ -265,16 +283,16 @@ def dragon_cristal(name="Dragon_Cristal", seed=55):
     col_b, mat_b = STYLE["body"]
     col_l, mat_l = STYLE["blades"]
     col_e, mat_e = STYLE["eyes"]
+    meta = {"chain": [p.tolist() for p in pts], "legs": {}}
 
-    skull, blades, jaw, eyes = head(rng, pts)
-    for v, f in skull:
-        a.add("Head", v, f, col_b, mat_b)
-    for v, f in blades:
-        a.add("Head_Blades", v, f, col_l, mat_l)
-    for v, f in jaw:
-        a.add("Head_Jaw", v, f, col_l, mat_l)
-    for v, f in eyes:
-        a.add("Head_Eyes", v, f, col_e, mat_e)
+    # la tête : un peu en avant du point 0 de la colonne
+    Mh, oh = frame(pts, 0) * HEAD_SCALE, pts[0] + np.array([0, -0.3, -3.0])
+    skull, blades, jaw, eyes = head(rng)
+    for nm, lst, c, m in (("Head", skull, col_b, mat_b), ("Head_Blades", blades, col_l, mat_l),
+                          ("Head_Jaw", jaw, col_l, mat_l), ("Head_Eyes", eyes, col_e, mat_e)):
+        for vf in lst:
+            a.add(nm, *place(vf, Mh, oh), c, m)
+    meta["jaw_hinge"] = (Mh @ JAW_HINGE + oh).tolist()
 
     for i in range(1, N_SEG + 1):
         core, bl = body_segment(rng, i, pts)
@@ -284,9 +302,15 @@ def dragon_cristal(name="Dragon_Cristal", seed=55):
             a.add(nm + "_Blades", v, f, col_l, mat_l)
 
     for seg, back, tag in ((FRONT_LEG_SEG, False, "F"), (BACK_LEG_SEG, True, "B")):
+        M, o = frame(pts, seg), pts[seg]
+        r = radius(seg)
         for side, sname in ((-1, "L"), (1, "R")):
-            for v, f in leg(rng, pts, seg, side, back):
-                a.add(f"Seg{seg:02d}_Leg{tag}{sname}", v, f, col_b, mat_b)
+            hip = np.array([side * r * 0.6, -r * 0.45, 0.0])
+            nm = f"Seg{seg:02d}_Leg{tag}{sname}"
+            for v, f in leg(rng, side, back):
+                a.add(nm, *place((np.array(v) + hip, f), M, o), col_b, mat_b)
+            meta["legs"][nm] = {"seg": seg, "hip": (M @ hip + o).tolist()}
+    a.meta = meta
     return a
 
 
