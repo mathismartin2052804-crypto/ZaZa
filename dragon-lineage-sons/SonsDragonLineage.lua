@@ -1,12 +1,13 @@
 --[[
-	SonsDragonLineage (ModuleScript) : présélection de sons pour Dragon Lineage.
+	SonsDragonLineage (ModuleScript) : sons de Dragon Lineage.
 	À placer dans ReplicatedStorage.
 
-	Tous les sons viennent des bibliothèques sous licence du Creator Store
-	(ProSoundEffects), utilisables gratuitement dans n'importe quel jeu.
-
-	Chaque besoin a 2 ou 3 candidats : Will écoute avec EcouteSons et garde
-	le meilleur. Les autres pourront être supprimés ensuite.
+	Deux sortes de sons :
+	- les sons cartoon fabriqués pour le jeu (dossier sons-cartoon/) :
+	  `id = nil` tant qu'ils ne sont pas importés dans Roblox. Après l'import,
+	  remplace nil par id(<numéro donné par Roblox>) ;
+	- les sons de récompense et de niveau supérieur, gardés de la bibliothèque
+	  Roblox : déjà prêts.
 	`boucle = true` : son fait pour tourner en continu (Looped).
 ]]
 
@@ -17,105 +18,88 @@ end
 return {
 	Dragons = {
 		RugissementPuissant = {
-			{ id = id(9113987603), nom = "Giant Crab Monster Roars 1", duree = 6 },
-			{ id = id(9120025244), nom = "Thunder With Lion Roar Searing Blast 16", duree = 3 },
-			{ id = id(9113985451), nom = "Roar Constant Deep Throaty Growls 1", duree = 16 },
+			{ id = nil, fichier = "rawr_gros.ogg", nom = "Gros RAWR grave", duree = 1.65 },
+			{ id = nil, fichier = "rawr_moyen.ogg", nom = "RAWR moyen, plus vif", duree = 1.25 },
 		},
 		GrognementCalme = {
-			{ id = id(9125467848), nom = "Lion Deep Guttural Rumbling", duree = 2 },
-			{ id = id(9113985445), nom = "Roar Constant Deep Throaty Growls 2", duree = 3 },
+			{ id = nil, fichier = "grr_ronron.ogg", nom = "Ronronnement grave « grrr »", duree = 1.4 },
+			{ id = nil, fichier = "grr_court.ogg", nom = "Petit grognement court", duree = 0.7 },
 		},
 		CriAttaque = {
-			{ id = id(9125474505), nom = "Pterodactyl Screech Vocals Screams", duree = 1 },
-			{ id = id(9113981940), nom = "Pterodactyl Dressed Screams 18", duree = 2 },
+			{ id = nil, fichier = "yip_aigu.ogg", nom = "Cri qui monte « yip ! »", duree = 0.5 },
+			{ id = nil, fichier = "yip_vibre.ogg", nom = "Cri vibrant, plus rigolo", duree = 0.65 },
 		},
 		Sifflement = {
-			{ id = id(9113991406), nom = "Spider Long Hiss Spray 2", duree = 5 },
-			{ id = id(9113990020), nom = "Spider Hiss Exhale 3", duree = 3 },
+			{ id = nil, fichier = "pschh.ogg", nom = "Sifflement « pschhh »", duree = 0.8 },
 		},
 		BattementAiles = {
-			{ id = id(9120781361), nom = "Wings Pterodactyl 2", duree = 5 },
-			{ id = id(9125472053), nom = "Pterodactyl Attack Wing Flaps 1", duree = 2 },
-			{ id = id(9120782165), nom = "Wings Pterodactyl 1", duree = 33, boucle = true },
+			{ id = nil, fichier = "flap_3.ogg", nom = "3 battements « fwup fwup fwup »", duree = 0.96 },
+			{ id = nil, fichier = "flap_2_lent.ogg", nom = "2 battements lents", duree = 1.0 },
 		},
 		PasLourds = {
-			{ id = id(9114080709), nom = "Dinosaur Footsteps Boomy Thumps 16", duree = 2 },
-			{ id = id(9125404769), nom = "Boomy Footsteps Giant Thumpy Dinosaur", duree = 3 },
+			{ id = nil, fichier = "bwomp.ogg", nom = "Pas lourd « bwomp »", duree = 0.75 },
+			{ id = nil, fichier = "bwomp_rebond.ogg", nom = "Pas qui rebondit un peu", duree = 0.8 },
 		},
 	},
-
 	Feu = {
 		SouffleDeFeu = {
-			{ id = id(9114439216), nom = "Fire Whoosh 4", duree = 6 },
-			{ id = id(9114446277), nom = "Fire Whoosh 6", duree = 2 },
-			{ id = id(9114443037), nom = "Fire Whoosh 7", duree = 2 },
+			{ id = nil, fichier = "fwoosh_long.ogg", nom = "Grand « FWOOSH » qui crépite", duree = 1.5 },
+			{ id = nil, fichier = "fwoosh_court.ogg", nom = "Souffle court", duree = 0.9 },
 		},
 		BouleDeFeu = {
-			{ id = id(9114446852), nom = "Fire Whoosh 15", duree = 1 },
-			{ id = id(9114444008), nom = "Fire Whoosh 3", duree = 1 },
+			{ id = nil, fichier = "fwip_pop.ogg", nom = "« Fwip » puis petit « pouf »", duree = 0.6 },
+			{ id = nil, fichier = "fwip.ogg", nom = "« Fwip » seul, très court", duree = 0.25 },
 		},
 		Brasero = {
-			{ id = id(9112780462), nom = "Fireplace Constant Burning Flame 4", duree = 43, boucle = true },
-			{ id = id(9112780193), nom = "Fireplace Constant Burning Flame 1", duree = 36, boucle = true },
+			{ id = nil, fichier = "brasero_boucle.ogg", nom = "Crépitement doux en boucle", duree = 7.6, boucle = true },
 		},
 	},
-
 	Os = {
 		Craquement = {
-			{ id = id(9113542363), nom = "Bone Cracks 10", duree = 1 },
-			{ id = id(9113540599), nom = "Bone Cracks 33", duree = 3 },
-			{ id = id(9113546617), nom = "Bone Cracks 30", duree = 2 },
+			{ id = nil, fichier = "krak.ogg", nom = "« Krak » sec, comme du bois", duree = 0.65 },
+			{ id = nil, fichier = "krak_simple.ogg", nom = "Un seul « krak »", duree = 0.65 },
 		},
-		-- Pas de vrai « cliquetis de squelette » dans la bibliothèque :
-		-- un treillis en bois qui s'entrechoque s'en rapproche.
 		Cliquetis = {
-			{ id = id(9120927210), nom = "Wood Lattice Light Rattle 7", duree = 4 },
+			{ id = nil, fichier = "squelette_xylo.ogg", nom = "Squelette au xylophone (classique du cartoon)", duree = 1.07 },
 		},
 		ImpactPierre = {
-			{ id = id(9125391808), nom = "Big Rocks Drop Interior Muffled", duree = 11 },
-			{ id = id(9118587701), nom = "Rock Drop On Concrete Drops Breaks 4", duree = 2 },
+			{ id = nil, fichier = "bonk.ogg", nom = "« Bonk » rebondissant", duree = 0.55 },
+			{ id = nil, fichier = "bonk_grave.ogg", nom = "« Bonk » grave et lourd", duree = 0.65 },
 		},
 	},
-
 	Oeufs = {
 		Fissure = {
-			{ id = id(9113958649), nom = "Crack Egg Crunchy 2", duree = 2 },
-			{ id = id(9113959106), nom = "Crack Egg Crunchy 7", duree = 4 },
-			{ id = id(9113958660), nom = "Crack Egg Crunchy 1", duree = 6 },
+			{ id = nil, fichier = "tik_tik_tik.ogg", nom = "3 petits « tik » qui montent", duree = 0.83 },
+			{ id = nil, fichier = "tik_tik.ogg", nom = "2 « tik » rapprochés", duree = 0.55 },
 		},
 		CoqueQuiCasse = {
-			{ id = id(9120490359), nom = "Walnuts Crunch Shell Crack Break 2", duree = 5 },
+			{ id = nil, fichier = "eclosion_pop.ogg", nom = "Crac + POP + étincelles", duree = 1.2 },
+			{ id = nil, fichier = "pop_boing.ogg", nom = "POP + petit boing", duree = 0.65 },
 		},
-		-- À essayer avec PlaybackSpeed entre 1.2 et 1.5 pour un son plus « bébé ».
 		CriBebeDragon = {
-			{ id = id(9125596197), nom = "Growls Tiny Creature Cartoon", duree = 1 },
-			{ id = id(9125596336), nom = "Growls Tiny Creature Cartoon", duree = 4 },
-			{ id = id(9125473997), nom = "Pterodactyl Squawks Wing Flaps", duree = 4 },
+			{ id = nil, fichier = "bebe_miaou.ogg", nom = "Deux petits cris mignons", duree = 1.1 },
+			{ id = nil, fichier = "bebe_rawr.ogg", nom = "Mini « rawr » de bébé", duree = 0.9 },
 		},
 	},
-
 	Ambiance = {
 		Repaire = {
-			{ id = id(9113731969), nom = "Cave Presence Constant Eerie Musical Hum 4", duree = 57, boucle = true },
-			{ id = id(9113732233), nom = "Cavernous Winds Empty Eerie Gusts Tonal 3", duree = 43, boucle = true },
+			{ id = nil, fichier = "repaire_boucle.ogg", nom = "Nappe grave et douce + gouttes", duree = 9.0, boucle = true },
 		},
 		GouttesCaverne = {
-			{ id = id(9120505513), nom = "Water Cave Trickle Very Thin 3", duree = 27, boucle = true },
-			{ id = id(9126190654), nom = "Water Drips Into Filled Bowl Cave Water Drop", duree = 8 },
+			{ id = nil, fichier = "gouttes_boucle.ogg", nom = "« Plink » de gouttes en boucle", duree = 7.7, boucle = true },
 		},
 		VentMontagne = {
-			{ id = id(9114625414), nom = "Gods Wind Spooky Eerie 1", duree = 36, boucle = true },
-			{ id = id(9114057104), nom = "Desert Wind Whistley Light Gusts 1", duree = 37, boucle = true },
+			{ id = nil, fichier = "vent_boucle.ogg", nom = "Vent doux qui siffle", duree = 9.0, boucle = true },
+			{ id = nil, fichier = "vent_doux_boucle.ogg", nom = "Vent doux sans sifflement", duree = 9.0, boucle = true },
 		},
 		DragonQuiPasse = {
-			{ id = id(9120697823), nom = "Whoosh By Howling Wind Light Rumbling 1", duree = 7 },
+			{ id = nil, fichier = "swoosh.ogg", nom = "« Swoooosh » au passage", duree = 1.5 },
 		},
 	},
-
 	Interface = {
 		Clic = {
-			{ id = id(9119717529), nom = "Switch Click On Or Off Toggle Button 1", duree = 0 },
-			{ id = id(9113649171), nom = "Button Click And Ring 1", duree = 1 },
+			{ id = nil, fichier = "clic_pop.ogg", nom = "Clic « pop » rond", duree = 0.05 },
+			{ id = nil, fichier = "clic_bulle.ogg", nom = "Clic bulle, plus grave", duree = 0.08 },
 		},
 		Recompense = {
 			{ id = id(9116394545), nom = "Magic Glows Soft Clusters Of Chiming Hits 1", duree = 1 },
@@ -126,8 +110,8 @@ return {
 			{ id = id(9125644775), nom = "Magic Twirling Small High Pitch Spinning", duree = 3 },
 		},
 		Pieces = {
-			{ id = id(9113849492), nom = "Coins Or Keys Jingle 6", duree = 1 },
-			{ id = id(9113848469), nom = "Coin Bounce 3", duree = 1 },
+			{ id = nil, fichier = "piece_bling.ogg", nom = "Pièce « bling » façon jeu vidéo", duree = 0.45 },
+			{ id = nil, fichier = "piece_bling_grave.ogg", nom = "Pièce plus grave", duree = 0.45 },
 		},
 	},
 }

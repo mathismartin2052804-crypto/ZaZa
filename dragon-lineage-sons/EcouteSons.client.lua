@@ -28,7 +28,10 @@ for _, categorie in categories do
 	table.sort(besoins)
 	for _, besoin in besoins do
 		for i, son in Sons[categorie][besoin] do
-			table.insert(liste, { titre = `{categorie} > {besoin} #{i}`, son = son })
+			-- Les sons cartoon pas encore importés (id = nil) sont ignorés.
+			if son.id then
+				table.insert(liste, { titre = `{categorie} > {besoin} #{i}`, son = son })
+			end
 		end
 	end
 end

@@ -1,0 +1,290 @@
+[
+ {
+  "categorie": "Dragons",
+  "besoin": "RugissementPuissant",
+  "fichier": "rawr_gros.ogg",
+  "description": "Gros RAWR grave",
+  "duree": 1.65,
+  "boucle": false
+ },
+ {
+  "categorie": "Dragons",
+  "besoin": "RugissementPuissant",
+  "fichier": "rawr_moyen.ogg",
+  "description": "RAWR moyen, plus vif",
+  "duree": 1.25,
+  "boucle": false
+ },
+ {
+  "categorie": "Dragons",
+  "besoin": "GrognementCalme",
+  "fichier": "grr_ronron.ogg",
+  "description": "Ronronnement grave « grrr »",
+  "duree": 1.4,
+  "boucle": false
+ },
+ {
+  "categorie": "Dragons",
+  "besoin": "GrognementCalme",
+  "fichier": "grr_court.ogg",
+  "description": "Petit grognement court",
+  "duree": 0.7,
+  "boucle": false
+ },
+ {
+  "categorie": "Dragons",
+  "besoin": "CriAttaque",
+  "fichier": "yip_aigu.ogg",
+  "description": "Cri qui monte « yip ! »",
+  "duree": 0.5,
+  "boucle": false
+ },
+ {
+  "categorie": "Dragons",
+  "besoin": "CriAttaque",
+  "fichier": "yip_vibre.ogg",
+  "description": "Cri vibrant, plus rigolo",
+  "duree": 0.65,
+  "boucle": false
+ },
+ {
+  "categorie": "Dragons",
+  "besoin": "Sifflement",
+  "fichier": "pschh.ogg",
+  "description": "Sifflement « pschhh »",
+  "duree": 0.8,
+  "boucle": false
+ },
+ {
+  "categorie": "Dragons",
+  "besoin": "BattementAiles",
+  "fichier": "flap_3.ogg",
+  "description": "3 battements « fwup fwup fwup »",
+  "duree": 0.96,
+  "boucle": false
+ },
+ {
+  "categorie": "Dragons",
+  "besoin": "BattementAiles",
+  "fichier": "flap_2_lent.ogg",
+  "description": "2 battements lents",
+  "duree": 1.0,
+  "boucle": false
+ },
+ {
+  "categorie": "Dragons",
+  "besoin": "PasLourds",
+  "fichier": "bwomp.ogg",
+  "description": "Pas lourd « bwomp »",
+  "duree": 0.75,
+  "boucle": false
+ },
+ {
+  "categorie": "Dragons",
+  "besoin": "PasLourds",
+  "fichier": "bwomp_rebond.ogg",
+  "description": "Pas qui rebondit un peu",
+  "duree": 0.8,
+  "boucle": false
+ },
+ {
+  "categorie": "Feu",
+  "besoin": "SouffleDeFeu",
+  "fichier": "fwoosh_long.ogg",
+  "description": "Grand « FWOOSH » qui crépite",
+  "duree": 1.5,
+  "boucle": false
+ },
+ {
+  "categorie": "Feu",
+  "besoin": "SouffleDeFeu",
+  "fichier": "fwoosh_court.ogg",
+  "description": "Souffle court",
+  "duree": 0.9,
+  "boucle": false
+ },
+ {
+  "categorie": "Feu",
+  "besoin": "BouleDeFeu",
+  "fichier": "fwip_pop.ogg",
+  "description": "« Fwip » puis petit « pouf »",
+  "duree": 0.6,
+  "boucle": false
+ },
+ {
+  "categorie": "Feu",
+  "besoin": "BouleDeFeu",
+  "fichier": "fwip.ogg",
+  "description": "« Fwip » seul, très court",
+  "duree": 0.25,
+  "boucle": false
+ },
+ {
+  "categorie": "Feu",
+  "besoin": "Brasero",
+  "fichier": "brasero_boucle.ogg",
+  "description": "Crépitement doux en boucle",
+  "duree": 7.6,
+  "boucle": true
+ },
+ {
+  "categorie": "Os",
+  "besoin": "Craquement",
+  "fichier": "krak.ogg",
+  "description": "« Krak » sec, comme du bois",
+  "duree": 0.65,
+  "boucle": false
+ },
+ {
+  "categorie": "Os",
+  "besoin": "Craquement",
+  "fichier": "krak_simple.ogg",
+  "description": "Un seul « krak »",
+  "duree": 0.65,
+  "boucle": false
+ },
+ {
+  "categorie": "Os",
+  "besoin": "Cliquetis",
+  "fichier": "squelette_xylo.ogg",
+  "description": "Squelette au xylophone (classique du cartoon)",
+  "duree": 1.07,
+  "boucle": false
+ },
+ {
+  "categorie": "Os",
+  "besoin": "ImpactPierre",
+  "fichier": "bonk.ogg",
+  "description": "« Bonk » rebondissant",
+  "duree": 0.55,
+  "boucle": false
+ },
+ {
+  "categorie": "Os",
+  "besoin": "ImpactPierre",
+  "fichier": "bonk_grave.ogg",
+  "description": "« Bonk » grave et lourd",
+  "duree": 0.65,
+  "boucle": false
+ },
+ {
+  "categorie": "Oeufs",
+  "besoin": "Fissure",
+  "fichier": "tik_tik_tik.ogg",
+  "description": "3 petits « tik » qui montent",
+  "duree": 0.83,
+  "boucle": false
+ },
+ {
+  "categorie": "Oeufs",
+  "besoin": "Fissure",
+  "fichier": "tik_tik.ogg",
+  "description": "2 « tik » rapprochés",
+  "duree": 0.55,
+  "boucle": false
+ },
+ {
+  "categorie": "Oeufs",
+  "besoin": "CoqueQuiCasse",
+  "fichier": "eclosion_pop.ogg",
+  "description": "Crac + POP + étincelles",
+  "duree": 1.2,
+  "boucle": false
+ },
+ {
+  "categorie": "Oeufs",
+  "besoin": "CoqueQuiCasse",
+  "fichier": "pop_boing.ogg",
+  "description": "POP + petit boing",
+  "duree": 0.65,
+  "boucle": false
+ },
+ {
+  "categorie": "Oeufs",
+  "besoin": "CriBebeDragon",
+  "fichier": "bebe_miaou.ogg",
+  "description": "Deux petits cris mignons",
+  "duree": 1.1,
+  "boucle": false
+ },
+ {
+  "categorie": "Oeufs",
+  "besoin": "CriBebeDragon",
+  "fichier": "bebe_rawr.ogg",
+  "description": "Mini « rawr » de bébé",
+  "duree": 0.9,
+  "boucle": false
+ },
+ {
+  "categorie": "Ambiance",
+  "besoin": "Repaire",
+  "fichier": "repaire_boucle.ogg",
+  "description": "Nappe grave et douce + gouttes",
+  "duree": 9.0,
+  "boucle": true
+ },
+ {
+  "categorie": "Ambiance",
+  "besoin": "GouttesCaverne",
+  "fichier": "gouttes_boucle.ogg",
+  "description": "« Plink » de gouttes en boucle",
+  "duree": 7.7,
+  "boucle": true
+ },
+ {
+  "categorie": "Ambiance",
+  "besoin": "VentMontagne",
+  "fichier": "vent_boucle.ogg",
+  "description": "Vent doux qui siffle",
+  "duree": 9.0,
+  "boucle": true
+ },
+ {
+  "categorie": "Ambiance",
+  "besoin": "VentMontagne",
+  "fichier": "vent_doux_boucle.ogg",
+  "description": "Vent doux sans sifflement",
+  "duree": 9.0,
+  "boucle": true
+ },
+ {
+  "categorie": "Ambiance",
+  "besoin": "DragonQuiPasse",
+  "fichier": "swoosh.ogg",
+  "description": "« Swoooosh » au passage",
+  "duree": 1.5,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Clic",
+  "fichier": "clic_pop.ogg",
+  "description": "Clic « pop » rond",
+  "duree": 0.05,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Clic",
+  "fichier": "clic_bulle.ogg",
+  "description": "Clic bulle, plus grave",
+  "duree": 0.08,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Pieces",
+  "fichier": "piece_bling.ogg",
+  "description": "Pièce « bling » façon jeu vidéo",
+  "duree": 0.45,
+  "boucle": false
+ },
+ {
+  "categorie": "Interface",
+  "besoin": "Pieces",
+  "fichier": "piece_bling_grave.ogg",
+  "description": "Pièce plus grave",
+  "duree": 0.45,
+  "boucle": false
+ }
+]

@@ -1,58 +1,43 @@
-# Dragon Lineage : présélection de sons
+# Dragon Lineage : sons cartoon
 
-49 sons pour 26 besoins (dragons, feu, os, œufs, ambiance, interface), avec 2 ou 3 candidats par besoin.
+Les sons réalistes de la v1 sont abandonnés. On garde seulement les sons Roblox de **récompense** et de **niveau supérieur**.
 
-## D'où viennent les sons
-Tous viennent de **ProSoundEffects**, une bibliothèque sous licence fournie par Roblox dans le Creator Store :
-- gratuits, utilisables dans n'importe quel jeu ;
-- rien à importer ni à faire modérer : on met l'ID dans un `Sound` et ça marche ;
-- aucun risque de droits d'auteur.
+Tous les autres sons sont des **sons cartoon fabriqués pour le jeu** par synthèse (`generateur/synth_cartoon.py`) : pop, boing, « RAWR », « fwoosh », squelette au xylophone… Comme ils ne viennent d'aucun autre jeu ni d'aucun site, il n'y a aucun problème de droits.
 
-J'ai écarté les sons mis en ligne par des joueurs. Beaucoup sont copiés d'autres jeux (*Skyrim*, *Elden Ring*…) et risquent d'être supprimés.
+## Écouter et choisir
+Ouvre `ecouter-les-sons.html` ou la page publiée. Le bouton ▶︎ joue chaque son directement dans la page. Coche ton préféré pour chaque besoin, puis clique sur « Copier mes choix » et colle le texte à Claude.
 
-⚠️ **Je n'entends pas les sons.** J'ai choisi d'après les noms, les durées et les descriptions. C'est à toi d'écouter et de garder le meilleur de chaque besoin.
+## La liste (36 sons, 21 besoins)
+| Catégorie | Besoins |
+|---|---|
+| Dragons | Rugissement « RAWR », grognement, cri d'attaque, sifflement, battement d'ailes, pas lourds |
+| Feu | Souffle « FWOOSH », boule de feu, brasero (boucle) |
+| Os et pierre | Craquement « krak », squelette au xylophone, « bonk » |
+| Œufs | Fissure « tik tik », éclosion « POP », cri de bébé dragon |
+| Ambiance | Repaire, gouttes, vent (boucles), dragon qui passe |
+| Interface | Clic, pièces (+ récompense et niveau supérieur gardés de Roblox) |
+
+## Mettre les sons dans le jeu
+Les sons fabriqués doivent être **importés dans Roblox** avant d'avoir un ID :
+1. Dans Studio : **View → Asset Manager**, puis le bouton **Bulk Import**. Choisis les `.ogg` que tu as gardés dans `sons-cartoon/`.
+2. Roblox les vérifie (modération), ce qui prend en général quelques minutes.
+3. Clic droit sur chaque son → **Copy Asset ID**.
+4. Dans `SonsDragonLineage`, remplace `id = nil` par `id(<le numéro>)`.
+
+Roblox limite le nombre de sons importés par mois. N'importe donc que ceux que tu gardes : un par besoin, soit 21 au maximum.
 
 ## Les fichiers
-| Fichier | Où le mettre dans Studio | Rôle |
-|---|---|---|
-| `SonsDragonLineage.lua` | `ReplicatedStorage`, en **ModuleScript** nommé `SonsDragonLineage` | La liste des sons, par catégorie |
-| `EcouteSons.client.lua` | `StarterPlayer > StarterPlayerScripts`, en **LocalScript** | Outil pour écouter les sons un par un (**à retirer avant de publier**) |
-| `outils/recherche_sons.py` | (reste sur l'ordinateur) | Pour chercher d'autres sons plus tard |
-
-## Comment écouter
-1. Mets les deux scripts aux bons endroits, puis lance **Play**.
-2. **E** : son suivant, **Q** : précédent, **R** : rejouer.
-3. La console (Output) affiche le nom et l'ID du son en cours. Note ceux que tu gardes.
-
-## La sélection
-| Catégorie | Besoin | Candidats | Remarque |
-|---|---|---|---|
-| Dragons | Rugissement puissant | 3 | Pour l'apparition d'un dragon ou une attaque forte |
-| | Grognement calme | 2 | Dragon au repos ou méfiant |
-| | Cri d'attaque | 2 | Cris de ptérodactyle, aigus et rapides |
-| | Sifflement | 2 | Menace avant une attaque |
-| | Battement d'ailes | 3 | Le n° 3 est une boucle de 33 s pour le vol |
-| | Pas lourds | 2 | |
-| Feu | Souffle de feu | 3 | |
-| | Boule de feu | 2 | Sons courts pour un projectile |
-| | Brasero | 2 | Boucles pour les `Brazier_DragonClaw` |
-| Os | Craquement | 3 | |
-| | Cliquetis | 1 | Pas de vrai bruit de squelette : un treillis en bois qui s'en approche |
-| | Impact de pierre | 2 | Pour les portes du repaire |
-| Œufs | Fissure | 3 | Le n° 3 (6 s) craque petit à petit |
-| | Coque qui casse | 1 | |
-| | Cri de bébé dragon | 3 | À essayer avec `PlaybackSpeed` entre 1.2 et 1.5 |
-| Ambiance | Repaire | 2 | Boucles inquiétantes |
-| | Gouttes dans la caverne | 2 | |
-| | Vent de montagne | 2 | Boucles |
-| | Dragon qui passe | 1 | Souffle de vent au passage d'un dragon |
-| Interface | Clic | 2 | |
-| | Récompense | 3 | Carillons magiques |
-| | Niveau supérieur | 1 | |
-| | Pièces | 2 | |
+| Fichier | Rôle |
+|---|---|
+| `sons-cartoon/*.ogg` | Les 36 sons cartoon, prêts à importer |
+| `sons-cartoon/manifest.json` | Liste des sons (catégorie, besoin, durée, boucle) |
+| `SonsDragonLineage.lua` | ModuleScript à mettre dans `ReplicatedStorage` |
+| `EcouteSons.client.lua` | Outil d'écoute dans Studio (seulement les sons qui ont un ID ; à retirer avant de publier) |
+| `ecouter-les-sons.html` | La page pour écouter et cocher |
+| `generateur/synth_cartoon.py` | Le générateur : change les réglages et relance-le pour refaire un son |
+| `outils/recherche_sons.py` | Recherche dans la bibliothèque Roblox |
 
 ## Conseils
-- **Varier** : pour un son qui revient souvent (pas, clics, coups), joue-le avec un `PlaybackSpeed` un peu différent à chaque fois (entre 0.9 et 1.1). On ne l'entend plus comme une répétition.
-- **Sons dans le monde** : mets le `Sound` dans une pièce (le brasero, le dragon) pour qu'on l'entende plus fort en s'approchant. Règle `RollOffMaxDistance`.
-- **Volume** : commence vers 0.5 et monte si besoin. Les ambiances doivent rester discrètes (0.2 à 0.4).
-- **Chercher d'autres sons** : `python3 outils/recherche_sons.py "mot anglais" "filtre"`, par exemple `python3 outils/recherche_sons.py "thunder" "thunder"`.
+- Pour un son qui revient souvent (pas, clics, pièces), change un peu le `PlaybackSpeed` à chaque fois (entre 0.9 et 1.1). La répétition s'entend beaucoup moins.
+- Les boucles (brasero, repaire, gouttes, vent) vont dans un `Sound` avec `Looped = true`, placé dans l'objet concerné, avec un volume bas (0.2 à 0.4).
+- Un son pas tout à fait comme tu veux (plus grave, plus long, plus mignon) ? Dis-le à Claude : il change les réglages du générateur et refait le son.
