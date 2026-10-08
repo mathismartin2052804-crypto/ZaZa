@@ -62,24 +62,26 @@ v4.ANTENNA = [(0.6, 2.1, -0.6), (2.0, 3.0, 0.0), (3.6, 3.9, 0.9), (5.0, 4.8, 2.1
 
 # ---------------- mèches hérissées ----------------
 
-def bristle(rng, root, radial, tang, back, ln, w, rise, hook=0.4, wave=1.0, twist=0.5, pts=5):
-    """Mèche hérissée (comme sur la vidéo) : la base reste couchée sur le corps, puis la mèche se relève
-    jusqu'à l'angle « rise » (radians, mesuré depuis le corps) et la pointe se redresse encore de « hook ».
-    flame() restait presque à plat (moins de 15°) : les mèches avaient l'air plaquées."""
-    phase = rng.uniform(0, 2 * math.pi)
-    amp = 0.08 * wave * ln * rng.uniform(0.7, 1.3)
+def bristle(rng, root, radial, tang, back, ln, w, rise, hook=0.4, wave=1.0, twist=0.5, lean=0.0, pts=7):
+    """Mèche en flamme (comme sur la vidéo) : base large couchée sur le corps, puis une COURBE qui se relève
+    jusqu'à l'angle « rise » (radians, mesuré depuis le corps), pointe qui se recourbe encore de « hook »,
+    avec une ondulation en S sur le côté. « lean » penche la mèche sur le côté (radians).
+    Première version : 5 points et un angle qui montait régulièrement = des pics droits (« électrocuté »)."""
+    phase = rng.choice([-1.0, 1.0])
+    amp = 0.13 * wave * ln * rng.uniform(0.7, 1.3)
     tw = twist * rng.uniform(-1, 1)
+    bk = back * math.cos(lean) + tang * math.sin(lean)
+    tg = np.cross(radial, bk); tg /= np.linalg.norm(tg)
     p = np.array(root, float)
-    path, sides = [p.copy()], [tang]
+    path, sides = [p.copy()], [tg]
     for k in range(1, pts):
         u = k / (pts - 1)
-        ang = rise * (0.3 + 0.7 * u) + hook * u * u
-        p = p + (back * math.cos(ang) + radial * math.sin(ang)) * (ln / (pts - 1))
-        path.append(p + tang * amp * math.sin(2 * math.pi * u * 0.9 + phase) * u)
+        ang = 0.06 + rise * u ** 1.6 + hook * u ** 3        # couchée au départ, de plus en plus relevée : une courbe
+        p = p + (bk * math.cos(ang) + radial * math.sin(ang)) * (ln / (pts - 1))
+        path.append(p + tg * amp * phase * math.sin(2 * math.pi * u) * (0.4 + 0.6 * u))   # S sur le côté
         a = tw * u
-        sides.append(tang * math.cos(a) + radial * math.sin(a))
-    prof = [0.8, 1.0, 0.85, 0.55, 0.25, 0.0] if pts == 6 else [0.85, 1.0, 0.7, 0.35, 0.0] if pts == 5 \
-        else [0.9, 1.0, 0.5, 0.0]
+        sides.append(tg * math.cos(a) + radial * math.sin(a))
+    prof = [0.85, 1.0, 0.95, 0.8, 0.55, 0.28, 0.0] if pts == 7 else [0.85, 1.0, 0.7, 0.35, 0.0]
     return blade3(path, [w * f for f in prof], 0.1, sides)
 
 
@@ -271,10 +273,12 @@ def body_segment(rng, i, pts):
         if rng.uniform() < 0.15:               # quelques très longues mèches qui sortent de la masse
             ln *= 1.4
         root = radial * np.array([rc * 1.2, rc * 1.05, 0]) * 0.95 + [0, 0, rng.uniform(-0.9, 0.0) * L]
-        w = r * (0.42 + 0.16 * top) * rng.uniform(0.85, 1.15)
-        rise = (0.32 + 0.3 * top + 0.2 * rear * top + 0.15 * mane) * rng.uniform(0.75, 1.25)
-        blades.append(bristle(rng, root, radial, tang, back, ln, w, rise, hook=0.25 + 0.35 * top,
-                              wave=1.1, twist=0.6))
+        w = r * (0.42 + 0.16 * top) * 1.5 * rng.uniform(0.8, 1.2)    # base large : des flammes, pas des aiguilles
+        # hérissées sur le haut du dos (surtout vers l'arrière), plus couchées sur les flancs ; beaucoup de variété
+        rise = (0.12 + 0.3 * top ** 2 + 0.25 * rear * top ** 2 + 0.1 * mane) * rng.uniform(0.55, 1.45)
+        lean = rng.uniform(-0.35, 0.35) * (1.2 - top)                # certaines partent sur le côté
+        blades.append(bristle(rng, root, radial, tang, back, ln, w, rise, hook=(0.15 + 0.4 * top) * rng.uniform(0.6, 1.3),
+                              wave=1.0, twist=0.5, lean=lean))
     for a0 in (250, 290):
         a = math.radians(a0 + rng.uniform(-8, 8))
         radial, tang = _dirs(a)
