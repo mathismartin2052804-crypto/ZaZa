@@ -272,6 +272,7 @@ def body_segment(rng, i, pts):
         ln = (6.6 + 5.4 * top + 3.0 * mane + 3.0 * tuft) * rs * rng.uniform(0.75, 1.3)
         if rng.uniform() < 0.15:               # quelques très longues mèches qui sortent de la masse
             ln *= 1.4
+        ln = min(ln, 14.0 * rs)                # …mais pas trop : une mèche de 21 studs « sortait de l'ordinaire » (Will)
         root = radial * np.array([rc * 1.2, rc * 1.05, 0]) * 0.95 + [0, 0, rng.uniform(-0.9, 0.0) * L]
         w = r * (0.42 + 0.16 * top) * 1.5 * rng.uniform(0.8, 1.2)    # base large : des flammes, pas des aiguilles
         # hérissées sur le haut du dos (surtout vers l'arrière), plus couchées sur les flancs ; beaucoup de variété
@@ -290,6 +291,8 @@ def body_segment(rng, i, pts):
             side = abs(math.cos(a))                 # les lames des côtés sont les plus longues : la tête paraît large de face
             root = radial * np.array([rc * 1.2, rc * 1.05, 0]) * 0.9
             ln = (8.0 + 6.0 * side - 1.5 * (i - 1)) * rng.uniform(0.85, 1.15)
+            if math.sin(a) < 0:                 # sous le cou : plus courtes (une longue lame pendait sous la tête)
+                ln *= 1 + 0.45 * math.sin(a)
             d = back * (0.75 - 0.4 * side) + radial * (0.25 + 0.4 * side)   # sur les côtés, elles partent vers l'extérieur
             blades.append(flame(rng, root, radial, tang, d / np.linalg.norm(d), ln, r * 0.5,
                                 1.2, 0.7, wave=1.0, twist=0.5, pts=5))
