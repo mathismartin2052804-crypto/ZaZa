@@ -1,0 +1,166 @@
+<title>Dragon de Cristal</title>
+<style>
+/* Layout : visionneuse plein cadre, barre d'outils flottante en bas. Univers unique sombre, comme l'image de référence. */
+:root{
+  --bg:#17181b; --panel:#202228; --line:#33363f; --fg:#e6ecf5; --muted:#8d97a8; --ice:#8fc1ff;
+  --display:"Cinzel", Georgia, serif; --body:"Manrope", system-ui, sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);overflow:hidden}
+#view{position:fixed;inset:0}
+canvas{display:block}
+header{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;padding:18px 20px;pointer-events:none;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-family:var(--display);font-weight:600;font-size:clamp(20px,3vw,28px);letter-spacing:.06em;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.stats{color:var(--muted);font-size:12px;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:8px;background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:12px;width:max-content;max-width:calc(100% - 32px)}
+.bar .grp{display:flex;gap:4px;align-items:center}
+.bar .sep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
+button{font:500 13px var(--body);color:var(--fg);background:transparent;border:1px solid transparent;border-radius:8px;padding:7px 11px;cursor:pointer}
+button:hover{background:var(--line)}
+button[aria-pressed="true"]{border-color:var(--ice);color:var(--ice)}
+button:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+.hint{position:fixed;left:20px;bottom:calc(84px + env(safe-area-inset-bottom,0px));color:var(--muted);font-size:12px}
+@media (max-width:600px){.hint{display:none}}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Manrope:wght@400;500&display=swap">
+<div id="view"></div>
+<header>
+  <div><h1>Dragon de Cristal</h1><div class="sub">Démo v2 · d'après la vidéo · à valider avant Blender</div></div>
+  <div class="stats" id="stats">chargement…</div>
+</header>
+<div class="hint">Glisser pour tourner · molette ou pincer pour zoomer</div>
+<div class="bar" role="toolbar" aria-label="Réglages de la vue">
+  <div class="grp" aria-label="Rendu">
+    <button id="mCrystal" aria-pressed="true">Cristal</button>
+    <button id="mSolid" aria-pressed="false">Couleurs Roblox</button>
+    <button id="mParts" aria-pressed="false">Morceaux</button>
+  </div>
+  <div class="sep"></div>
+  <div class="grp" aria-label="Angle">
+    <button data-view="side">Profil</button>
+    <button data-view="three">3/4</button>
+    <button data-view="front">Face</button>
+    <button data-view="top">Dessus</button>
+  </div>
+  <div class="sep"></div>
+  <button id="anim" aria-pressed="true">Animation</button>
+  <button id="spin" aria-pressed="false">Rotation auto</button>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const GLB = "__GLB__";
+const META = __META__;
+const el = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x17181b);
+el.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35,1,0.5,2000);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.autoRotate = false; controls.autoRotateSpeed = 0.6;
+scene.add(new THREE.HemisphereLight(0xcfe3ff,0x10141c,0.9));
+const sun = new THREE.DirectionalLight(0xffffff,0.8); sun.position.set(30,60,40); scene.add(sun);
+
+const meshes = []; let center = new THREE.Vector3(), size = 60;
+const bin = Uint8Array.from(atob(GLB), c => c.charCodeAt(0)).buffer;
+new THREE.GLTFLoader().parse(bin, "", gltf => {
+  const root = gltf.scene; scene.add(root);
+  let tris = 0;
+  root.traverse(o => { if (o.isMesh) {
+    const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+    const isEye = o.name.includes("Eyes"), isBlade = o.name.includes("Blades") || o.name.includes("Jaw");
+    const orig = o.material.color.clone();
+    const crystal = new THREE.MeshPhongMaterial({color: isEye ? 0xd8f1ff : (isBlade ? 0x2f6fc6 : 0x1d4f9a),
+      emissive: isEye ? 0xbfe6ff : 0x061a3a, transparent:true, opacity: isEye ? 1 : 0.55, flatShading:true,
+      shininess:80, specular:0x6fa8ff, depthWrite:false, side:THREE.DoubleSide});
+    const solid = new THREE.MeshLambertMaterial({color:orig, flatShading:true, emissive: isEye ? orig : 0x000000});
+    const hue = (meshes.length * 0.137) % 1;
+    const parts = new THREE.MeshLambertMaterial({color:new THREE.Color().setHSL(hue,0.55,0.55), flatShading:true});
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(g, 28),
+      new THREE.LineBasicMaterial({color:0xa9d0ff, transparent:true, opacity:0.75}));
+    o.add(edges);
+    meshes.push({o, crystal, solid, parts, edges});
+  }});
+  const box = new THREE.Box3().setFromObject(root);
+  rig(root);
+  box.getCenter(center); size = box.getSize(new THREE.Vector3()).length();
+  controls.target.copy(center);
+  setMode("crystal"); setView("three");
+  document.getElementById("stats").innerHTML =
+    `${meshes.length} morceaux · ${Math.round(tris).toLocaleString("fr-FR")} triangles<br>` +
+    `${box.getSize(new THREE.Vector3()).toArray().map(v=>v.toFixed(0)).join(" × ")} studs`;
+}, err => { document.getElementById("stats").textContent = "Le modèle n'a pas pu se charger."; });
+
+// ---- animation procédurale : vague verticale de la tête à la queue + pas des pattes (boucle de 1,32 s) ----
+const chain = [], legs = [];
+let jaw = null;
+function rig(root){
+  const P = META.chain.map(p => new THREE.Vector3(...p));
+  for (let i = 0; i < P.length; i++){ const g = new THREE.Group(); g.position.copy(P[i]); scene.add(g); chain.push({g, rest:P[i]}); }
+  const byName = {}; root.traverse(o => { if (o.isMesh) byName[o.name] = o; });
+  const j = new THREE.Group(); j.position.copy(new THREE.Vector3(...META.jaw_hinge).sub(P[0])); chain[0].g.add(j); jaw = j;
+  for (const [nm, L] of Object.entries(META.legs)){
+    const g = new THREE.Group(); g.position.copy(new THREE.Vector3(...L.hip).sub(P[L.seg])); chain[L.seg].g.add(g);
+    legs.push({g, front: nm.includes("LegF"), left: nm.endsWith("L"), name: nm});
+  }
+  scene.updateMatrixWorld(true);
+  for (const [nm, o] of Object.entries(byName)){
+    const L = legs.find(l => l.name === nm);
+    if (L) { L.g.attach(o); continue; }
+    if (nm === "Head_Jaw") { jaw.attach(o); continue; }
+    const key = nm.split("_")[0];
+    const i = key === "Head" ? 0 : parseInt(key.slice(3), 10);
+    if (chain[i]) chain[i].g.attach(o);
+  }
+}
+let playing = !matchMedia("(prefers-reduced-motion: reduce)").matches, tAnim = 0;
+const PERIOD = 1.32, SP = 2.0;
+function animate(dt){
+  if (!chain.length) return;
+  if (playing) tAnim += dt;
+  const ph = 2 * Math.PI * tAnim / PERIOD;
+  const dy = chain.map((c, i) => 0.9 * Math.sin(ph - i * 0.32) * (0.55 + 0.45 * Math.min(1, i / 6)) + 0.35 * Math.sin(ph * 2));
+  const dx = chain.map((c, i) => 0.35 * Math.sin(ph * 0.5 - i * 0.18));
+  chain.forEach((c, i) => {
+    c.g.position.set(c.rest.x + dx[i], c.rest.y + dy[i], c.rest.z);
+    const a = i === 0 ? 1 : i - 1, b = i === 0 ? 0 : i;
+    c.g.rotation.x = Math.atan2(dy[a] - dy[b], SP) * (i === 0 ? -1 : 1) + (i === 0 ? 0.12 * Math.sin(ph + 0.6) : 0);
+    c.g.rotation.y = -Math.atan2(dx[a] - dx[b], SP) * (i === 0 ? -1 : 1);
+  });
+  for (const l of legs){
+    const off = (l.front ? 0 : Math.PI * 0.5) + (l.left ? 0 : Math.PI);
+    l.g.rotation.x = (l.front ? 0.5 : 0.4) * Math.sin(ph + off);
+  }
+  jaw.rotation.x = 0.12 + 0.12 * Math.sin(ph * 0.5);
+}
+
+function setMode(m){
+  for (const x of meshes){ x.o.material = x[m]; x.edges.visible = m === "crystal"; }
+  for (const [id,k] of [["mCrystal","crystal"],["mSolid","solid"],["mParts","parts"]])
+    document.getElementById(id).setAttribute("aria-pressed", String(k === m));
+}
+function setView(v){
+  const d = size * (el.clientWidth < 700 ? 1.9 : 1.15), dirs = {side:[1,0.08,0], three:[0.75,0.35,-0.7], front:[0.02,0.1,-1], top:[0.05,1,0.02]};
+  const dir = new THREE.Vector3(...dirs[v]).normalize();
+  camera.position.copy(center).addScaledVector(dir, d);
+  controls.update();
+}
+document.getElementById("mCrystal").onclick = () => setMode("crystal");
+document.getElementById("mSolid").onclick = () => setMode("solid");
+document.getElementById("mParts").onclick = () => setMode("parts");
+document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => setView(b.dataset.view));
+const spin = document.getElementById("spin");
+const animBtn = document.getElementById("anim");
+animBtn.setAttribute("aria-pressed", String(playing));
+animBtn.onclick = () => { playing = !playing; animBtn.setAttribute("aria-pressed", String(playing)); };
+spin.onclick = () => { controls.autoRotate = !controls.autoRotate; spin.setAttribute("aria-pressed", String(controls.autoRotate)); };
+function resize(){ const w = el.clientWidth, h = el.clientHeight; renderer.setSize(w,h); camera.aspect = w/h; camera.updateProjectionMatrix(); }
+addEventListener("resize", resize); resize();
+const clock = new THREE.Clock();
+(function loop(){ requestAnimationFrame(loop); animate(Math.min(clock.getDelta(), 0.1)); controls.update(); renderer.render(scene,camera); })();
+</script>

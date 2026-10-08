@@ -1,5 +1,5 @@
 # Construit la démo 3D (HTML autonome) du dragon de cristal à partir d'un gabarit.
-# Usage : python3 demo5.py gabarit.html sortie.html
+# Usage : python3 demo5.py demo5.tpl.html sortie.html
 import sys, json, base64, io, os, tempfile
 import numpy as np
 from meshlib import export_glb

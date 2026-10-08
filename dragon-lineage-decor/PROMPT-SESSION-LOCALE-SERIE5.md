@@ -18,7 +18,7 @@ Il est découpé en **68 parties** pour qu'on puisse l'animer plus tard. **Ne re
 - `Head`, `Seg01` … `Seg30` : la tête et le corps, couleur `#24569F` ;
 - `Head_Blades`, `SegXX_Blades` et `Head_Jaw` (mâchoire) : les lames, couleur `#4E8FE6` ;
 - `Head_Eyes` : les yeux, couleur `#C8ECFF`, en **Neon** ;
-- `Seg06_LegFL/FR` (pattes avant) et `Seg21_LegBL/BR` (pattes arrière), couleur `#24569F`.
+- `Seg10_LegFL/FR` (pattes avant) et `Seg25_LegBL/BR` (pattes arrière), couleur `#24569F`.
 
 ## Import (fait par Will)
 **Avatar → Import 3D**, unité **Stud** (si c'est environ 3,5 fois trop grand ou petit, change l'unité), parties séparées, **Anchored** coché. Range le modèle dans `ServerStorage > MapProps`.
