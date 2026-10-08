@@ -5,6 +5,10 @@
 #   - regard froncé (Head_Brows, sombre et opaque) : orbite, trois sourcils en mèches qui plongent vers le nez
 #     et remontent en pointes, paupière du bas, plis de froncement sur l'arête du nez ;
 #   - tête un peu baissée : il regarde par en dessous ;
+#   - forme de la tête : museau plus court, plus large et plus carré, babine retroussée (trait sombre), crocs
+#     irréguliers et courbés, mâchoire plus massive avec de grandes pointes de joue, front dégagé (crête plus petite) ;
+#   - corps environ 1,4 fois plus épais (il faisait « renard ») : cœur plus gros, lames plus évasées, queue moins fine ;
+#   - pattes plus longues et plus épaisses, pattes arrière plus près de la queue (Seg27), comme sur la vidéo ;
 #   - gemme du front plus grosse, entourée de deux anneaux (Head_Gem), comme sur la vidéo.
 # Ce que la v3 avait changé par rapport à la v2 (assets5.py) :
 #   - corps plus haut et plus touffu : deux couches de lames (courtes plaquées dessous, longues dessus) ;
@@ -34,7 +38,7 @@ from assets5 import _oriented, frame, place, _section
 N_SEG = 30
 SPACING = 2.0
 FRONT_LEG_SEG = 10
-BACK_LEG_SEG = 25
+BACK_LEG_SEG = 27                        # v3 : 25 ; sur la vidéo, les pattes arrière sont près de la queue
 HEAD_SCALE = 1.4
 HEAD_PITCH = 0.06                       # tête un peu baissée : il regarde par en dessous (v3 : 0,2)
 HEAD_WIDEN = np.diag([1.4, 1.2, 1.0])   # tête plus large et plus haute que longue : une vraie tête de dragon, pas de crocodile
@@ -176,7 +180,7 @@ def spine():
     pts = []
     for i in range(N_SEG + 1):
         t = i / N_SEG
-        y = 8.4 + 3.8 * _smooth(0.0, 0.34, t) - 3.0 * _smooth(0.62, 1.0, t) + 0.35 * math.sin(2 * math.pi * t * 1.4)
+        y = 11.2 + 3.8 * _smooth(0.0, 0.34, t) - 3.0 * _smooth(0.62, 1.0, t) + 0.35 * math.sin(2 * math.pi * t * 1.4)
         pts.append(np.array([0.0, y, i * SPACING]))
     out = [pts[0]]
     for p in pts[1:]:
@@ -188,10 +192,10 @@ def spine():
 def radius(i):
     t = i / N_SEG
     if t < 0.14:
-        return 1.9 + 0.6 * (t / 0.14)
+        return 3.0 + 0.5 * (t / 0.14)          # cou épais (sous la crinière)
     if t < 0.72:
-        return 2.5
-    return 2.5 - 1.25 * ((t - 0.72) / 0.28)
+        return 3.5 - 0.2 * _smooth(0.14, 0.72, t)
+    return 3.3 - 1.3 * ((t - 0.72) / 0.28)      # queue moins fine qu'en v3 (1,25 au bout)
 
 
 # ---------------- morceaux du corps ----------------
@@ -211,7 +215,7 @@ def body_segment(rng, i, pts):
     t = i / N_SEG
     mane = math.exp(-((t - 0.06) / 0.09) ** 2)
     tuft = max(0.0, (t - 0.82) / 0.18)
-    rs = 0.6 + 0.4 * r / 2.5
+    rs = 0.6 + 0.4 * r / 2.5 * 0.9
     back = np.array([0, 0, 1.0])
     blades = []
     # couche du dessous : lames courtes et larges, plaquées contre le corps (cachent le cœur foncé)
@@ -234,7 +238,7 @@ def body_segment(rng, i, pts):
             ln *= 1.35                          # de temps en temps une très longue mèche
         root = radial * np.array([rc, rc * 1.22, 0]) * 0.95 + [0, 0, rng.uniform(-0.9, 0.0) * L]
         w = r * (0.48 + 0.2 * top) * rng.uniform(0.85, 1.15)
-        blades.append(flame(rng, root, radial, tang, back, ln, w, 0.42 + 0.2 * (1 - top) + 0.4 * tuft,
+        blades.append(flame(rng, root, radial, tang, back, ln, w, 0.55 + 0.25 * (1 - top) + 0.4 * tuft,
                             hook=0.3 + 0.4 * top, wave=1.0, twist=0.6))
     # deux petites lames sous le ventre
     for a0 in (250, 290):
@@ -257,6 +261,17 @@ JAW_HINGE = np.array([0, -0.45, 1.9])   # repère local de la tête
 JAW_OPEN = 0.5                          # la gueule est modélisée ouverte (air menaçant)
 
 
+def _snout(v):
+    """Museau plus court (x 0,8 devant les yeux) et plus large au bout (jusqu'à x 1,3) : moins crocodile, plus dragon."""
+    v = np.array(v, float)
+    z = v[:, 2]
+    k = np.clip((-z - 2.0) / 5.0, 0, 1)
+    k = k * k * (3 - 2 * k)
+    v[:, 0] *= 1 + 0.3 * k
+    v[:, 2] = np.where(z < -2.0, -2.0 + (z + 2.0) * 0.8, z)
+    return v
+
+
 def head(rng):
     """Tête en repère local (avant = -Z). Renvoie (crâne, lames, mâchoire, yeux)."""
     up = math.pi / 2
@@ -269,25 +284,26 @@ def head(rng):
 
     bl = []
     back = np.array([0, 0, 1.0])
-    # dents du haut : deux grands crocs par côté, le reste plus petit
+    # dents du haut : tailles irrégulières, un très grand croc et un moyen par côté, toutes courbées vers l'arrière
+    UPPER = [(0.5, 0.11), (2.1, 0.28), (0.7, 0.12), (0.4, 0.09), (1.3, 0.2), (0.55, 0.1), (0.35, 0.08),
+             (0.75, 0.12), (0.45, 0.09)]
     for side in (-1, 1):
-        for k in range(9):
+        for k, (ln, r0) in enumerate(UPPER):
             z = -7.1 + k * 0.62
             x = side * (0.42 + 0.11 * k)
-            big = {1: (1.6, 0.24), 4: (1.1, 0.19)}.get(k, (0.5, 0.11))
-            bl.append(_oriented(*tube([[x, -0.05, z], [x * 1.03, -0.05 - big[0] * 0.6, z + 0.05],
-                                       [x * 1.0, -0.05 - big[0], z + 0.2]], [big[1], big[1] * 0.6, 0], 3, tip=True)))
+            bl.append(_oriented(*tube([[x, -0.05, z], [x * 1.05, -0.05 - ln * 0.55, z + 0.1 * ln],
+                                       [x, -0.05 - ln, z + 0.38 * ln]], [r0, r0 * 0.6, 0], 3, tip=True)))
     # narines : deux petites bosses sur le nez
     for side in (-1, 1):
-        bl.append(_oriented(*tube([[side * 0.35, 0.9, -7.0], [side * 0.5, 1.2, -6.5], [side * 0.55, 1.05, -6.0]],
-                                  [0.18, 0.15, 0], 4, tip=True)))
+        bl.append(_oriented(*tube([[side * 0.4, 0.95, -7.1], [side * 0.75, 1.35, -6.6], [side * 0.95, 1.3, -5.9]],
+                                  [0.26, 0.2, 0], 4, tip=True)))
     # crinière : lames couchées vers l'arrière et les côtés, autour de la nuque
     for k in range(26):
         a = math.radians(-60 + 300 * k / 25 + rng.uniform(-5, 5))
         radial, tang = _dirs(a)
         top = max(0.0, math.sin(a))
         ln = rng.uniform(5.5, 8.0) * (0.7 + 0.3 * top)
-        root = radial * np.array([1.4, 1.6, 0]) + [0, 0.6, rng.uniform(-1.0, 1.6)]
+        root = radial * np.array([1.4, 1.6, 0]) + [0, 0.6, rng.uniform(-0.1, 2.0)]
         bl.append(flame(rng, root, radial, tang, back, ln, rng.uniform(0.5, 0.75), 0.5 + 0.2 * (1 - top),
                         hook=0.6 + 0.4 * top, wave=1.1))
     # collerette : une couronne de grandes lames qui rayonnent autour de la nuque (silhouette de lion vue de face)
@@ -321,29 +337,31 @@ def head(rng):
               [side * 3.6, -0.8, 2.2], [side * 3.4, -0.4, 4.6]]
         bl.append(_oriented(*tube(wh, [0.15, 0.13, 0.11, 0.09, 0.06, 0], 4, tip=True)))
     # crête centrale : une grande lame dressée au milieu du front
-    bl.append(blade3([[0, 2.0, -1.0], [0, 3.6, -0.3], [0, 5.2, 0.7], [0, 6.4, 2.2]], [0.75, 0.6, 0.35, 0],
-                     0.18, [[0, 0, 1]] * 4))
+    bl.append(blade3([[0, 2.15, 0.45], [0, 3.1, 0.95], [0, 4.0, 1.75], [0, 4.7, 2.9]], [0.5, 0.42, 0.26, 0],
+                     0.16, [[0, 0, 1]] * 4))
 
     # mâchoire ouverte : crocs du bas, pointes au menton et barbe qui pend vers l'arrière
-    jprof = [(1.9, 1.25, -0.45, -1.15), (0.3, 1.3, -0.4, -1.3), (-1.8, 1.0, -0.35, -1.1),
-             (-3.8, 0.78, -0.3, -0.9), (-5.6, 0.6, -0.25, -0.7), (-6.9, 0.42, -0.2, -0.55)]
+    jprof = [(1.9, 1.5, -0.4, -1.45), (0.3, 1.55, -0.35, -1.6), (-1.8, 1.22, -0.3, -1.32),
+             (-3.8, 0.96, -0.28, -1.02), (-5.6, 0.76, -0.22, -0.8), (-6.9, 0.56, -0.18, -0.62)]
     jaw = [_oriented(*loft([_section(z, w, t, b, 8) for z, w, t, b in jprof]))]
     for side in (-1, 1):
-        for k in range(8):
+        for k, (ln, r0) in enumerate([(1.6, 0.23), (0.45, 0.09), (0.7, 0.12), (1.0, 0.16), (0.4, 0.09),
+                                      (0.6, 0.1), (0.35, 0.08), (0.5, 0.1)]):
             z = -6.5 + k * 0.7
-            x = side * (0.3 + 0.11 * k)
-            big = {0: (1.3, 0.2), 3: (0.9, 0.16)}.get(k, (0.45, 0.1))
-            jaw.append(_oriented(*tube([[x, -0.3, z], [x, -0.3 + big[0], z - 0.1]], [big[1], 0], 3, tip=True)))
-        for k in range(3):                                    # pointes sur le côté de la mâchoire
-            jaw.append(_oriented(*tube([[side * 1.0, -0.9, -1.5 + 1.2 * k], [side * 1.9, -1.3, -0.6 + 1.2 * k]],
-                                       [0.2, 0], 3, tip=True)))
+            x = side * (0.36 + 0.13 * k)
+            jaw.append(_oriented(*tube([[x, -0.3, z], [x * 1.04, -0.3 + ln * 0.55, z + 0.08 * ln],
+                                        [x, -0.3 + ln, z + 0.3 * ln]], [r0, r0 * 0.6, 0], 3, tip=True)))
+        for k in range(4):                                    # grandes pointes de joue, rabattues vers l'arrière
+            jaw.append(blade3([[side * 1.25, -0.8 - 0.1 * k, -1.9 + 0.95 * k], [side * 2.4, -1.15 - 0.1 * k, -0.6 + 0.95 * k],
+                               [side * 3.2, -0.95 - 0.15 * k, 0.9 + 0.95 * k]], [0.32, 0.22, 0.0], 0.14,
+                              [[0, 1.0, 0]] * 3))
     for k in range(7):
         a = math.radians(200 + 140 * k / 6)
         radial, tang = _dirs(a)
         root = radial * 0.85 + [0, -0.9, -4.0 + 0.6 * abs(k - 3)]
         jaw.append(flame(rng, root, radial, tang, np.array([0, -0.4, 1.0]) / 1.08, rng.uniform(4.0, 5.8),
                          0.36, 0.55, 0.8, wave=1.0))
-    jaw = [(transform(np.array(v) - JAW_HINGE, rot_matrix_x(-JAW_OPEN), JAW_HINGE), f) for v, f in jaw]
+    jaw = [(transform(_snout(v) - JAW_HINGE, rot_matrix_x(-JAW_OPEN), JAW_HINGE), f) for v, f in jaw]
 
     # yeux : orbite sombre, iris en amande incliné et plissé (haut coupé en biais), pupille en fente verticale
     eyes, pupils, brows = [], [], []
@@ -371,6 +389,13 @@ def head(rng):
         # paupière du bas : lame fine sous l'œil qui file vers l'arrière (trait d'eye-liner)
         brows.append(blade3([[s_ * 1.2, 0.8, -2.05], [s_ * 1.52, 0.86, -0.9], [s_ * 1.88, 1.08, 0.3],
                              [s_ * 2.2, 1.45, 1.5]], [0.12, 0.26, 0.22, 0.0], 0.12, [[0, 1.0, 0]] * 4))
+        # babine retroussée : le bord de la lèvre remonte vers l'arrière et découvre les crocs (grognement)
+        brows.append(blade3([[s_ * 0.8, 0.0, -7.0], [s_ * 1.0, 0.12, -5.3], [s_ * 1.2, 0.38, -3.5],
+                             [s_ * 1.45, 0.8, -2.1], [s_ * 1.75, 1.05, -0.8]], [0.1, 0.2, 0.24, 0.18, 0.0], 0.14,
+                            [[s_, 0.45, 0]] * 5))
+        for z in (-4.6, -3.7):                              # plis du grognement au-dessus de la lèvre
+            brows.append(blade3([[s_ * 1.05, 0.3, z], [s_ * 0.95, 0.7, z - 0.35], [s_ * 0.75, 1.0, z - 0.6]],
+                                [0.1, 0.08, 0.0], 0.08, [[0, 0.2, 1.0]] * 3))
         # plis de froncement sur l'arête du nez (chevrons pointés vers le museau)
         for z, y in ((-2.35, 1.17), (-2.85, 1.1), (-3.35, 1.03)):
             brows.append(blade3([[0, y + 0.14, z - 0.15], [s_ * 0.32, y + 0.1, z + 0.08], [s_ * 0.62, y - 0.02, z + 0.32]],
@@ -381,7 +406,8 @@ def head(rng):
     v, f = blob(gc, 0.4, scale=(0.75, 1.0, 1.0), jitter=0.0, subdiv=1)
     v = [list(gc + (np.asarray(p) - gc) - _unit(gn) * ((np.asarray(p) - gc) @ _unit(gn)) * 0.45) for p in v]
     gem = [_oriented(v, f), torus(gc - _unit(gn) * 0.05, gn, 0.58, 0.07), torus(gc - _unit(gn) * 0.1, gn, 0.8, 0.055)]
-    return skull, bl, jaw, eyes, pupils, gem, brows
+    sn = lambda lst: [(_snout(v), f) for v, f in lst]
+    return sn(skull), sn(bl), jaw, sn(eyes), sn(pupils), sn(gem), sn(brows)
 
 
 # ---------------- pattes (cuisse, tibia, pied) ----------------
@@ -407,7 +433,7 @@ def leg_pose(pts, seg, side, front):
     hip = M @ np.array([side * r * 0.62, -r * 0.5, 0.0]) + o
     contact = np.array([hip[0] + side * 0.9, 0.0, hip[2] - (0.6 if front else -0.2)])
     ankle = contact + [0, ANKLE_H, 0.45]
-    l1, l2 = (5.6, 5.4) if front else (4.9, 4.7)
+    l1, l2 = (7.0, 6.6) if front else (6.4, 6.0)
     bend = np.array([0, 0, 1.0]) if front else np.array([0, 0, -1.0])   # coude vers l'arrière, genou vers l'avant
     knee = ik_knee(hip, ankle, l1, l2, bend)
     return dict(hip=hip, knee=knee, ankle=ankle, contact=contact, l1=l1, l2=l2, bend=bend)
@@ -416,9 +442,9 @@ def leg_pose(pts, seg, side, front):
 def leg_parts(rng, P, side, front):
     """Renvoie (cuisse, tibia, pied), chacun une liste de (v, f) en repère monde."""
     hip, knee, ankle, contact = P["hip"], P["knee"], P["ankle"], P["contact"]
-    k = 1.3 if front else 1.4
+    k = 1.55 if front else 1.65                # pattes plus épaisses : elles portent un corps plus gros
     thigh = [_oriented(*tube([hip, (hip + knee) / 2, knee], [1.3 * k, 1.0 * k, 0.75 * k], 6, jitter=0.1, rng=rng))]
-    shin = [_oriented(*tube([knee, (knee + ankle) / 2, ankle], [0.75 * k, 0.6 * k, 0.48 * k], 6, jitter=0.1, rng=rng))]
+    shin = [_oriented(*tube([knee, (knee + ankle) / 2, ankle], [0.72 * k, 0.58 * k, 0.46 * k], 6, jitter=0.1, rng=rng))]
     # lames : épaule/cuisse et coude/genou, couchées vers l'arrière
     for lst, root, ln in ((thigh, hip + [0, -0.4, 0], 3.2), (thigh, (hip + knee) / 2, 2.4), (shin, knee, 2.4)):
         a = math.radians(90 - side * 60)
