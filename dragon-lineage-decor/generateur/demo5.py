@@ -15,6 +15,9 @@ POINTS = ("hip", "knee", "ankle", "contact")   # points à recaler ; les directi
 meta = {"chain": [sh(q) for q in a.meta["chain"]], "jaw_hinge": sh(a.meta["jaw_hinge"]),
         "ground": a.meta.get("ground", 0.0) - mn[1],
         "legs": {k: {f: (sh(x) if f in POINTS else x) for f, x in L.items()} for k, L in a.meta["legs"].items()}}
+if "whiskers" in a.meta:                   # v5 : pivots des moustaches et centre des yeux (les directions ne bougent pas)
+    meta["whiskers"] = {k: [sh(q) for q in L] for k, L in a.meta["whiskers"].items()}
+    meta["eyes"] = {k: {"c": sh(e["c"]), "n": e["n"]} for k, e in a.meta["eyes"].items()}
 tmp = os.path.join(tempfile.mkdtemp(), "d.glb")
 export_glb(a, tmp)
 b64 = base64.b64encode(open(tmp, "rb").read()).decode()

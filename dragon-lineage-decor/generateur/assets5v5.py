@@ -90,6 +90,21 @@ def _jaw_place(v):
     return transform(_snout(v) - JAW_HINGE, rot_matrix_x(-JAW_OPEN), JAW_HINGE)
 
 
+def _beard_fix(k, vf):
+    """Les 7 mèches de la barbe de la v4 partaient jusqu'à 0,9 stud SOUS la mâchoire (on voyait un vide entre
+    le menton et la barbe). On remonte chaque mèche pour que sa racine rentre dans la mâchoire."""
+    a = math.radians(200 + 140 * k / 6)
+    z = -4.0 + 0.6 * abs(k - 3)
+    root_y = 0.85 * math.sin(a) - 0.9
+    zs, ts, bs = [-6.9, -5.6, -3.8, -1.8, 0.3], [-0.18, -0.22, -0.28, -0.3, -0.35], [-0.62, -0.8, -1.02, -1.32, -1.6]
+    t, b = np.interp(z, zs, ts), np.interp(z, zs, bs)
+    bottom = (t + b) / 2 - (t - b) / 2 * 0.92            # dessous de la section octogonale
+    dy = max(0.0, bottom + 0.2 - root_y)
+    shift = rot_matrix_x(-JAW_OPEN) @ np.array([0, dy, 0])
+    v, f = vf
+    return (np.asarray(v) + shift).tolist(), f
+
+
 def head5(rng):
     """Tête v4 à l'identique (validée), mais les dents sont sorties dans leurs propres parties (blanc glacé)
     et la gueule a un intérieur sombre : palais, joues, plancher et langue. Avant, tout était du même bleu."""
@@ -99,7 +114,50 @@ def head5(rng):
     assert len(jaw) == 1 + 2 * 12 + 7
     teeth, bl = bl[:18], bl[18:]
     jaw_teeth = jaw[1:9] + jaw[13:21]
-    jaw = jaw[:1] + jaw[9:13] + jaw[21:]
+    jaw = jaw[:1] + jaw[9:13] + [_beard_fix(k, vf) for k, vf in enumerate(jaw[21:])]
+    # moustaches : celles de la v4 (une seule pièce chacune, dans Head_Blades) sont remplacées par des
+    # moustaches en 3 morceaux qui ondulent (Head_WhiskerL1..3 et R1..3) ; Head_Blades, une fois les crocs
+    # retirés : 2 narines, 26 mèches de crinière, 16 de collerette, 9 pièces par côté (moustache en dernier), crête
+    assert len(bl) == 2 + 26 + 16 + 2 * 9 + 1
+    bl = [vf for k, vf in enumerate(bl) if k not in (44 + 8, 53 + 8)]
+    whiskers, wpiv = {}, {}
+    for side, sn_ in ((-1, "L"), (1, "R")):
+        wh = _snout(np.array([[side * 0.6, 0.3, -6.6], [side * 1.8, 0.0, -5.4], [side * 2.8, -0.5, -3.4],
+                              [side * 3.4, -0.9, -0.8], [side * 3.6, -0.8, 2.2], [side * 3.4, -0.4, 4.6]]))
+        rad = [0.15, 0.13, 0.11, 0.09, 0.06, 0]
+        for j, (a_, b_) in enumerate(((0, 2), (2, 4), (4, 5))):
+            if j < 2:
+                pts = [wh[a_], wh[a_ + 1], wh[b_]]
+                r = [rad[a_], rad[a_ + 1], rad[b_]]
+            else:
+                pts, r = [wh[a_], wh[b_]], [rad[a_], rad[b_]]
+            whiskers[f"Head_Whisker{sn_}{j + 1}"] = [_oriented(*tube(pts, r, 4, tip=(j == 2)))]
+        wpiv[sn_] = [wh[0], wh[2], wh[4]]           # pivots : racine de chaque morceau
+
+    # yeux : une pupille par œil (elles bougent), paupières fermée et mi-close (cachées, le script les montre
+    # pendant un clignement : Transparency 1 → 0 → 1)
+    pupils_lr = {"Head_Pupils_L": [pupils[0]], "Head_Pupils_R": [pupils[1]]}
+    lids, lids_half, eye_meta = [], [], {}
+    for side, sn_ in ((-1, "L"), (1, "R")):
+        c = np.array([side * 1.28, 1.18, -1.3])
+        nrm = np.array([side * 0.85, 0.08, -0.52])
+        along = np.array([side * -0.15, -0.32, -1.0])
+        n_ = nrm / np.linalg.norm(nrm)
+        lid = v4.lens(c + n_ * 0.05, along, nrm, 0.92, 0.42, 0.24, back=0.2)
+        lids.append(lid)
+        # mi-close : on garde seulement le haut de la paupière (au-dessus d'une ligne en biais, comme lid_cut)
+        a_ = along - (along @ n_) * n_; a_ /= np.linalg.norm(a_)
+        b_ = np.cross(n_, a_)
+        v, f = lid
+        half = []
+        for q in v:
+            d = np.asarray(q) - c
+            ca, cb, cn = d @ a_, d @ b_, d @ n_
+            half.append(list(c + a_ * ca + b_ * max(cb, 0.02 - 0.32 * ca) + n_ * cn))
+        lids_half.append(_oriented(half, f))
+        eye_meta[sn_] = {"c": _snout(c[None])[0], "n": n_}
+    sn = lambda lst: [(_snout(v), f) for v, f in lst]
+    lids, lids_half = sn(lids), sn(lids_half)
 
     # palais : une plaque sombre sous le crâne, du fond de la gorge au bout du museau
     pal = [(1.7, 1.25, -0.62), (0.3, 1.3, -0.52), (-2.0, 0.98, -0.32), (-3.6, 0.82, -0.27),
@@ -125,13 +183,16 @@ def head5(rng):
         mouth.append(_oriented(*loft(rings)))
     jaw_mouth = [(_jaw_place(v), f) for v, f in jaw_mouth]
     tongue = [(_jaw_place(v), f) for v, f in tongue]
-    return dict(Head=skull, Head_Blades=bl, Head_Jaw=jaw, Head_Eyes=eyes, Head_Pupils=pupils, Head_Gem=gem,
-                Head_Brows=brows, Head_Teeth=teeth, Head_Mouth=mouth, Head_Jaw_Teeth=jaw_teeth,
-                Head_Jaw_Mouth=jaw_mouth, Head_Jaw_Tongue=tongue)
+    parts = dict(Head=skull, Head_Blades=bl, Head_Jaw=jaw, Head_Eyes=eyes, Head_Gem=gem,
+                 Head_Brows=brows, Head_Teeth=teeth, Head_Mouth=mouth, Head_Jaw_Teeth=jaw_teeth,
+                 Head_Jaw_Mouth=jaw_mouth, Head_Jaw_Tongue=tongue, Head_Lids=lids, Head_LidsHalf=lids_half,
+                 **pupils_lr, **whiskers)
+    return parts, {"whiskers": wpiv, "eyes": eye_meta}
 
 
 HEAD_STYLE = {"Head": "body", "Head_Blades": "blades", "Head_Jaw": "blades", "Head_Eyes": "eyes",
-              "Head_Pupils": "pupils", "Head_Gem": "gem", "Head_Brows": "brows", "Head_Teeth": "teeth",
+              "Head_Pupils_L": "pupils", "Head_Pupils_R": "pupils", "Head_Lids": "brows", "Head_LidsHalf": "brows",
+              **{f"Head_Whisker{s_}{j}": "blades" for s_ in "LR" for j in (1, 2, 3)}, "Head_Gem": "gem", "Head_Brows": "brows", "Head_Teeth": "teeth",
               "Head_Mouth": "mouth", "Head_Jaw_Teeth": "teeth", "Head_Jaw_Mouth": "mouth",
               "Head_Jaw_Tongue": "tongue"}
 
@@ -357,7 +418,12 @@ def dragon_cristal_v5(name="Dragon_Cristal_v5", seed=57):
 
     # tête v4 (avec la gueule sombre et les dents à part), dans l'axe du cou
     Mh, oh = frame(pts, 0) @ rot_matrix_x(HEAD_PITCH) @ HEAD_WIDEN * HEAD_SCALE, pts[0] + np.array([0, 0.4, -3.6])
-    for nm, lst in head5(rng).items():
+    hparts, hmeta = head5(rng)
+    w2 = lambda q: (Mh @ np.asarray(q) + oh).tolist()
+    meta["whiskers"] = {k: [w2(q) for q in L] for k, L in hmeta["whiskers"].items()}
+    meta["eyes"] = {k: {"c": w2(e["c"]), "n": (Mh @ e["n"] / np.linalg.norm(Mh @ e["n"])).tolist()}
+                    for k, e in hmeta["eyes"].items()}
+    for nm, lst in hparts.items():
         c, m = STYLE[HEAD_STYLE[nm]]
         for vf in lst:
             a.add(nm, *place(vf, Mh, oh), c, m)
