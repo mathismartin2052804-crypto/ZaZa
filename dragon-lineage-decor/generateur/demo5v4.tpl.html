@@ -27,7 +27,7 @@ button:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Manrope:wght@400;500&display=swap">
 <div id="view"></div>
 <header>
-  <div><h1>Dragon de Cristal</h1><div class="sub">Démo v4 · yeux et gemme retravaillés</div></div>
+  <div><h1>Dragon de Cristal</h1><div class="sub">Démo v4 · nouvelle tête (regard, yeux, gemme) · animation de vol à venir</div></div>
   <div class="stats" id="stats">chargement…</div>
 </header>
 <div class="hint">Glisser pour tourner · molette ou pincer pour zoomer</div>
@@ -52,7 +52,7 @@ button:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
     <button data-eyes="C" aria-pressed="false">Yeux C</button>
   </div>
   <div class="sep"></div>
-  <button id="anim" aria-pressed="true">Animation</button>
+  <button id="anim" aria-pressed="false">Ancienne marche</button>
   <button id="slow" aria-pressed="false">Ralenti</button>
   <button id="spin" aria-pressed="false">Rotation auto</button>
 </div>
@@ -176,7 +176,7 @@ function rig(root){
     drive.push({o, kind: "seg", i: key === "Head" ? 0 : parseInt(key.slice(3), 10)});
   });
 }
-let playing = !matchMedia("(prefers-reduced-motion: reduce)").matches, tAnim = 0, slow = false;
+let playing = false, tAnim = 0, slow = false;   // la marche v3 reste en pause : l'animation de vol la remplacera
 function pose(t){
   const ph = (t / T) % 1, w = 2 * Math.PI * ph;
   const hump = 0.5 - 0.5 * Math.cos(w);          // dos bombé au maximum quand les pattes arrière se posent
