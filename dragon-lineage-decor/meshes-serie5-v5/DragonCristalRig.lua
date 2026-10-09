@@ -1,0 +1,63 @@
+-- Généré par generateur/rig5v5.py : NE PAS MODIFIER À LA MAIN (relancer le script).
+-- Pivots de repos du dragon de cristal v5, repère du GLB (studs, Y vers le haut, tête vers -Z).
+return {
+	HeadCenter = Vector3.new(0.0000, 10.5854, -4.4516),  -- centre de la boîte de « Head » : sert à recaler le modèle importé
+	HeadSize = Vector3.new(7.0497, 6.8738, 16.1526),    -- taille de « Head » : sert à trouver l'échelle si l'import l'a changée
+	CheckPart = "Seg20", CheckCenter = Vector3.new(-0.2568, 22.5761, 49.7374),  -- pour vérifier le recalage
+	JawHinge = Vector3.new(0.0000, 9.2986, -1.1325),
+	Chain = {
+		Vector3.new(0.0000, 10.1470, 0.0000),
+		Vector3.new(0.0000, 9.8062, 2.5776),
+		Vector3.new(0.0000, 9.2526, 5.1180),
+		Vector3.new(0.0000, 9.3525, 7.7160),
+		Vector3.new(0.0000, 10.1587, 10.1879),
+		Vector3.new(0.0000, 11.3423, 12.5028),
+		Vector3.new(0.0000, 12.4660, 14.8475),
+		Vector3.new(0.0000, 13.3716, 17.2847),
+		Vector3.new(0.0000, 14.1091, 19.7779),
+		Vector3.new(0.0000, 14.7649, 22.2938),
+		Vector3.new(0.0000, 15.3903, 24.8175),
+		Vector3.new(0.0000, 16.0142, 27.3415),
+		Vector3.new(0.0000, 16.6559, 29.8611),
+		Vector3.new(0.0000, 17.3289, 32.3725),
+		Vector3.new(0.0000, 18.0408, 34.8731),
+		Vector3.new(0.0000, 18.7919, 37.3623),
+		Vector3.new(0.0000, 19.5754, 39.8414),
+		Vector3.new(0.0000, 20.3780, 42.3144),
+		Vector3.new(0.0000, 21.1805, 44.7875),
+		Vector3.new(0.0000, 21.9587, 47.2683),
+		Vector3.new(0.0000, 22.6849, 49.7648),
+		Vector3.new(0.0000, 23.3283, 52.2839),
+		Vector3.new(0.0000, 23.8568, 54.8297),
+		Vector3.new(0.0000, 24.2396, 57.4013),
+		Vector3.new(0.0000, 24.4501, 59.9928),
+		Vector3.new(0.0000, 24.4703, 62.5927),
+		Vector3.new(0.0000, 24.2941, 65.1867),
+		Vector3.new(0.0000, 23.9291, 67.7610),
+		Vector3.new(0.0000, 23.3945, 70.3054),
+		Vector3.new(0.0000, 22.7170, 72.8156),
+		Vector3.new(0.0000, 21.9265, 75.2925),
+		Vector3.new(0.0000, 21.0520, 77.7410),
+		Vector3.new(0.0000, 20.1193, 80.1680),
+		Vector3.new(0.0000, 19.1499, 82.5805),
+		Vector3.new(0.0000, 18.1602, 84.9848),
+		Vector3.new(0.0000, 17.1619, 87.3855),
+		Vector3.new(0.0000, 16.1615, 89.7853),
+		Vector3.new(0.0000, 15.1614, 92.1853),
+		Vector3.new(0.0000, 14.1604, 94.5848),
+	},
+	Legs = {
+		{ Name = "Seg10_LegFL", Tag = "FL", Seg = 10, Front = true, Hip = Vector3.new(-2.8031, 13.2526, 25.3473), Knee = Vector3.new(-3.9100, 9.4890, 27.3398), Ankle = Vector3.new(-4.4726, 4.0321, 26.2146) },
+		{ Name = "Seg10_LegFR", Tag = "FR", Seg = 10, Front = true, Hip = Vector3.new(2.8031, 13.2526, 25.3473), Knee = Vector3.new(3.9100, 9.4890, 27.3398), Ankle = Vector3.new(4.4726, 4.0321, 26.2146) },
+		{ Name = "Seg28_LegBL", Tag = "BL", Seg = 28, Front = false, Hip = Vector3.new(-3.1350, 20.9724, 69.7965), Knee = Vector3.new(-5.1527, 18.2821, 66.6578), Ankle = Vector3.new(-5.5514, 14.2948, 69.6483) },
+		{ Name = "Seg28_LegBR", Tag = "BR", Seg = 28, Front = false, Hip = Vector3.new(3.1350, 20.9724, 69.7965), Knee = Vector3.new(5.1527, 18.2821, 66.6578), Ankle = Vector3.new(5.5514, 14.2948, 69.6483) },
+	},
+	Whiskers = {
+		L = { Vector3.new(-1.5224, 12.5549, -11.3108), Vector3.new(-5.8029, 10.5535, -8.0480), Vector3.new(-7.0560, 8.6415, -0.8320) },
+		R = { Vector3.new(1.5224, 12.5549, -11.3108), Vector3.new(5.8029, 10.5535, -8.0480), Vector3.new(7.0560, 8.6415, -0.8320) },
+	},
+	Eyes = {
+		L = { C = Vector3.new(-2.5088, 12.8395, -5.0095), N = Vector3.new(-0.9138, 0.1484, -0.3780) },
+		R = { C = Vector3.new(2.5088, 12.8395, -5.0095), N = Vector3.new(0.9138, 0.1484, -0.3780) },
+	},
+}
