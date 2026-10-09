@@ -17,9 +17,12 @@ cd dragon-lineage-decor/generateur
 python3 build.py assets5 meshes-serie5 apercu-serie5.png    # module, dossier de sortie, aperçu
 python3 vue5.py ../vue-dragon-cristal.png                    # aperçu multi-angles d'un objet long
 python3 demo5.py demo5.tpl.html /chemin/scratchpad/demo.html # démo 3D animée (navigateur)
-# v5 du dragon de cristal (serpentin, pose de vol) — version actuelle :
-python3 demo5.py demo5v5.tpl.html /chemin/scratchpad/dragon-cristal-demo.html assets5v5
-python3 vue5.py /chemin/scratchpad/vue-v5.png assets5v5
+# v5 du dragon de cristal (serpentin, qui VOLE) — version actuelle, importée dans Roblox :
+python3 demo5.py demo5v5.tpl.html /chemin/scratchpad/dragon-cristal-demo.html assets5v5 C       # démo de vol (plumage C)
+python3 demo5.py demo5v5.tpl.html /chemin/scratchpad/plumes.html assets5v5 0,A,B,C              # plusieurs plumages à comparer
+python3 build.py assets5v5 meshes-serie5-v5 /chemin/scratchpad/apercu-v5.png                    # GLB + manifest pour Roblox
+python3 rig5v5.py ../meshes-serie5-v5/DragonCristalRig.lua                                      # pivots pour le script (à refaire si le modèle change)
+# script Roblox (meshes-serie5-v5/DragonCristalVol.client.lua) : à tester hors de Roblox, voir 3.9
 # v3 du dragon de cristal (ancienne marche au sol, abandonnée) :
 python3 build.py assets5v3 meshes-serie5-v3 /chemin/scratchpad/apercu-v3.png
 python3 vue5.py ../vue-dragon-cristal-v3.png assets5v3
@@ -52,10 +55,20 @@ python3 demo5.py demo5v3.tpl.html /chemin/scratchpad/dragon-cristal-demo.html as
 - Avec `loft`, l'ordre des points de l'anneau décide du sens des faces. Dans un `ring`, l'ordre suit le sens `axis_u → axis_v`.
 - Les lames plates « cristal » : `blade()` (section en losange) et `sabre()` (lame couchée vers l'arrière, pointe relevée). Ce qui a marché pour ressembler à la référence : des lames **larges** (environ 0,6 × le rayon du corps), **longues**, **peu relevées** (`hook` faible). Des lames fines et dressées donnent un hérisson.
 - Pour une pièce animée par morceaux, fais **chevaucher** les morceaux (longueur d'environ 1,3 à 1,5 fois l'écart), sinon des trous apparaissent quand ça plie.
+- **Mèches / plumage** (remarques de Will sur la v5) :
+  - plaquées à moins de 15° du corps = « trop plaqué » ;
+  - droites, fines et toutes dans le même sens = « électrocuté », « ça pique » ;
+  - ce qui marche : des **courbes** (7 ou 8 points, angle qui augmente en `u^1,6`), une base **large**, une ondulation en S, beaucoup de **variété** (angle, longueur, certaines penchées sur le côté). Le plumage retenu (« Fluides ») ondule aussi de haut en bas ;
+  - **plafonne la longueur** : un seul tirage aléatoire trop long (21 studs au lieu de 8 à 13) se remarque tout de suite ;
+  - **une seule crinière** : plusieurs couches de lames qui se superposent dans des sens différents (crinière + collerette de la tête + collerette du corps) donnent un aspect « brouillon ».
+- **Jonctions entre morceaux** : affiche les morceaux SANS les lames (mode « Morceaux » + filtre sur les noms, voir 3.4) pour voir les vides. Erreurs déjà faites : un vide entre le crâne et le cou (le crâne s'arrêtait net), un cou aussi gros que le corps (pas de vrai cou), une barbe qui partait 0,9 stud SOUS la mâchoire (Will : « un espace sous le menton »).
 
 ### 3.4 Aperçus
 - **matplotlib** : avec `set_box_aspect((1,1,1))`, un objet long (dragon de 78 studs) devient minuscule. `vue5.py` règle l'aspect sur les vraies dimensions. Le rendu matplotlib reste approximatif : il sert à vérifier les formes, pas le style.
 - **Pour juger le style, utilise la démo three.js** (`demo5.tpl.html` + `demo5.py`). Elle intègre le GLB en base64 et offre le rendu cristal (transparent + arêtes lumineuses), les couleurs Roblox, une couleur par morceau, des angles prédéfinis et l'animation.
+- **Proposer des choix à Will** : une seule démo avec des boutons (ex. `demo5.py … assets5v5 0,A,B,C` : un GLB par style, recharge au clic) plutôt que plusieurs liens. Attention à la limite de **16 Mo** par artifact (4 dragons ≈ 11 Mo). Une fois le choix fait, ne garder que lui (démo plus légère).
+- **Diagnostiquer** : depuis Playwright, `scene.traverse(o => { if (o.isMesh) o.visible = /^(Head|Seg0[1-8])$/.test(o.name) })` puis `setMode("parts")` montre seulement les morceaux voulus, chacun d'une couleur.
+- **« Je ne le vois pas animé »** : la démo démarre en pause si l'appareil a le réglage « Réduire les animations » (`prefers-reduced-motion`) ; le bouton **Animation** la relance. Vérifier avec Playwright : `newPage({reducedMotion: "reduce"})`.
 - **Capture de la démo** : `capture_demo.js`, lancé depuis le dossier qui contient `dragon-cristal-demo.html` :
   `NODE_PATH=$(npm root -g) node capture_demo.js`
   Il faut les options `--use-gl=swiftshader --ignore-gpu-blocklist` (déjà dans le script) pour le WebGL. **Ne lance jamais `playwright install`** : Chromium est déjà installé.
@@ -79,7 +92,9 @@ python3 demo5.py demo5v3.tpl.html /chemin/scratchpad/dragon-cristal-demo.html as
 - Will peut changer d'avis en cours de route (« l'anime pas maintenant »). Adapte-toi tout de suite, mais **garde ce qui servira plus tard** (le découpage en morceaux est resté, pour l'animation).
 - Montre toujours un aperçu (image ou démo) **avant** de préparer l'import dans Studio, puis propose une courte liste de choses à améliorer.
 - Pas de pull request sauf si Will la demande. Commit et push sur la branche de la session.
-- Dès le début, demande la vidéo ou les images de référence si elles ne sont pas jointes. Ne propose pas d'améliorations « à l'aveugle » sans le dire.
+- Dès le début, demande la vidéo ou les images de référence si elles ne sont pas jointes (la vidéo du dragon de cristal n'est **pas dans le dépôt** : Will doit la joindre au message). Ne propose pas d'améliorations « à l'aveugle » sans le dire.
+- Quand Will demande « t'en penses quoi », donne un avis franc et une courte liste de propositions, puis **attends son « oui »** avant de coder. Quand c'est flou (« les plumes fluides » : le style « Plumes » ou « Fluides » ?), pose la question en une ligne et dis ce que tu choisis par défaut.
+- Après chaque changement : démo republiée sur le même lien + planche avant/après avec la vidéo en haut. Will juge sur la démo, pas sur le code.
 
 ### 3.7 Animer une créature (marche ou vol)
 > **Le dragon de cristal VOLE** (voir 3.5 et 4). Ce qui suit sur l'appui au sol servait à la marche v3, abandonnée ; la formule des matrices et l'IK à deux os restent valables pour le vol (pattes qui pagaient, morceaux qui ondulent).
@@ -103,8 +118,15 @@ Ce qui manquait à la v2 du dragon (remarque de Will : « la tête n'est pas ass
 - **L'expression vient de quelques formes fortes** : des arcades sourcilières épaisses qui descendent vers le museau (air méchant), une bouche ouverte avec de grands crocs visibles, des joues hérissées qui élargissent la silhouette de face, un ornement au milieu du front (crête, gemme).
 - **La silhouette avant les détails** : vérifie la vue de face et de profil en ombre chinoise. Si on ne reconnaît pas la créature en silhouette, ajouter des lames n'y changera rien.
 
+### 3.9 Script Roblox d'animation : le tester hors de Roblox
+- La session cloud n'a pas Roblox, mais elle peut **exécuter du Luau** : télécharge la release GitHub `luau-ubuntu.zip` (ex. `https://github.com/luau-lang/luau/releases/download/0.650/luau-ubuntu.zip`) dans le scratchpad. `luau-analyze --mode=nonstrict fichier.lua` vérifie la syntaxe (les erreurs « Unknown global 'game' / 'warn' / 'Enum' » sont normales).
+- Mets le calcul pur du script entre deux repères (`-- @@MATH` … `-- @@FIN`). Un petit fichier de test recolle : un faux `Vector3`/`CFrame` (`new`, `fromMatrix`, `Angles`, `*`, `Inverse`, `Unit`, `Cross`), le ModuleScript des pivots, la partie `@@MATH`, puis affiche les matrices de quelques parties.
+- Compare-les à la démo (Playwright : `pose(t)` puis `scene.getObjectByName(nom).matrix.elements`). Pour le dragon v5 : écart max 0,0005 (arrondi des pivots à 4 décimales). C'est ce qui garantit que Roblox fera **exactement** l'animation que Will a validée.
+- Recalage dans Roblox : le pivot d'une MeshPart importée est le centre de sa boîte. Le script retrouve le repère du GLB à partir de la partie `Head` (centre et taille exportés dans le ModuleScript), ce qui marche même si l'import change l'échelle ou si le modèle est tourné, et vérifie avec une 2e partie (`Seg20`).
+- Les paupières (`Head_Lids`, `Head_LidsHalf`) ne bougent pas : elles sont **cachées** (Transparency 1) et le script les montre pendant un clignement. C'est plus simple et plus sûr qu'une paupière qui pivote.
+
 ## 4. Le dragon de cristal (série 5) : ce qu'il faut savoir pour continuer
-> **Version actuelle : v5** (`assets5v5.py`, `demo5v5.tpl.html`, planche `comparaison-silhouette-dragon-v5.png`). La démo publiée (même lien) montre la v5. Les anciennes versions sont gardées telles quelles.
+> **Version actuelle : v5, terminée et prête à importer** (`assets5v5.py`, `demo5v5.tpl.html`, export `meshes-serie5-v5/`, prompt `PROMPT-SESSION-LOCALE-SERIE5.md`, zip `dragon-lineage-serie5.zip`). État final : plumage C « Fluides », vrai cou et une seule crinière, gueule sombre et dents blanc glacé, yeux or, paupières, pupilles et moustaches animées ; 117 parties, 28 388 triangles. La démo publiée (même lien) montre le vol. Planches dans l'ordre : `comparaison-silhouette`, `-pattes`, `-forme`, `-gueule-meches`, `-meches-flammes`, `-plumages`, `-cou-dragon-v5.png`. Prochaine étape : retours de Will après l'import dans Studio (option proposée : le faire voler en cercle au lieu de sur place). Les anciennes versions sont gardées telles quelles.
 >
 > **v5 (silhouette « pas chien ») :** tête v4 reprise à l'identique (validée par Will) ; 38 morceaux de 2,6 studs (environ 118 studs de long, queue de 10 morceaux qui s'affine jusqu'à 0,8) ; cou en S (creux derrière la nuque, tête relevée) ; corps plus large que haut et **collerette** de grandes lames sur `Seg01`–`Seg03` qui partent sur les côtés (de face, sans elle, le dragon fait « colonne ») ; colonne en grande arche (`spine()`) ; bras en `Seg10`, pattes arrière en `Seg28` ; pattes de vol en 3 morceaux (bras, avant-bras, main en serres), épaisses et couvertes de plaques de cristal (`_plates`) ; **patte arrière : genou en avant, talon en arrière, orteils vers l'AVANT** (le pied tourné vers la queue faisait une patte « à l'envers ») ; antennes écartées sur les côtés (`v4.ANTENNA` remplacé dans la v5) ; les plaques des pattes sont dans des morceaux à part, `SegXX_LegYY_Blades` et `SegXX_LegYY_Shin_Blades` (couleur des lames) : **dans le script, ils suivent la cuisse et le tibia, pas le morceau `SegXX`** ; `a.meta["legs"]` donne `hip`, `knee`, `ankle`, `hand` (direction des doigts), `l1`, `l2`, `bend` ; le dragon est à environ `FLY_H = 24` studs du sol ; environ 22 500 triangles et 103 morceaux avant les retouches ci-dessous (Will accepte un peu plus de 20 000, mais il faut que ça tourne sur mobile). **Pas encore d'animation** : Will veut d'abord un dragon satisfaisant.
 >
