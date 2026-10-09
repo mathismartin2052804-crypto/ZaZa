@@ -44,6 +44,7 @@ N_SEG = 38                 # 34 au début de la v5 : la queue est plus longue (1
 SPACING = 2.6
 FRONT_LEG_SEG = 10         # sur la vidéo, les bras sont au tiers avant du corps
 BACK_LEG_SEG = 28          # et les pattes arrière vers les 4/5 ; la queue (touffue) part juste derrière
+NECK_SEGS = 6              # le cou s'élargit de Seg01 à Seg06 (épaules)
 FLY_H = 24.0               # hauteur du dos au-dessus du sol (le dragon vole)
 
 STYLE = dict(STYLE4)
@@ -67,7 +68,7 @@ v4.ANTENNA = [(0.6, 2.1, -0.6), (2.0, 3.0, 0.0), (3.6, 3.9, 0.9), (5.0, 4.8, 2.1
 #   "A" : flammes douces : plus couchées, longue courbe en S, pointe arrondie ;
 #   "B" : plumes : plus courtes et plus larges, en feuille, couchées et qui se chevauchent comme des écailles ;
 #   "C" : mèches fluides : longues, ondulées deux fois (de côté et de haut en bas), comme des cheveux au vent.
-PLUMAGE = "0"
+PLUMAGE = "C"                      # choisi par Will (« les plumes fluides »)
 _STYLES = {
     #     pts  long  larg  relevé pointe  S    vague  profil de largeur (de la racine à la pointe)
     "0": (7, 1.0, 1.5, 1.0, 1.0, 0.13, 0.0, [0.85, 1.0, 0.95, 0.8, 0.55, 0.28, 0.0]),
@@ -126,10 +127,35 @@ def _beard_fix(k, vf):
     return (np.asarray(v) + shift).tolist(), f
 
 
+def mane(rng):
+    """La crinière, unique, qui part de la nuque et s'écoule vers l'arrière dans le style du plumage (fluide) :
+    longues lames sur le dessus, lames des côtés qui s'écartent (la tête paraît large de face, allure « lion »),
+    plus courtes dessous. Repère local de la tête (avant = -Z, avant le changement d'échelle de la tête)."""
+    out = []
+    back = np.array([0, 0, 1.0])
+    for row, (z, n, k_ln) in enumerate(((0.6, 11, 1.0), (2.2, 10, 0.9), (3.8, 9, 0.75))):
+        for j in range(n):
+            a = math.radians(-50 + 280 * (j + 0.5 * (row % 2)) / n + rng.uniform(-6, 6))
+            radial, tang = _dirs(a)
+            top, side = max(0.0, math.sin(a)), abs(math.cos(a))
+            root = radial * np.array([1.35, 1.5, 0]) * (1.0 - 0.08 * row) + [0, 0.45 - 0.25 * row, z]
+            ln = (5.0 + 2.5 * top + 3.0 * side) * k_ln * rng.uniform(0.85, 1.15)   # côtés longs : large de face
+            if math.sin(a) < 0:
+                ln *= 1 + 0.45 * math.sin(a)
+            d = back * (0.85 - 0.35 * side) + radial * (0.15 + 0.5 * side)
+            out.append(bristle(rng, root, radial, tang, d / np.linalg.norm(d), ln, 1.0,     # larges, peu ondulées :
+                               0.25 + 0.3 * top, hook=0.25 + 0.2 * top, wave=0.45, twist=0.3))  # elles coulent ensemble
+    return out
+
+
 def head5(rng):
     """Tête v4 à l'identique (validée), mais les dents sont sorties dans leurs propres parties (blanc glacé)
     et la gueule a un intérieur sombre : palais, joues, plancher et langue. Avant, tout était du même bleu."""
     skull, bl, jaw, eyes, pupils, gem, brows = v4.head(rng)
+    # nuque : le crâne se prolonge vers l'arrière et s'affine jusqu'à la taille du cou (avant, il s'arrêtait net
+    # et il restait un vide avant Seg01, beaucoup plus gros que l'arrière du crâne)
+    nape = [(2.0, 1.6, 1.9, -0.6), (3.0, 1.5, 1.7, -0.85), (4.0, 1.38, 1.4, -1.15), (5.0, 1.28, 1.2, -1.35)]
+    skull = skull + [_oriented(*loft([_section(z, w, t, b, 8) for z, w, t, b in nape]))]
     # v4.head : Head_Blades commence par les 2 x 9 crocs du haut ; Head_Jaw = [os], puis par côté 8 crocs
     # et 4 pointes de joue, puis 7 mèches de barbe
     assert len(jaw) == 1 + 2 * 12 + 7
@@ -140,7 +166,9 @@ def head5(rng):
     # moustaches en 3 morceaux qui ondulent (Head_WhiskerL1..3 et R1..3) ; Head_Blades, une fois les crocs
     # retirés : 2 narines, 26 mèches de crinière, 16 de collerette, 9 pièces par côté (moustache en dernier), crête
     assert len(bl) == 2 + 26 + 16 + 2 * 9 + 1
-    bl = [vf for k, vf in enumerate(bl) if k not in (44 + 8, 53 + 8)]
+    # on retire aussi la crinière (26 lames) et la collerette (16) de la v4 : avec la collerette du corps,
+    # cela faisait trois crinières qui partaient dans tous les sens (« brouillon ») ; une seule, plus bas
+    bl = [vf for k, vf in enumerate(bl) if k not in (44 + 8, 53 + 8) and not 2 <= k <= 43]
     whiskers, wpiv = {}, {}
     for side, sn_ in ((-1, "L"), (1, "R")):
         wh = _snout(np.array([[side * 0.6, 0.3, -6.6], [side * 1.8, 0.0, -5.4], [side * 2.8, -0.5, -3.4],
@@ -204,6 +232,7 @@ def head5(rng):
         mouth.append(_oriented(*loft(rings)))
     jaw_mouth = [(_jaw_place(v), f) for v, f in jaw_mouth]
     tongue = [(_jaw_place(v), f) for v, f in tongue]
+    bl = bl + mane(rng)
     parts = dict(Head=skull, Head_Blades=bl, Head_Jaw=jaw, Head_Eyes=eyes, Head_Gem=gem,
                  Head_Brows=brows, Head_Teeth=teeth, Head_Mouth=mouth, Head_Jaw_Teeth=jaw_teeth,
                  Head_Jaw_Mouth=jaw_mouth, Head_Jaw_Tongue=tongue, Head_Lids=lids, Head_LidsHalf=lids_half,
@@ -242,8 +271,10 @@ def spine():
 def radius(i):
     """Corps épais jusqu'aux pattes arrière, puis une longue queue qui s'affine."""
     t = i / N_SEG
+    if i <= NECK_SEGS:                            # cou : environ 60 % de la largeur du corps derrière la tête
+        return 2.5 + 1.6 * _smooth(0.0, 1.0, (i - 1) / (NECK_SEGS - 1))
     if t < 0.12:
-        return 3.6 + 0.5 * (t / 0.12)
+        return 4.1
     tb = BACK_LEG_SEG / N_SEG
     if t < tb:
         return 4.1 - 0.7 * _smooth(0.12, tb, t)
@@ -256,10 +287,14 @@ def body_segment(rng, i, pts):
     r = radius(i)
     rc = r * 0.84
     L = SPACING * 0.72
+    neck = i <= NECK_SEGS
+    if neck:                                   # anneaux réguliers et qui se chevauchent : pas de cassure au cou
+        L = SPACING * 0.85
     rings = []
     for k, (z, s) in enumerate([(-L, 0.95), (0.0, 1.05), (L, 0.93)]):
-        rr = ring((0, 0, z), rc * s, 8, angle0=0.4 * k + i * 0.3, axis_u=(1, 0, 0), axis_v=(0, 1, 0),
-                  jitter=0.08, rng=rng)
+        rr = ring((0, 0, z), rc * s * (1.0 + (0.04 if neck and k == 0 else 0)), 8,
+                  angle0=(0.0 if neck else 0.4 * k + i * 0.3), axis_u=(1, 0, 0), axis_v=(0, 1, 0),
+                  jitter=(0.02 if neck else 0.08), rng=rng)
         rr[:, 0] *= 1.2                        # plus large (de face, il faisait « colonne »)
         rr[:, 1] *= 1.05
         rings.append(rr)
@@ -303,18 +338,7 @@ def body_segment(rng, i, pts):
         a = math.radians(a0 + rng.uniform(-8, 8))
         radial, tang = _dirs(a)
         blades.append(flame(rng, radial * rc * 1.1, radial, tang, back, 2.2 * rs, r * 0.25, 0.3, 0.3, pts=4))
-    if i <= 3:                                  # collerette : grandes lames qui s'écartent derrière la tête (vue de face « lion »)
-        for k in range(9):
-            a = math.radians(-60 + 300 * k / 8 + 10 * i + rng.uniform(-8, 8))
-            radial, tang = _dirs(a)
-            side = abs(math.cos(a))                 # les lames des côtés sont les plus longues : la tête paraît large de face
-            root = radial * np.array([rc * 1.2, rc * 1.05, 0]) * 0.9
-            ln = (8.0 + 6.0 * side - 1.5 * (i - 1)) * rng.uniform(0.85, 1.15)
-            if math.sin(a) < 0:                 # sous le cou : plus courtes (une longue lame pendait sous la tête)
-                ln *= 1 + 0.45 * math.sin(a)
-            d = back * (0.75 - 0.4 * side) + radial * (0.25 + 0.4 * side)   # sur les côtés, elles partent vers l'extérieur
-            blades.append(flame(rng, root, radial, tang, d / np.linalg.norm(d), ln, r * 0.5,
-                                1.2, 0.7, wave=1.0, twist=0.5, pts=5))
+    # (la collerette des Seg01–03 a été retirée : une seule crinière, sur la nuque, dans head5)
     if i == N_SEG:                              # petite touffe au bout de la queue
         for k in range(6):
             a = 2 * math.pi * k / 6 + rng.uniform(-0.2, 0.2)
